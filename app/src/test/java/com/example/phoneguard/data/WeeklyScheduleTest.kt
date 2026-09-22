@@ -81,11 +81,15 @@ class WeeklyScheduleTest {
   private fun time(dayOfWeek: Int, hour: Int, minute: Int): Calendar =
     Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
       clear()
-      set(Calendar.YEAR, 2026)
-      set(Calendar.MONTH, Calendar.SEPTEMBER)
-      set(Calendar.DAY_OF_MONTH, 21)
-      set(Calendar.DAY_OF_WEEK, dayOfWeek)
-      set(Calendar.HOUR_OF_DAY, hour)
-      set(Calendar.MINUTE, minute)
+      // 20 Sep 2026 is Sunday, so Calendar's Sunday=1 ... Saturday=7
+      // maps directly to dates 20 ... 26 without relying on DAY_OF_WEEK mutation.
+      set(
+        2026,
+        Calendar.SEPTEMBER,
+        20 + (dayOfWeek - Calendar.SUNDAY),
+        hour,
+        minute,
+        0,
+      )
     }
 }
