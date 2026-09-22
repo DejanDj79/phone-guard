@@ -354,19 +354,6 @@ export default {
         ).toISOString();
     }
 
-    const { error: updateError } = await ctx.supabaseAdmin
-      .from("child_devices")
-      .update({
-        access_state: accessState,
-        temporary_allow_until: temporaryAllowUntil,
-        updated_at: now.toISOString(),
-      })
-      .eq("device_id", deviceId);
-
-    if (updateError) {
-      return json({ error: "status_update_failed" }, 500);
-    }
-
     return json({
       ok: true,
       commandId,
