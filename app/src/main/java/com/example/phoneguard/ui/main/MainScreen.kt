@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
@@ -314,7 +316,11 @@ private fun ChildDashboard(
   val restrictedNow = weeklySchedule.isRestrictedAt(Calendar.getInstance())
 
   Column(
-    modifier = modifier.fillMaxSize().padding(24.dp),
+    modifier =
+      modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
+        .padding(24.dp),
     verticalArrangement = Arrangement.spacedBy(20.dp),
   ) {
     Text(
@@ -409,6 +415,13 @@ private fun ChildDashboard(
           }
         }
       }
+    }
+
+    Button(
+      onClick = onTestLock,
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Text("TEST LOCK")
     }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -508,14 +521,6 @@ private fun ChildDashboard(
       }
     }
 
-    Spacer(modifier = Modifier.weight(1f))
-
-    Button(
-      onClick = onTestLock,
-      modifier = Modifier.fillMaxWidth(),
-    ) {
-      Text("TEST LOCK")
-    }
   }
 }
 
