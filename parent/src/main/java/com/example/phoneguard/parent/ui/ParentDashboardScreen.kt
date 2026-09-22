@@ -247,7 +247,7 @@ fun ParentDashboardScreen(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-          listOf(15, 30, 60).forEach { minutes ->
+          listOf(1, 15, 30, 60).forEach { minutes ->
             OutlinedButton(
               onClick = {
                 sendCommand(RemoteCommand.bonusTime(minutes))
