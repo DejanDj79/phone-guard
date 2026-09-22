@@ -350,6 +350,8 @@ private fun ChildDashboard(
 ) {
   val enabledDays = weeklySchedule.enabledDaysCount()
   val restrictedNow = weeklySchedule.isRestrictedAt(Calendar.getInstance())
+  val registrationFailure =
+    registrationResult as? ChildRegistrationResult.Failure
 
   Column(
     modifier =
@@ -490,13 +492,13 @@ private fun ChildDashboard(
               registrationInProgress -> "Backend: registering…"
               registrationResult is ChildRegistrationResult.Success ->
                 "Backend: registered"
-              registrationResult is ChildRegistrationResult.Failure ->
-                "Backend error: " + registrationResult.message
+              registrationFailure != null ->
+                "Backend error: " + registrationFailure.message
               else -> "Backend: not registered yet"
             },
           style = MaterialTheme.typography.bodyMedium,
           color =
-            if (registrationResult is ChildRegistrationResult.Failure) {
+            if (registrationFailure != null) {
               MaterialTheme.colorScheme.error
             } else {
               MaterialTheme.colorScheme.onSurfaceVariant
@@ -511,7 +513,7 @@ private fun ChildDashboard(
           )
         }
 
-        if (registrationResult is ChildRegistrationResult.Failure) {
+        if (registrationFailure != null) {
           OutlinedButton(
             onClick = onRetryRegistration,
             modifier = Modifier.fillMaxWidth(),
