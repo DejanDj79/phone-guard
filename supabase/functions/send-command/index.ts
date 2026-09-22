@@ -43,10 +43,25 @@ function pemToPkcs8Bytes(pem: string): Uint8Array {
     .replaceAll("\\n", "\n")
     .replaceAll("\\r", "\n");
 
-  const base64 = normalizedPem
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replaceAll(/\s/g, "");
+  const beginMarker = "-----BEGIN PRIVATE KEY-----";
+  const endMarker = "-----END PRIVATE KEY-----";
+  const begin = normalizedPem.indexOf(beginMarker);
+  const end = normalizedPem.indexOf(endMarker);
+
+  if (begin < 0 || end <= begin) {
+    throw new Error("firebase_private_key_pem_invalid");
+  }
+
+  const body = normalizedPem.slice(
+    begin + beginMarker.length,
+    end,
+  );
+
+  const base64 = body.replace(/[^A-Za-z0-9+/=]/g, "");
+
+  if (!base64 || base64.length % 4 !== 0) {
+    throw new Error("firebase_private_key_base64_invalid");
+  }
 
   const binary = atob(base64);
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
