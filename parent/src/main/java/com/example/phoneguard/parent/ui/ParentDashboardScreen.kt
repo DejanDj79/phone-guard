@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -23,11 +24,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import android.widget.NumberPicker
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.PairingRequest
@@ -64,6 +67,8 @@ fun ParentDashboardScreen(
   var lastCommand by remember { mutableStateOf<RemoteCommand?>(null) }
   var commandInProgress by remember { mutableStateOf(false) }
   var commandError by remember { mutableStateOf<String?>(null) }
+  var showBonusTimePicker by remember { mutableStateOf(false) }
+  var selectedBonusMinutes by remember { mutableStateOf(15) }
 
   if (pairedDevice == null) {
     PairDeviceScreen(
@@ -243,21 +248,12 @@ fun ParentDashboardScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Row(
+        OutlinedButton(
+          onClick = { showBonusTimePicker = true },
+          enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-          listOf(1, 15, 30, 60).forEach { minutes ->
-            OutlinedButton(
-              onClick = {
-                sendCommand(RemoteCommand.bonusTime(minutes))
-              },
-              enabled = !commandInProgress,
-              modifier = Modifier.weight(1f),
-            ) {
-              Text("+" + minutes)
-            }
-          }
+          Text("ADD TIME")
         }
       }
     }
@@ -298,6 +294,98 @@ fun ParentDashboardScreen(
 
     Spacer(modifier = Modifier.height(8.dp))
   }
+
+  if (showBonusTimePicker) {
+    BonusTimeWheelDialog(
+      initialMinutes = selectedBonusMinutes,
+      onDismiss = { showBonusTimePicker = false },
+      onConfirm = { minutes ->
+        selectedBonusMinutes = minutes
+        showBonusTimePicker = false
+        sendCommand(RemoteCommand.bonusTime(minutes))
+      },
+    )
+  }
+}
+
+@Composable
+private fun BonusTimeWheelDialog(
+  initialMinutes: Int,
+  onDismiss: () -> Unit,
+  onConfirm: (Int) -> Unit,
+) {
+  var selectedMinutes by remember(initialMinutes) {
+    mutableStateOf(initialMinutes.coerceIn(1, 60))
+  }
+
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = {
+      Text(
+        text = "Dodatno vreme",
+        fontWeight = FontWeight.SemiBold,
+      )
+    },
+    text = {
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Text(
+          text = "Izaberi trajanje od 1 do 60 minuta.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        AndroidView(
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .height(190.dp),
+          factory = { context ->
+            NumberPicker(context).apply {
+              minValue = 1
+              maxValue = 60
+              value = selectedMinutes
+              wrapSelectorWheel = false
+              descendantFocusability = NumberPicker.FOCUS_BLOCK_DESCENDANTS
+              setFormatter { value -> value.toString().padStart(2, '0') }
+              setOnValueChangedListener { _, _, newValue ->
+                selectedMinutes = newValue
+              }
+            }
+          },
+          update = { picker ->
+            if (picker.value != selectedMinutes) {
+              picker.value = selectedMinutes
+            }
+          },
+        )
+
+        Text(
+          text =
+            selectedMinutes.toString() +
+              if (selectedMinutes == 1) " minut" else " minuta",
+          modifier = Modifier.fillMaxWidth(),
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+          textAlign = TextAlign.Center,
+        )
+      }
+    },
+    confirmButton = {
+      Button(
+        onClick = { onConfirm(selectedMinutes) },
+      ) {
+        Text("DODAJ")
+      }
+    },
+    dismissButton = {
+      OutlinedButton(onClick = onDismiss) {
+        Text("OTKAŽI")
+      }
+    },
+  )
 }
 
 @Composable
