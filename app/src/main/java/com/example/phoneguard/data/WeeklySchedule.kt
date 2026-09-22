@@ -37,6 +37,11 @@ data class DaySchedule(
     get() = endMinutes.toTimeLabel()
 }
 
+data class ScheduleTransition(
+  val triggerAtMillis: Long,
+  val restrictedAfter: Boolean,
+)
+
 data class WeeklySchedule(
   val days: Map<GuardDay, DaySchedule> =
     GuardDay.entries.associateWith { DaySchedule() },
@@ -110,6 +115,49 @@ data class WeeklySchedule(
     } else {
       null
     }
+  }
+
+  fun nextTransitionAfter(calendar: Calendar): ScheduleTransition? {
+    val nowMillis = calendar.timeInMillis
+    val candidates = mutableSetOf<Long>()
+
+    for (dayOffset in -1..7) {
+      val dayCalendar = (calendar.clone() as Calendar).apply {
+        add(Calendar.DAY_OF_MONTH, dayOffset)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+      }
+
+      val day = GuardDay.fromCalendarDay(dayCalendar.get(Calendar.DAY_OF_WEEK))
+      val schedule = scheduleFor(day)
+      if (!schedule.enabled || schedule.startMinutes == schedule.endMinutes) continue
+
+      val start = (dayCalendar.clone() as Calendar).apply {
+        set(Calendar.HOUR_OF_DAY, schedule.startMinutes / 60)
+        set(Calendar.MINUTE, schedule.startMinutes % 60)
+      }
+
+      val end = (dayCalendar.clone() as Calendar).apply {
+        set(Calendar.HOUR_OF_DAY, schedule.endMinutes / 60)
+        set(Calendar.MINUTE, schedule.endMinutes % 60)
+        if (schedule.startMinutes > schedule.endMinutes) {
+          add(Calendar.DAY_OF_MONTH, 1)
+        }
+      }
+
+      if (start.timeInMillis > nowMillis) candidates += start.timeInMillis
+      if (end.timeInMillis > nowMillis) candidates += end.timeInMillis
+    }
+
+    val triggerAtMillis = candidates.minOrNull() ?: return null
+    val after = (calendar.clone() as Calendar).apply {
+      timeInMillis = triggerAtMillis
+    }
+
+    return ScheduleTransition(
+      triggerAtMillis = triggerAtMillis,
+      restrictedAfter = isRestrictedAt(after),
+    )
   }
 
   fun encode(): String =
