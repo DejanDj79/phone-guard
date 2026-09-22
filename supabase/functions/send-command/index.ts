@@ -38,7 +38,12 @@ function base64UrlJson(value: unknown): string {
 }
 
 function pemToPkcs8Bytes(pem: string): Uint8Array {
-  const base64 = pem
+  const normalizedPem = pem
+    .replaceAll("\\r\\n", "\n")
+    .replaceAll("\\n", "\n")
+    .replaceAll("\\r", "\n");
+
+  const base64 = normalizedPem
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
     .replaceAll(/\s/g, "");
