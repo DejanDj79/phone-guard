@@ -48,6 +48,27 @@ class WeeklyScheduleTest {
   }
 
   @Test
+  fun nextTransitionForOvernightScheduleIsStartThenEnd() {
+    val schedule =
+      scheduleWith(
+        GuardDay.MONDAY,
+        DaySchedule(enabled = true, startMinutes = 22 * 60, endMinutes = 7 * 60),
+      )
+
+    val beforeStart = time(Calendar.MONDAY, 21, 0)
+    val startTransition = schedule.nextTransitionAfter(beforeStart)!!
+
+    assertEquals(time(Calendar.MONDAY, 22, 0).timeInMillis, startTransition.triggerAtMillis)
+    assertTrue(startTransition.restrictedAfter)
+
+    val duringRestriction = time(Calendar.MONDAY, 23, 0)
+    val endTransition = schedule.nextTransitionAfter(duringRestriction)!!
+
+    assertEquals(time(Calendar.TUESDAY, 7, 0).timeInMillis, endTransition.triggerAtMillis)
+    assertFalse(endTransition.restrictedAfter)
+  }
+
+  @Test
   fun codecPreservesWeeklySchedule() {
     val original =
       WeeklySchedule(
