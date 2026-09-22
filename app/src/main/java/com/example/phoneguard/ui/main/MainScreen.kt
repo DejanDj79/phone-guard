@@ -33,7 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.data.ChildSettingsStore
+import com.example.phoneguard.data.WeeklySchedule
 import com.example.phoneguard.theme.PhoneGuardTheme
+import java.util.Calendar
 
 @Composable
 fun MainScreen(
@@ -45,6 +47,8 @@ fun MainScreen(
 
   var hasParentPin by remember { mutableStateOf(settingsStore.hasParentPin()) }
   var isLocked by remember { mutableStateOf(settingsStore.isLocked()) }
+  var weeklySchedule by remember { mutableStateOf(settingsStore.getWeeklySchedule()) }
+  var editingSchedule by remember { mutableStateOf(false) }
 
   when {
     !hasParentPin -> {
@@ -53,6 +57,18 @@ fun MainScreen(
           settingsStore.setParentPin(pin)
           hasParentPin = true
         },
+      )
+    }
+
+    editingSchedule -> {
+      ScheduleEditorScreen(
+        schedule = weeklySchedule,
+        onSave = { schedule ->
+          settingsStore.saveWeeklySchedule(schedule)
+          weeklySchedule = schedule
+          editingSchedule = false
+        },
+        onCancel = { editingSchedule = false },
       )
     }
 
@@ -76,6 +92,8 @@ fun MainScreen(
     else -> {
       ChildDashboard(
         modifier = modifier,
+        weeklySchedule = weeklySchedule,
+        onEditSchedule = { editingSchedule = true },
         onTestLock = {
           settingsStore.setLocked(true)
           isLocked = true
@@ -193,9 +211,14 @@ private fun PinField(
 
 @Composable
 private fun ChildDashboard(
+  weeklySchedule: WeeklySchedule,
+  onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val enabledDays = weeklySchedule.enabledDaysCount()
+  val restrictedNow = weeklySchedule.isRestrictedAt(Calendar.getInstance())
+
   Column(
     modifier = modifier.fillMaxSize().padding(24.dp),
     verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -233,18 +256,44 @@ private fun ChildDashboard(
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
       Column(
         modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Text(
           text = "Schedule",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
         Text(
-          text = "No schedule configured",
+          text =
+            if (enabledDays == 0) {
+              "No schedule configured"
+            } else {
+              enabledDays.toString() + " days configured"
+            },
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
         )
+
+        if (enabledDays > 0) {
+          Text(
+            text =
+              if (restrictedNow) {
+                "Current schedule state: LOCKED"
+              } else {
+                "Current schedule state: allowed"
+              },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        OutlinedButton(
+          onClick = onEditSchedule,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("EDIT SCHEDULE")
+        }
       }
     }
 
@@ -370,7 +419,11 @@ private fun ParentPinSetupPreview() {
 @Composable
 private fun ChildDashboardPreview() {
   PhoneGuardTheme {
-    ChildDashboard(onTestLock = {})
+    ChildDashboard(
+      weeklySchedule = WeeklySchedule(),
+      onEditSchedule = {},
+      onTestLock = {},
+    )
   }
 }
 
