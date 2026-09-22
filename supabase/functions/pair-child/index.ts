@@ -97,13 +97,26 @@ export default {
       return json({ error: "invalid_or_expired_code" }, 404);
     }
 
+    const temporaryAccessMinutesRemaining =
+      pairedDevice.access_state === "TEMPORARILY_ALLOWED" &&
+      pairedDevice.temporary_allow_until
+        ? Math.max(
+            1,
+            Math.ceil(
+              (new Date(pairedDevice.temporary_allow_until).getTime() -
+                Date.now()) /
+                60000,
+            ),
+          )
+        : null;
+
     return json({
       ok: true,
       device: {
         deviceId: pairedDevice.device_id,
         displayName: pairedDevice.display_name,
         state: pairedDevice.access_state,
-        temporaryAllowUntil: pairedDevice.temporary_allow_until,
+        temporaryAccessMinutesRemaining,
       },
       controlToken,
     });
