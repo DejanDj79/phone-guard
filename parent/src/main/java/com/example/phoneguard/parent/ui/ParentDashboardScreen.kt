@@ -19,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -32,34 +34,67 @@ import com.example.phoneguard.core.PairingRequest
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
-import com.example.phoneguard.parent.data.MockPairingGateway
+import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.PairingGateway
+import com.example.phoneguard.parent.data.ParentSettingsStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ParentDashboardScreen(
   modifier: Modifier = Modifier,
-  pairingGateway: PairingGateway = remember { MockPairingGateway() },
+  pairingGateway: PairingGateway? = null,
 ) {
-  var pairedDevice by remember { mutableStateOf<ChildDevice?>(null) }
+  val context = LocalContext.current
+  val settingsStore =
+    remember(context) {
+      ParentSettingsStore(context.applicationContext)
+    }
+  val defaultGateway = remember { HttpPairingGateway() }
+  val gateway = pairingGateway ?: defaultGateway
+
+  var pairedDevice by remember {
+    mutableStateOf(settingsStore.loadPairedDevice())
+  }
   var lastCommand by remember { mutableStateOf<RemoteCommand?>(null) }
 
   if (pairedDevice == null) {
     PairDeviceScreen(
       modifier = modifier,
       onPair = { rawCode ->
-        val request =
+        val requestResult =
           runCatching { PairingRequest.fromUserInput(rawCode) }
-            .getOrElse {
-              return@PairDeviceScreen PairingResult.InvalidCode(
-                "Kod mora imati tačno 6 slova ili cifara.",
-              )
+
+        if (requestResult.isFailure) {
+          PairingResult.InvalidCode(
+            "Kod mora imati tačno 6 slova ili cifara.",
+          )
+        } else {
+          val result =
+            withContext(Dispatchers.IO) {
+              gateway.pair(requestResult.getOrThrow())
             }
 
-        val result = pairingGateway.pair(request)
-        if (result is PairingResult.Success) {
-          pairedDevice = result.device
+          if (result is PairingResult.Success) {
+            val token = result.controlToken
+
+            if (token.isNullOrBlank()) {
+              PairingResult.Error(
+                "Backend nije vratio control token.",
+              )
+            } else {
+              settingsStore.savePairing(
+                device = result.device,
+                controlToken = token,
+              )
+              pairedDevice = result.device
+              result
+            }
+          } else {
+            result
+          }
         }
-        result
       },
     )
     return
@@ -67,7 +102,7 @@ fun ParentDashboardScreen(
 
   val device = pairedDevice!!
 
-  fun sendMock(command: RemoteCommand) {
+  fun applyMockCommand(command: RemoteCommand) {
     lastCommand = command
 
     pairedDevice =
@@ -140,7 +175,13 @@ fun ParentDashboardScreen(
         )
 
         Text(
-          text = "Development pairing: kod još potvrđuje mock gateway; mrežna potvrda je sledeći korak.",
+          text = "✓ Real backend pairing",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Text(
+          text = "Command transport: mock dok ne povežemo FCM.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -159,14 +200,14 @@ fun ParentDashboardScreen(
         )
 
         Button(
-          onClick = { sendMock(RemoteCommand.lock()) },
+          onClick = { applyMockCommand(RemoteCommand.lock()) },
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("LOCK NOW")
         }
 
         OutlinedButton(
-          onClick = { sendMock(RemoteCommand.unlock()) },
+          onClick = { applyMockCommand(RemoteCommand.unlock()) },
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("UNLOCK")
@@ -184,7 +225,9 @@ fun ParentDashboardScreen(
         ) {
           listOf(15, 30, 60).forEach { minutes ->
             OutlinedButton(
-              onClick = { sendMock(RemoteCommand.bonusTime(minutes)) },
+              onClick = {
+                applyMockCommand(RemoteCommand.bonusTime(minutes))
+              },
               modifier = Modifier.weight(1f),
             ) {
               Text("+" + minutes)
@@ -212,27 +255,20 @@ fun ParentDashboardScreen(
       }
     }
 
-    OutlinedButton(
-      onClick = {
-        pairedDevice = null
-        lastCommand = null
-      },
-      modifier = Modifier.fillMaxWidth(),
-    ) {
-      Text("UNPAIR DEVELOPMENT DEVICE")
-    }
-
     Spacer(modifier = Modifier.height(8.dp))
   }
 }
 
 @Composable
 private fun PairDeviceScreen(
-  onPair: (String) -> PairingResult,
+  onPair: suspend (String) -> PairingResult,
   modifier: Modifier = Modifier,
 ) {
+  val scope = rememberCoroutineScope()
+
   var pairingCode by remember { mutableStateOf("") }
   var errorMessage by remember { mutableStateOf<String?>(null) }
+  var pairingInProgress by remember { mutableStateOf(false) }
 
   Column(
     modifier =
@@ -277,6 +313,7 @@ private fun PairDeviceScreen(
       },
       label = { Text("Pairing code") },
       singleLine = true,
+      enabled = !pairingInProgress,
       keyboardOptions =
         KeyboardOptions(
           capitalization = KeyboardCapitalization.Characters,
@@ -298,22 +335,37 @@ private fun PairDeviceScreen(
 
     Button(
       onClick = {
-        when (val result = onPair(pairingCode)) {
-          is PairingResult.Success -> errorMessage = null
-          is PairingResult.InvalidCode -> errorMessage = result.message
-          is PairingResult.Error -> errorMessage = result.message
+        scope.launch {
+          pairingInProgress = true
+          errorMessage = null
+
+          when (val result = onPair(pairingCode)) {
+            is PairingResult.Success -> Unit
+            is PairingResult.InvalidCode ->
+              errorMessage = result.message
+            is PairingResult.Error ->
+              errorMessage = result.message
+          }
+
+          pairingInProgress = false
         }
       },
-      enabled = pairingCode.length == 6,
+      enabled = pairingCode.length == 6 && !pairingInProgress,
       modifier = Modifier.fillMaxWidth(),
     ) {
-      Text("PAIR DEVICE")
+      Text(
+        if (pairingInProgress) {
+          "PAIRING…"
+        } else {
+          "PAIR DEVICE"
+        },
+      )
     }
 
     Spacer(modifier = Modifier.height(16.dp))
 
     Text(
-      text = "Development build: trenutno se proverava format koda i tok aplikacije. Server će u sledećoj fazi potvrditi da kod zaista pripada konkretnom Child uređaju.",
+      text = "Kod se proverava na PhoneGuard backendu i može se iskoristiti samo dok je aktivan.",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -325,7 +377,9 @@ private fun deviceStateLabel(device: ChildDevice): String =
     DeviceAccessState.ALLOWED -> "● Telefon je dostupan"
     DeviceAccessState.LOCKED -> "● Telefon je zaključan"
     DeviceAccessState.TEMPORARILY_ALLOWED ->
-      "● Dodatno vreme: " + device.temporaryAccessMinutesRemaining + " min"
+      "● Dodatno vreme: " +
+        device.temporaryAccessMinutesRemaining +
+        " min"
     DeviceAccessState.OFFLINE -> "○ Uređaj je offline"
   }
 
@@ -334,7 +388,8 @@ private fun commandLabel(command: RemoteCommand?): String =
     null -> "Nema poslatih komandi"
     RemoteCommandType.LOCK -> "LOCK NOW"
     RemoteCommandType.UNLOCK -> "UNLOCK"
-    RemoteCommandType.BONUS_TIME -> "+" + command.bonusMinutes + " min"
+    RemoteCommandType.BONUS_TIME ->
+      "+" + command.bonusMinutes + " min"
   }
 
 @Preview(showBackground = true)
