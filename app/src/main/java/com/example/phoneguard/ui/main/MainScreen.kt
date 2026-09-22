@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,12 +47,14 @@ import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.data.WeeklySchedule
 import com.example.phoneguard.protection.BackgroundProtectionStatus
 import com.example.phoneguard.remote.ChildBackendClient
+import com.example.phoneguard.remote.ChildPairingResetResult
 import com.example.phoneguard.remote.ChildRegistrationResult
 import com.example.phoneguard.remote.FcmTokenProvider
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
 import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -218,6 +221,31 @@ fun MainScreen(
           registrationResult = null
           registrationRetryKey += 1
         },
+        onResetPairing = { pin ->
+          if (!settingsStore.verifyParentPin(pin)) {
+            ChildPairingResetResult.Failure("Pogrešan roditeljski PIN.")
+          } else {
+            val refreshedIdentity = settingsStore.regeneratePairingCode()
+            val result =
+              withContext(Dispatchers.IO) {
+                backendClient.resetPairing(
+                  identity = refreshedIdentity,
+                  deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+                )
+              }
+
+            if (result is ChildPairingResetResult.Success) {
+              pairingIdentity = refreshedIdentity
+              registrationResult =
+                ChildRegistrationResult.Success(
+                  pairingExpiresAt = result.pairingExpiresAt,
+                  paired = false,
+                )
+            }
+
+            result
+          }
+        },
         onEditSchedule = { editingSchedule = true },
         onTestLock = {
           settingsStore.setManualLock(true)
@@ -348,6 +376,7 @@ private fun ChildDashboard(
   onRequestExactAlarmAccess: () -> Unit,
   onRegeneratePairingCode: () -> Unit,
   onRetryRegistration: () -> Unit,
+  onResetPairing: suspend (String) -> ChildPairingResetResult,
   onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
   modifier: Modifier = Modifier,
@@ -356,6 +385,14 @@ private fun ChildDashboard(
   val restrictedNow = weeklySchedule.isRestrictedAt(Calendar.getInstance())
   val registrationFailure =
     registrationResult as? ChildRegistrationResult.Failure
+  val registrationSuccess =
+    registrationResult as? ChildRegistrationResult.Success
+  val paired = registrationSuccess?.paired == true
+  val pairingScope = rememberCoroutineScope()
+  var showPairNewParent by remember { mutableStateOf(false) }
+  var resetPin by remember { mutableStateOf("") }
+  var resetError by remember { mutableStateOf<String?>(null) }
+  var resetInProgress by remember { mutableStateOf(false) }
 
   Column(
     modifier =
@@ -478,24 +515,11 @@ private fun ChildDashboard(
         )
 
         Text(
-          text = pairingIdentity.pairingCode,
-          style = MaterialTheme.typography.headlineMedium,
-          fontWeight = FontWeight.Bold,
-        )
-
-        Text(
-          text = "Unesi ovaj kod u PhoneGuard Parent aplikaciji.",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-
-        Text(
           text =
             when {
               registrationInProgress -> "Backend: registering…"
-              registrationResult is ChildRegistrationResult.Success ->
-                "Backend: registered"
+              paired -> "Backend: paired"
+              registrationSuccess != null -> "Backend: ready for pairing"
               registrationFailure != null ->
                 "Backend error: " + registrationFailure.message
               else -> "Backend: not registered yet"
@@ -509,12 +533,121 @@ private fun ChildDashboard(
             },
         )
 
-        if (registrationResult is ChildRegistrationResult.Success) {
+        if (paired) {
           Text(
-            text = "Pairing code is active for about 15 minutes from registration.",
-            style = MaterialTheme.typography.bodySmall,
+            text = "Ovaj Child uređaj je već uparen sa Parent aplikacijom.",
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
+
+          if (!showPairNewParent) {
+            OutlinedButton(
+              onClick = {
+                showPairNewParent = true
+                resetPin = ""
+                resetError = null
+              },
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("PAIR NEW PARENT")
+            }
+          } else {
+            Text(
+              text = "Ovo će poništiti pristup prethodno uparenoj Parent aplikaciji.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+
+            PinField(
+              value = resetPin,
+              onValueChange = {
+                resetPin = it.onlyPinDigits()
+                resetError = null
+              },
+              label = "Roditeljski PIN",
+            )
+
+            resetError?.let { message ->
+              Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+              )
+            }
+
+            Button(
+              onClick = {
+                pairingScope.launch {
+                  resetInProgress = true
+                  resetError = null
+
+                  when (val result = onResetPairing(resetPin)) {
+                    is ChildPairingResetResult.Success -> {
+                      resetPin = ""
+                      showPairNewParent = false
+                    }
+
+                    is ChildPairingResetResult.Failure -> {
+                      resetError = result.message
+                      resetPin = ""
+                    }
+                  }
+
+                  resetInProgress = false
+                }
+              },
+              enabled = resetPin.length in 4..6 && !resetInProgress,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text(
+                if (resetInProgress) {
+                  "RESETTING…"
+                } else {
+                  "CONFIRM NEW PAIRING"
+                },
+              )
+            }
+
+            OutlinedButton(
+              onClick = {
+                showPairNewParent = false
+                resetPin = ""
+                resetError = null
+              },
+              enabled = !resetInProgress,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("CANCEL")
+            }
+          }
+        } else {
+          Text(
+            text = pairingIdentity.pairingCode,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+          )
+
+          Text(
+            text = "Unesi ovaj kod u PhoneGuard Parent aplikaciji.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          if (registrationSuccess != null) {
+            Text(
+              text = "Pairing code is active for about 15 minutes from registration.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+
+          OutlinedButton(
+            onClick = onRegeneratePairingCode,
+            enabled = !registrationInProgress,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("GENERATE NEW CODE")
+          }
         }
 
         if (registrationFailure != null) {
@@ -531,13 +664,6 @@ private fun ChildDashboard(
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-
-        OutlinedButton(
-          onClick = onRegeneratePairingCode,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("GENERATE NEW CODE")
-        }
       }
     }
 
@@ -730,7 +856,11 @@ private fun ChildDashboardPreview() {
           deviceId = "preview-device-id",
           pairingCode = "AB12CD",
         ),
-      registrationResult = ChildRegistrationResult.Success("preview-expiry"),
+      registrationResult =
+        ChildRegistrationResult.Success(
+          pairingExpiresAt = "preview-expiry",
+          paired = false,
+        ),
       registrationInProgress = false,
       accessibilityEnabled = false,
       exactAlarmAccess = false,
@@ -740,6 +870,7 @@ private fun ChildDashboardPreview() {
       onRequestExactAlarmAccess = {},
       onRegeneratePairingCode = {},
       onRetryRegistration = {},
+      onResetPairing = { ChildPairingResetResult.Success("preview-expiry") },
       onEditSchedule = {},
       onTestLock = {},
     )
