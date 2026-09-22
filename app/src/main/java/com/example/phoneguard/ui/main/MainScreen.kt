@@ -47,6 +47,7 @@ import com.example.phoneguard.data.WeeklySchedule
 import com.example.phoneguard.protection.BackgroundProtectionStatus
 import com.example.phoneguard.remote.ChildBackendClient
 import com.example.phoneguard.remote.ChildRegistrationResult
+import com.example.phoneguard.remote.FcmTokenProvider
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
 import java.util.Calendar
@@ -125,10 +126,13 @@ fun MainScreen(
 
     registrationResult =
       withContext(Dispatchers.IO) {
+        val fcmToken = FcmTokenProvider.currentToken()
+
         backendClient.register(
           identity = pairingIdentity,
           displayName = Build.MODEL.ifBlank { "Child device" },
           deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+          fcmToken = fcmToken,
         )
       }
 
