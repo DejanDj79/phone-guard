@@ -16,6 +16,14 @@ sealed interface ChildRegistrationResult {
   ) : ChildRegistrationResult
 }
 
+sealed interface ChildCommandAckResult {
+  data object Success : ChildCommandAckResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildCommandAckResult
+}
+
 sealed interface ChildPairingResetResult {
   data class Success(
     val pairingExpiresAt: String,
@@ -151,10 +159,64 @@ class ChildBackendClient {
     }
   }
 
+  fun acknowledgeCommand(
+    deviceId: String,
+    deviceSecret: String,
+    commandId: String,
+  ): ChildCommandAckResult {
+    val connection =
+      (URL(ACK_COMMAND_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .put("commandId", commandId)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        ChildCommandAckResult.Success
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildCommandAckResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildCommandAckResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
   private companion object {
     const val REGISTER_CHILD_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/register-child"
     const val RESET_PAIRING_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/reset-pairing"
+    const val ACK_COMMAND_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/ack-command"
   }
 }
