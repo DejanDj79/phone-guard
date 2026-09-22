@@ -33,7 +33,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.runtime.NavKey
+import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.data.WeeklySchedule
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
@@ -46,13 +50,32 @@ fun MainScreen(
   modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
+  val lifecycleOwner = LocalLifecycleOwner.current
   val settingsStore = remember(context) { ChildSettingsStore(context.applicationContext) }
   val alarmScheduler = remember(context) { ScheduleAlarmScheduler(context.applicationContext) }
 
   var hasParentPin by remember { mutableStateOf(settingsStore.hasParentPin()) }
+  var accessibilityEnabled by remember {
+    mutableStateOf(PhoneGuardAccessibilityStatus.isEnabled(context))
+  }
   var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
   var weeklySchedule by remember { mutableStateOf(settingsStore.getWeeklySchedule()) }
   var editingSchedule by remember { mutableStateOf(false) }
+
+  DisposableEffect(lifecycleOwner, context) {
+    val observer =
+      LifecycleEventObserver { _, event ->
+        if (event == Lifecycle.Event.ON_RESUME) {
+          accessibilityEnabled = PhoneGuardAccessibilityStatus.isEnabled(context)
+        }
+      }
+
+    lifecycleOwner.lifecycle.addObserver(observer)
+
+    onDispose {
+      lifecycleOwner.lifecycle.removeObserver(observer)
+    }
+  }
 
   DisposableEffect(settingsStore) {
     val listener =
@@ -122,7 +145,11 @@ fun MainScreen(
       ChildDashboard(
         modifier = modifier,
         weeklySchedule = weeklySchedule,
+        accessibilityEnabled = accessibilityEnabled,
         exactAlarmAccess = alarmScheduler.hasExactAlarmAccess(),
+        onEnableAccessibility = {
+          context.startActivity(PhoneGuardAccessibilityStatus.settingsIntent())
+        },
         onRequestExactAlarmAccess = {
           alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
             context.startActivity(intent)
@@ -247,7 +274,9 @@ private fun PinField(
 @Composable
 private fun ChildDashboard(
   weeklySchedule: WeeklySchedule,
+  accessibilityEnabled: Boolean,
   exactAlarmAccess: Boolean,
+  onEnableAccessibility: () -> Unit,
   onRequestExactAlarmAccess: () -> Unit,
   onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
@@ -283,10 +312,30 @@ private fun ChildDashboard(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-          text = "● Local prototype ready",
+          text =
+            if (accessibilityEnabled) {
+              "● Accessibility protection enabled"
+            } else {
+              "○ Accessibility protection disabled"
+            },
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
         )
+
+        Text(
+          text = "PhoneGuard uses Android Accessibility only to keep the parental lock screen above other apps while protection is active. It does not request access to read screen content.",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        if (!accessibilityEnabled) {
+          OutlinedButton(
+            onClick = onEnableAccessibility,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("ENABLE ACCESSIBILITY")
+          }
+        }
       }
     }
 
@@ -482,7 +531,9 @@ private fun ChildDashboardPreview() {
   PhoneGuardTheme {
     ChildDashboard(
       weeklySchedule = WeeklySchedule(),
+      accessibilityEnabled = false,
       exactAlarmAccess = false,
+      onEnableAccessibility = {},
       onRequestExactAlarmAccess = {},
       onEditSchedule = {},
       onTestLock = {},
