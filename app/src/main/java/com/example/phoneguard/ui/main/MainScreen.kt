@@ -38,6 +38,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
+import com.example.phoneguard.core.PairingIdentity
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.data.WeeklySchedule
 import com.example.phoneguard.protection.BackgroundProtectionStatus
@@ -67,6 +68,9 @@ fun MainScreen(
   }
   var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
   var weeklySchedule by remember { mutableStateOf(settingsStore.getWeeklySchedule()) }
+  var pairingIdentity by remember {
+    mutableStateOf(settingsStore.getOrCreatePairingIdentity())
+  }
   var editingSchedule by remember { mutableStateOf(false) }
 
   DisposableEffect(lifecycleOwner, context) {
@@ -155,6 +159,7 @@ fun MainScreen(
       ChildDashboard(
         modifier = modifier,
         weeklySchedule = weeklySchedule,
+        pairingIdentity = pairingIdentity,
         accessibilityEnabled = accessibilityEnabled,
         exactAlarmAccess = exactAlarmAccess,
         batteryOptimizationIgnored = batteryOptimizationIgnored,
@@ -170,6 +175,9 @@ fun MainScreen(
           alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
             context.startActivity(intent)
           }
+        },
+        onRegeneratePairingCode = {
+          pairingIdentity = settingsStore.regeneratePairingCode()
         },
         onEditSchedule = { editingSchedule = true },
         onTestLock = {
@@ -290,12 +298,14 @@ private fun PinField(
 @Composable
 private fun ChildDashboard(
   weeklySchedule: WeeklySchedule,
+  pairingIdentity: PairingIdentity,
   accessibilityEnabled: Boolean,
   exactAlarmAccess: Boolean,
   batteryOptimizationIgnored: Boolean,
   onEnableAccessibility: () -> Unit,
   onOpenBatterySettings: () -> Unit,
   onRequestExactAlarmAccess: () -> Unit,
+  onRegeneratePairingCode: () -> Unit,
   onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
   modifier: Modifier = Modifier,
@@ -397,6 +407,44 @@ private fun ChildDashboard(
           ) {
             Text("BATTERY SETTINGS")
           }
+        }
+      }
+    }
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        Text(
+          text = "Pairing",
+          style = MaterialTheme.typography.labelLarge,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Text(
+          text = pairingIdentity.pairingCode,
+          style = MaterialTheme.typography.headlineMedium,
+          fontWeight = FontWeight.Bold,
+        )
+
+        Text(
+          text = "Unesi ovaj kod u PhoneGuard Parent aplikaciji.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Text(
+          text = "Device ID: " + pairingIdentity.deviceId,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        OutlinedButton(
+          onClick = onRegeneratePairingCode,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("GENERATE NEW CODE")
         }
       }
     }
@@ -593,12 +641,18 @@ private fun ChildDashboardPreview() {
   PhoneGuardTheme {
     ChildDashboard(
       weeklySchedule = WeeklySchedule(),
+      pairingIdentity =
+        PairingIdentity(
+          deviceId = "preview-device-id",
+          pairingCode = "AB12CD",
+        ),
       accessibilityEnabled = false,
       exactAlarmAccess = false,
       batteryOptimizationIgnored = false,
       onEnableAccessibility = {},
       onOpenBatterySettings = {},
       onRequestExactAlarmAccess = {},
+      onRegeneratePairingCode = {},
       onEditSchedule = {},
       onTestLock = {},
     )
