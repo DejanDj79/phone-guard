@@ -38,15 +38,20 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.os.Build
 import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.core.PairingIdentity
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.data.WeeklySchedule
 import com.example.phoneguard.protection.BackgroundProtectionStatus
+import com.example.phoneguard.remote.ChildBackendClient
+import com.example.phoneguard.remote.ChildRegistrationResult
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
 import java.util.Calendar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MainScreen(
@@ -57,6 +62,7 @@ fun MainScreen(
   val lifecycleOwner = LocalLifecycleOwner.current
   val settingsStore = remember(context) { ChildSettingsStore(context.applicationContext) }
   val alarmScheduler = remember(context) { ScheduleAlarmScheduler(context.applicationContext) }
+  val backendClient = remember { ChildBackendClient() }
 
   var hasParentPin by remember { mutableStateOf(settingsStore.hasParentPin()) }
   var accessibilityEnabled by remember {
@@ -73,6 +79,11 @@ fun MainScreen(
   var pairingIdentity by remember {
     mutableStateOf(settingsStore.getOrCreatePairingIdentity())
   }
+  var registrationResult by remember {
+    mutableStateOf<ChildRegistrationResult?>(null)
+  }
+  var registrationInProgress by remember { mutableStateOf(false) }
+  var registrationRetryKey by remember { mutableStateOf(0) }
   var editingSchedule by remember { mutableStateOf(false) }
 
   DisposableEffect(lifecycleOwner, context) {
@@ -107,6 +118,21 @@ fun MainScreen(
   LaunchedEffect(Unit) {
     alarmScheduler.syncCurrentStateAndScheduleNext()
     isLocked = settingsStore.isEffectivelyLocked()
+  }
+
+  LaunchedEffect(pairingIdentity, registrationRetryKey) {
+    registrationInProgress = true
+
+    registrationResult =
+      withContext(Dispatchers.IO) {
+        backendClient.register(
+          identity = pairingIdentity,
+          displayName = Build.MODEL.ifBlank { "Child device" },
+          deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+        )
+      }
+
+    registrationInProgress = false
   }
 
   when {
@@ -162,6 +188,8 @@ fun MainScreen(
         modifier = modifier,
         weeklySchedule = weeklySchedule,
         pairingIdentity = pairingIdentity,
+        registrationResult = registrationResult,
+        registrationInProgress = registrationInProgress,
         accessibilityEnabled = accessibilityEnabled,
         exactAlarmAccess = exactAlarmAccess,
         batteryOptimizationIgnored = batteryOptimizationIgnored,
@@ -179,7 +207,12 @@ fun MainScreen(
           }
         },
         onRegeneratePairingCode = {
+          registrationResult = null
           pairingIdentity = settingsStore.regeneratePairingCode()
+        },
+        onRetryRegistration = {
+          registrationResult = null
+          registrationRetryKey += 1
         },
         onEditSchedule = { editingSchedule = true },
         onTestLock = {
@@ -301,6 +334,8 @@ private fun PinField(
 private fun ChildDashboard(
   weeklySchedule: WeeklySchedule,
   pairingIdentity: PairingIdentity,
+  registrationResult: ChildRegistrationResult?,
+  registrationInProgress: Boolean,
   accessibilityEnabled: Boolean,
   exactAlarmAccess: Boolean,
   batteryOptimizationIgnored: Boolean,
@@ -308,6 +343,7 @@ private fun ChildDashboard(
   onOpenBatterySettings: () -> Unit,
   onRequestExactAlarmAccess: () -> Unit,
   onRegeneratePairingCode: () -> Unit,
+  onRetryRegistration: () -> Unit,
   onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
   modifier: Modifier = Modifier,
@@ -446,6 +482,43 @@ private fun ChildDashboard(
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+
+        Text(
+          text =
+            when {
+              registrationInProgress -> "Backend: registering…"
+              registrationResult is ChildRegistrationResult.Success ->
+                "Backend: registered"
+              registrationResult is ChildRegistrationResult.Failure ->
+                "Backend error: " + registrationResult.message
+              else -> "Backend: not registered yet"
+            },
+          style = MaterialTheme.typography.bodyMedium,
+          color =
+            if (registrationResult is ChildRegistrationResult.Failure) {
+              MaterialTheme.colorScheme.error
+            } else {
+              MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+
+        if (registrationResult is ChildRegistrationResult.Success) {
+          Text(
+            text = "Pairing code is active for about 15 minutes from registration.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        if (registrationResult is ChildRegistrationResult.Failure) {
+          OutlinedButton(
+            onClick = onRetryRegistration,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("RETRY BACKEND REGISTRATION")
+          }
+        }
 
         Text(
           text = "Device ID: " + pairingIdentity.deviceId,
@@ -651,6 +724,8 @@ private fun ChildDashboardPreview() {
           deviceId = "preview-device-id",
           pairingCode = "AB12CD",
         ),
+      registrationResult = ChildRegistrationResult.Success("preview-expiry"),
+      registrationInProgress = false,
       accessibilityEnabled = false,
       exactAlarmAccess = false,
       batteryOptimizationIgnored = false,
@@ -658,6 +733,7 @@ private fun ChildDashboardPreview() {
       onOpenBatterySettings = {},
       onRequestExactAlarmAccess = {},
       onRegeneratePairingCode = {},
+      onRetryRegistration = {},
       onEditSchedule = {},
       onTestLock = {},
     )
