@@ -105,6 +105,7 @@ data class PairingRequest(
 sealed interface PairingResult {
   data class Success(
     val device: ChildDevice,
+    val controlToken: String? = null,
   ) : PairingResult
 
   data class InvalidCode(
