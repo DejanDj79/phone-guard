@@ -19,10 +19,11 @@ class ScheduleAlarmScheduler(context: Context) {
   fun syncCurrentStateAndScheduleNext() {
     settingsStore.setScheduleLock(settingsStore.shouldBeRestrictedNow())
     scheduleNext()
+    syncTemporaryAllowanceAlarm()
   }
 
   fun scheduleNext() {
-    cancelCurrent()
+    cancelScheduleTransition()
 
     val transition =
       settingsStore
@@ -30,21 +31,29 @@ class ScheduleAlarmScheduler(context: Context) {
         .nextTransitionAfter(Calendar.getInstance())
         ?: return
 
-    val operation = alarmPendingIntent()
+    scheduleAlarm(
+      triggerAtMillis = transition.triggerAtMillis,
+      operation = scheduleTransitionPendingIntent(),
+    )
+  }
 
-    if (hasExactAlarmAccess()) {
-      alarmManager.setExactAndAllowWhileIdle(
-        AlarmManager.RTC_WAKEUP,
-        transition.triggerAtMillis,
-        operation,
-      )
-    } else {
-      alarmManager.setAndAllowWhileIdle(
-        AlarmManager.RTC_WAKEUP,
-        transition.triggerAtMillis,
-        operation,
-      )
+  fun syncTemporaryAllowanceAlarm() {
+    cancelTemporaryAllowanceExpiry()
+
+    val until = settingsStore.temporaryAllowanceUntilMillis()
+    val now = System.currentTimeMillis()
+
+    if (until <= now) {
+      if (until > 0L) {
+        settingsStore.clearTemporaryAllowance()
+      }
+      return
     }
+
+    scheduleAlarm(
+      triggerAtMillis = until,
+      operation = temporaryAllowancePendingIntent(),
+    )
   }
 
   fun hasExactAlarmAccess(): Boolean =
@@ -60,11 +69,34 @@ class ScheduleAlarmScheduler(context: Context) {
     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
   }
 
-  private fun cancelCurrent() {
-    alarmManager.cancel(alarmPendingIntent())
+  private fun scheduleAlarm(
+    triggerAtMillis: Long,
+    operation: PendingIntent,
+  ) {
+    if (hasExactAlarmAccess()) {
+      alarmManager.setExactAndAllowWhileIdle(
+        AlarmManager.RTC_WAKEUP,
+        triggerAtMillis,
+        operation,
+      )
+    } else {
+      alarmManager.setAndAllowWhileIdle(
+        AlarmManager.RTC_WAKEUP,
+        triggerAtMillis,
+        operation,
+      )
+    }
   }
 
-  private fun alarmPendingIntent(): PendingIntent =
+  private fun cancelScheduleTransition() {
+    alarmManager.cancel(scheduleTransitionPendingIntent())
+  }
+
+  private fun cancelTemporaryAllowanceExpiry() {
+    alarmManager.cancel(temporaryAllowancePendingIntent())
+  }
+
+  private fun scheduleTransitionPendingIntent(): PendingIntent =
     PendingIntent.getBroadcast(
       appContext,
       REQUEST_CODE_SCHEDULE_TRANSITION,
@@ -72,7 +104,16 @@ class ScheduleAlarmScheduler(context: Context) {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
+  private fun temporaryAllowancePendingIntent(): PendingIntent =
+    PendingIntent.getBroadcast(
+      appContext,
+      REQUEST_CODE_TEMPORARY_ALLOWANCE,
+      Intent(appContext, TemporaryAllowanceReceiver::class.java),
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
   private companion object {
     const val REQUEST_CODE_SCHEDULE_TRANSITION = 4101
+    const val REQUEST_CODE_TEMPORARY_ALLOWANCE = 4102
   }
 }
