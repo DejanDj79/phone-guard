@@ -40,6 +40,7 @@ import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.data.WeeklySchedule
+import com.example.phoneguard.protection.BackgroundProtectionStatus
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
 import java.util.Calendar
@@ -58,6 +59,12 @@ fun MainScreen(
   var accessibilityEnabled by remember {
     mutableStateOf(PhoneGuardAccessibilityStatus.isEnabled(context))
   }
+  var exactAlarmAccess by remember {
+    mutableStateOf(alarmScheduler.hasExactAlarmAccess())
+  }
+  var batteryOptimizationIgnored by remember {
+    mutableStateOf(BackgroundProtectionStatus.isBatteryOptimizationIgnored(context))
+  }
   var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
   var weeklySchedule by remember { mutableStateOf(settingsStore.getWeeklySchedule()) }
   var editingSchedule by remember { mutableStateOf(false) }
@@ -67,6 +74,9 @@ fun MainScreen(
       LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_RESUME) {
           accessibilityEnabled = PhoneGuardAccessibilityStatus.isEnabled(context)
+          exactAlarmAccess = alarmScheduler.hasExactAlarmAccess()
+          batteryOptimizationIgnored =
+            BackgroundProtectionStatus.isBatteryOptimizationIgnored(context)
         }
       }
 
@@ -146,9 +156,15 @@ fun MainScreen(
         modifier = modifier,
         weeklySchedule = weeklySchedule,
         accessibilityEnabled = accessibilityEnabled,
-        exactAlarmAccess = alarmScheduler.hasExactAlarmAccess(),
+        exactAlarmAccess = exactAlarmAccess,
+        batteryOptimizationIgnored = batteryOptimizationIgnored,
         onEnableAccessibility = {
           context.startActivity(PhoneGuardAccessibilityStatus.settingsIntent())
+        },
+        onOpenBatterySettings = {
+          context.startActivity(
+            BackgroundProtectionStatus.batteryOptimizationSettingsIntent(),
+          )
         },
         onRequestExactAlarmAccess = {
           alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
@@ -276,7 +292,9 @@ private fun ChildDashboard(
   weeklySchedule: WeeklySchedule,
   accessibilityEnabled: Boolean,
   exactAlarmAccess: Boolean,
+  batteryOptimizationIgnored: Boolean,
   onEnableAccessibility: () -> Unit,
+  onOpenBatterySettings: () -> Unit,
   onRequestExactAlarmAccess: () -> Unit,
   onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
@@ -304,26 +322,61 @@ private fun ChildDashboard(
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
       Column(
         modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Text(
-          text = "Protection",
+          text = "Protection health",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        val protectionReady =
+          accessibilityEnabled &&
+            (enabledDays == 0 || exactAlarmAccess)
+
         Text(
           text =
-            if (accessibilityEnabled) {
-              "● Accessibility protection enabled"
+            if (protectionReady) {
+              "● Core protection ready"
             } else {
-              "○ Accessibility protection disabled"
+              "○ Protection incomplete"
             },
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
         )
 
         Text(
-          text = "PhoneGuard uses Android Accessibility only to keep the parental lock screen above other apps while protection is active. It does not request access to read screen content.",
+          text =
+            if (accessibilityEnabled) {
+              "✓ Accessibility overlay"
+            } else {
+              "✕ Accessibility overlay"
+            },
+          style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
+          text =
+            if (exactAlarmAccess) {
+              "✓ Precise schedule timing"
+            } else {
+              "△ Precise schedule timing not granted"
+            },
+          style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
+          text =
+            if (batteryOptimizationIgnored) {
+              "✓ Background battery restriction relaxed"
+            } else {
+              "△ Battery optimization may restrict background work"
+            },
+          style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
+          text = "PhoneGuard uses Accessibility only to keep the parental lock screen above other apps while protection is active. It does not request access to read screen content.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -334,6 +387,15 @@ private fun ChildDashboard(
             modifier = Modifier.fillMaxWidth(),
           ) {
             Text("ENABLE ACCESSIBILITY")
+          }
+        }
+
+        if (!batteryOptimizationIgnored) {
+          OutlinedButton(
+            onClick = onOpenBatterySettings,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("BATTERY SETTINGS")
           }
         }
       }
@@ -533,7 +595,9 @@ private fun ChildDashboardPreview() {
       weeklySchedule = WeeklySchedule(),
       accessibilityEnabled = false,
       exactAlarmAccess = false,
+      batteryOptimizationIgnored = false,
       onEnableAccessibility = {},
+      onOpenBatterySettings = {},
       onRequestExactAlarmAccess = {},
       onEditSchedule = {},
       onTestLock = {},
