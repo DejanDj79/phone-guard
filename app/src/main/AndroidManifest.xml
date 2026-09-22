@@ -37,6 +37,15 @@
                 android:resource="@xml/phone_guard_accessibility_service" />
         </service>
 
+
+        <service
+            android:name=".remote.PhoneGuardMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".schedule.ScheduleAlarmReceiver"
             android:exported="false" />
