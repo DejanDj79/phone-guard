@@ -60,11 +60,11 @@ export default {
     const deviceSecretHash = await sha256Hex(deviceSecret);
     const pairingCodeHash = await sha256Hex(pairingCode);
     const now = new Date();
-    const pairingExpiresAt = new Date(now.getTime() + PAIRING_TTL_MS);
+    const newPairingExpiresAt = new Date(now.getTime() + PAIRING_TTL_MS);
 
     const { data: existing, error: readError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_secret_hash")
+      .select("device_secret_hash, control_token_hash, pairing_expires_at")
       .eq("device_id", deviceId)
       .maybeSingle();
 
@@ -77,15 +77,28 @@ export default {
     }
 
     let writeError;
+    let effectivePairingExpiresAt = newPairingExpiresAt.toISOString();
+    let paired = false;
 
     if (existing) {
+      paired = Boolean(existing.control_token_hash);
+
       const update: Record<string, unknown> = {
         display_name: displayName || "Child device",
-        pairing_code_hash: pairingCodeHash,
-        pairing_expires_at: pairingExpiresAt.toISOString(),
         last_seen_at: now.toISOString(),
         updated_at: now.toISOString(),
       };
+
+      if (!paired) {
+        update.pairing_code_hash = pairingCodeHash;
+        update.pairing_expires_at = newPairingExpiresAt.toISOString();
+      } else {
+        effectivePairingExpiresAt =
+          typeof existing.pairing_expires_at === "string"
+            ? existing.pairing_expires_at
+            : now.toISOString();
+      }
+
       if (fcmToken !== null) {
         update.fcm_token = fcmToken;
       }
@@ -102,7 +115,7 @@ export default {
         device_id: deviceId,
         display_name: displayName || "Child device",
         pairing_code_hash: pairingCodeHash,
-        pairing_expires_at: pairingExpiresAt.toISOString(),
+        pairing_expires_at: newPairingExpiresAt.toISOString(),
         device_secret_hash: deviceSecretHash,
         fcm_token: fcmToken,
         access_state: "ALLOWED",
@@ -123,7 +136,8 @@ export default {
     return json({
       ok: true,
       deviceId,
-      pairingExpiresAt: pairingExpiresAt.toISOString(),
+      paired,
+      pairingExpiresAt: effectivePairingExpiresAt,
     });
   }),
 };
