@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,32 +22,55 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
+import com.example.phoneguard.core.PairingRequest
+import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
+import com.example.phoneguard.parent.data.MockPairingGateway
+import com.example.phoneguard.parent.data.PairingGateway
 
 @Composable
 fun ParentDashboardScreen(
   modifier: Modifier = Modifier,
+  pairingGateway: PairingGateway = remember { MockPairingGateway() },
 ) {
-  var device by remember {
-    mutableStateOf(
-      ChildDevice(
-        deviceId = "mock-redmi-note-10",
-        displayName = "Redmi Note 10",
-        state = DeviceAccessState.ALLOWED,
-      ),
-    )
-  }
+  var pairedDevice by remember { mutableStateOf<ChildDevice?>(null) }
   var lastCommand by remember { mutableStateOf<RemoteCommand?>(null) }
+
+  if (pairedDevice == null) {
+    PairDeviceScreen(
+      modifier = modifier,
+      onPair = { rawCode ->
+        val request =
+          runCatching { PairingRequest.fromUserInput(rawCode) }
+            .getOrElse {
+              return@PairDeviceScreen PairingResult.InvalidCode(
+                "Kod mora imati tačno 6 slova ili cifara.",
+              )
+            }
+
+        val result = pairingGateway.pair(request)
+        if (result is PairingResult.Success) {
+          pairedDevice = result.device
+        }
+        result
+      },
+    )
+    return
+  }
+
+  val device = pairedDevice!!
 
   fun sendMock(command: RemoteCommand) {
     lastCommand = command
 
-    device =
+    pairedDevice =
       when (command.type) {
         RemoteCommandType.LOCK ->
           device.copy(
@@ -92,7 +117,7 @@ fun ParentDashboardScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         Text(
-          text = "Test uređaj",
+          text = "Upareni uređaj",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -115,7 +140,7 @@ fun ParentDashboardScreen(
         )
 
         Text(
-          text = "Mock režim — backend još nije povezan",
+          text = "Development pairing: kod još potvrđuje mock gateway; mrežna potvrda je sledeći korak.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -187,10 +212,108 @@ fun ParentDashboardScreen(
       }
     }
 
+    OutlinedButton(
+      onClick = {
+        pairedDevice = null
+        lastCommand = null
+      },
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Text("UNPAIR DEVELOPMENT DEVICE")
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+  }
+}
+
+@Composable
+private fun PairDeviceScreen(
+  onPair: (String) -> PairingResult,
+  modifier: Modifier = Modifier,
+) {
+  var pairingCode by remember { mutableStateOf("") }
+  var errorMessage by remember { mutableStateOf<String?>(null) }
+
+  Column(
+    modifier =
+      modifier
+        .fillMaxSize()
+        .padding(horizontal = 24.dp, vertical = 32.dp),
+    verticalArrangement = Arrangement.Center,
+  ) {
+    Text(
+      text = "PhoneGuard Parent",
+      style = MaterialTheme.typography.headlineMedium,
+      fontWeight = FontWeight.Bold,
+    )
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Text(
+      text = "Upari dečji telefon",
+      style = MaterialTheme.typography.headlineSmall,
+      fontWeight = FontWeight.SemiBold,
+    )
+
     Spacer(modifier = Modifier.height(8.dp))
 
     Text(
-      text = "Sledeći korak: pairing identitet i transport komandi između Parent i Child aplikacije.",
+      text = "Na Child telefonu otvori PhoneGuard i unesi njegov šestoznakovni pairing kod.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    Spacer(modifier = Modifier.height(24.dp))
+
+    OutlinedTextField(
+      value = pairingCode,
+      onValueChange = { value ->
+        pairingCode =
+          value
+            .uppercase()
+            .filter(Char::isLetterOrDigit)
+            .take(6)
+        errorMessage = null
+      },
+      label = { Text("Pairing code") },
+      singleLine = true,
+      keyboardOptions =
+        KeyboardOptions(
+          capitalization = KeyboardCapitalization.Characters,
+          keyboardType = KeyboardType.Ascii,
+        ),
+      modifier = Modifier.fillMaxWidth(),
+    )
+
+    errorMessage?.let {
+      Spacer(modifier = Modifier.height(10.dp))
+      Text(
+        text = it,
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodyMedium,
+      )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Button(
+      onClick = {
+        when (val result = onPair(pairingCode)) {
+          is PairingResult.Success -> errorMessage = null
+          is PairingResult.InvalidCode -> errorMessage = result.message
+          is PairingResult.Error -> errorMessage = result.message
+        }
+      },
+      enabled = pairingCode.length == 6,
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Text("PAIR DEVICE")
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Text(
+      text = "Development build: trenutno se proverava format koda i tok aplikacije. Server će u sledećoj fazi potvrditi da kod zaista pripada konkretnom Child uređaju.",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
