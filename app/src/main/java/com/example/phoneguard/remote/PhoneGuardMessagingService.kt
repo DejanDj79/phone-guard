@@ -32,6 +32,8 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
       "FCM message received: keys=" + message.data.keys.sorted().joinToString(","),
     )
 
+    val commandId = message.data[KEY_COMMAND_ID]?.trim().orEmpty()
+
     val command =
       when (message.data[KEY_COMMAND]?.uppercase()) {
         "LOCK" -> RemoteCommand.lock()
@@ -51,6 +53,30 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
 
     RemoteCommandProcessor(applicationContext).apply(command)
     Log.i(TAG, "Remote command applied: " + command.type.name)
+
+    if (commandId.isBlank()) {
+      Log.w(TAG, "Command has no command_id; ACK skipped")
+      return
+    }
+
+    val settingsStore = ChildSettingsStore(applicationContext)
+    when (
+      val ackResult =
+        ChildBackendClient().acknowledgeCommand(
+          deviceId = settingsStore.getOrCreatePairingIdentity().deviceId,
+          deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+          commandId = commandId,
+        )
+    ) {
+      ChildCommandAckResult.Success ->
+        Log.i(TAG, "Command ACK applied: " + commandId)
+
+      is ChildCommandAckResult.Failure ->
+        Log.e(
+          TAG,
+          "Command ACK failed: " + ackResult.message,
+        )
+    }
   }
 
   override fun onDeletedMessages() {
@@ -61,6 +87,7 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
   private companion object {
     const val TAG = "PhoneGuardFCM"
     const val KEY_COMMAND = "command"
+    const val KEY_COMMAND_ID = "command_id"
     const val KEY_BONUS_MINUTES = "bonus_minutes"
   }
 }
