@@ -22,18 +22,50 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
-private enum class MockDeviceState {
-  ALLOWED,
-  LOCKED,
-}
+import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.core.DeviceAccessState
+import com.example.phoneguard.core.RemoteCommand
+import com.example.phoneguard.core.RemoteCommandType
 
 @Composable
 fun ParentDashboardScreen(
   modifier: Modifier = Modifier,
 ) {
-  var deviceState by remember { mutableStateOf(MockDeviceState.ALLOWED) }
-  var lastCommand by remember { mutableStateOf("Nema poslatih komandi") }
+  var device by remember {
+    mutableStateOf(
+      ChildDevice(
+        deviceId = "mock-redmi-note-10",
+        displayName = "Redmi Note 10",
+        state = DeviceAccessState.ALLOWED,
+      ),
+    )
+  }
+  var lastCommand by remember { mutableStateOf<RemoteCommand?>(null) }
+
+  fun sendMock(command: RemoteCommand) {
+    lastCommand = command
+
+    device =
+      when (command.type) {
+        RemoteCommandType.LOCK ->
+          device.copy(
+            state = DeviceAccessState.LOCKED,
+            temporaryAccessMinutesRemaining = null,
+          )
+
+        RemoteCommandType.UNLOCK ->
+          device.copy(
+            state = DeviceAccessState.ALLOWED,
+            temporaryAccessMinutesRemaining = null,
+          )
+
+        RemoteCommandType.BONUS_TIME ->
+          device.copy(
+            state = DeviceAccessState.TEMPORARILY_ALLOWED,
+            temporaryAccessMinutesRemaining = command.bonusMinutes,
+          )
+      }
+  }
 
   Column(
     modifier =
@@ -66,18 +98,20 @@ fun ParentDashboardScreen(
         )
 
         Text(
-          text = "Redmi Note 10",
+          text = device.displayName,
           style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.SemiBold,
         )
 
         Text(
-          text =
-            when (deviceState) {
-              MockDeviceState.ALLOWED -> "● Telefon je dostupan"
-              MockDeviceState.LOCKED -> "● Telefon je zaključan"
-            },
+          text = deviceStateLabel(device),
           style = MaterialTheme.typography.bodyLarge,
+        )
+
+        Text(
+          text = "Device ID: " + device.deviceId,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Text(
@@ -100,20 +134,14 @@ fun ParentDashboardScreen(
         )
 
         Button(
-          onClick = {
-            deviceState = MockDeviceState.LOCKED
-            lastCommand = "LOCK NOW"
-          },
+          onClick = { sendMock(RemoteCommand.lock()) },
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("LOCK NOW")
         }
 
         OutlinedButton(
-          onClick = {
-            deviceState = MockDeviceState.ALLOWED
-            lastCommand = "UNLOCK"
-          },
+          onClick = { sendMock(RemoteCommand.unlock()) },
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("UNLOCK")
@@ -129,34 +157,13 @@ fun ParentDashboardScreen(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-          OutlinedButton(
-            onClick = {
-              deviceState = MockDeviceState.ALLOWED
-              lastCommand = "+15 min"
-            },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("+15")
-          }
-
-          OutlinedButton(
-            onClick = {
-              deviceState = MockDeviceState.ALLOWED
-              lastCommand = "+30 min"
-            },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("+30")
-          }
-
-          OutlinedButton(
-            onClick = {
-              deviceState = MockDeviceState.ALLOWED
-              lastCommand = "+60 min"
-            },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("+60")
+          listOf(15, 30, 60).forEach { minutes ->
+            OutlinedButton(
+              onClick = { sendMock(RemoteCommand.bonusTime(minutes)) },
+              modifier = Modifier.weight(1f),
+            ) {
+              Text("+" + minutes)
+            }
           }
         }
       }
@@ -173,7 +180,7 @@ fun ParentDashboardScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-          text = lastCommand,
+          text = commandLabel(lastCommand),
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
         )
@@ -183,12 +190,29 @@ fun ParentDashboardScreen(
     Spacer(modifier = Modifier.height(8.dp))
 
     Text(
-      text = "Sledeći korak: uparivanje Parent i Child aplikacije i zamena mock komandi stvarnim daljinskim komandama.",
+      text = "Sledeći korak: pairing identitet i transport komandi između Parent i Child aplikacije.",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   }
 }
+
+private fun deviceStateLabel(device: ChildDevice): String =
+  when (device.state) {
+    DeviceAccessState.ALLOWED -> "● Telefon je dostupan"
+    DeviceAccessState.LOCKED -> "● Telefon je zaključan"
+    DeviceAccessState.TEMPORARILY_ALLOWED ->
+      "● Dodatno vreme: " + device.temporaryAccessMinutesRemaining + " min"
+    DeviceAccessState.OFFLINE -> "○ Uređaj je offline"
+  }
+
+private fun commandLabel(command: RemoteCommand?): String =
+  when (command?.type) {
+    null -> "Nema poslatih komandi"
+    RemoteCommandType.LOCK -> "LOCK NOW"
+    RemoteCommandType.UNLOCK -> "UNLOCK"
+    RemoteCommandType.BONUS_TIME -> "+" + command.bonusMinutes + " min"
+  }
 
 @Preview(showBackground = true)
 @Composable
