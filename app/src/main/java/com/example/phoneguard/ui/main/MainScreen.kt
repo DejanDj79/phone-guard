@@ -100,6 +100,12 @@ fun MainScreen(
       }
 
       LockScreen(
+        unlockTimeLabel =
+          if (settingsStore.isScheduleLockActive()) {
+            settingsStore.currentScheduledUnlockLabel()
+          } else {
+            null
+          },
         onUnlock = { pin ->
           val accepted = settingsStore.verifyParentPin(pin)
           if (accepted) {
@@ -118,7 +124,9 @@ fun MainScreen(
         weeklySchedule = weeklySchedule,
         exactAlarmAccess = alarmScheduler.hasExactAlarmAccess(),
         onRequestExactAlarmAccess = {
-          alarmScheduler.exactAlarmPermissionIntent()?.let(context::startActivity)
+          alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
+            context.startActivity(intent)
+          }
         },
         onEditSchedule = { editingSchedule = true },
         onTestLock = {
@@ -354,6 +362,7 @@ private fun ChildDashboard(
 
 @Composable
 private fun LockScreen(
+  unlockTimeLabel: String?,
   onUnlock: (String) -> Boolean,
   modifier: Modifier = Modifier,
 ) {
@@ -383,17 +392,25 @@ private fun LockScreen(
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      Text(
-        text = "Ponovo dostupno u",
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
+      if (unlockTimeLabel != null) {
+        Text(
+          text = "Ponovo dostupno u",
+          style = MaterialTheme.typography.bodyLarge,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
-      Text(
-        text = "07:00",
-        style = MaterialTheme.typography.displaySmall,
-        fontWeight = FontWeight.Bold,
-      )
+        Text(
+          text = unlockTimeLabel,
+          style = MaterialTheme.typography.displaySmall,
+          fontWeight = FontWeight.Bold,
+        )
+      } else {
+        Text(
+          text = "Ručno zaključano",
+          style = MaterialTheme.typography.titleMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
 
       Spacer(modifier = Modifier.height(40.dp))
 
@@ -477,6 +494,9 @@ private fun ChildDashboardPreview() {
 @Composable
 private fun LockScreenPreview() {
   PhoneGuardTheme {
-    LockScreen(onUnlock = { false })
+    LockScreen(
+      unlockTimeLabel = "07:00",
+      onUnlock = { false },
+    )
   }
 }
