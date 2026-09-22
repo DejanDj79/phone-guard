@@ -41,6 +41,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".schedule.TemporaryAllowanceReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".schedule.ScheduleRestoreReceiver"
             android:exported="false">
             <intent-filter>
