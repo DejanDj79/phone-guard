@@ -18,3 +18,4 @@ local.properties
 **/google-services.json
 **/*service-account*.json
 **/firebase-adminsdk-*.json
+**/supabase/functions/.env*
