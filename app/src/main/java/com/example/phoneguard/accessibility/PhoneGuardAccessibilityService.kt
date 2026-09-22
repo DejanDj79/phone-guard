@@ -4,6 +4,9 @@ import android.accessibilityservice.AccessibilityService
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.text.InputFilter
 import android.text.InputType
 import android.view.Gravity
@@ -22,6 +25,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private lateinit var alarmScheduler: ScheduleAlarmScheduler
   private lateinit var windowManager: WindowManager
 
+  private val mainHandler = Handler(Looper.getMainLooper())
+
   private var overlayView: View? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
@@ -32,18 +37,25 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     alarmScheduler = ScheduleAlarmScheduler(applicationContext)
     windowManager = getSystemService(WindowManager::class.java)
 
+    Log.i(TAG, "Accessibility service connected")
+
     lockStateListener =
       settingsStore.registerLockStateListener {
-        refreshOverlay()
+        Log.i(
+          TAG,
+          "Lock state changed: effectivelyLocked=" +
+            settingsStore.isEffectivelyLocked(),
+        )
+        refreshOverlayOnMainThread()
       }
 
     alarmScheduler.syncCurrentStateAndScheduleNext()
-    refreshOverlay()
+    refreshOverlayOnMainThread()
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     if (::settingsStore.isInitialized) {
-      refreshOverlay()
+      refreshOverlayOnMainThread()
     }
   }
 
@@ -55,7 +67,26 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     super.onDestroy()
   }
 
+  private fun refreshOverlayOnMainThread() {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      refreshOverlay()
+    } else {
+      mainHandler.post {
+        if (::settingsStore.isInitialized) {
+          refreshOverlay()
+        }
+      }
+    }
+  }
+
   private fun refreshOverlay() {
+    Log.i(
+      TAG,
+      "Refreshing overlay: effectivelyLocked=" +
+        settingsStore.isEffectivelyLocked() +
+        ", overlayVisible=" +
+        (overlayView != null),
+    )
     if (settingsStore.isEffectivelyLocked()) {
       showOverlay()
     } else {
@@ -185,15 +216,29 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     runCatching {
       windowManager.addView(root, params)
       overlayView = root
+    }.onSuccess {
+      Log.i(TAG, "Lock overlay shown")
+    }.onFailure { error ->
+      Log.e(TAG, "Failed to show lock overlay", error)
     }
   }
 
   private fun hideOverlay() {
     val view = overlayView ?: return
     runCatching { windowManager.removeView(view) }
+      .onSuccess {
+        Log.i(TAG, "Lock overlay hidden")
+      }
+      .onFailure { error ->
+        Log.e(TAG, "Failed to hide lock overlay", error)
+      }
     overlayView = null
   }
 
   private fun dp(value: Int): Int =
     (value * resources.displayMetrics.density).toInt()
+
+  private companion object {
+    const val TAG = "PhoneGuardAccessibility"
+  }
 }
