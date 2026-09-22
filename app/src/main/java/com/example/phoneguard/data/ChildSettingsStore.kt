@@ -1,6 +1,7 @@
 package com.example.phoneguard.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Base64
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -38,10 +39,29 @@ class ChildSettingsStore(context: Context) {
     }.getOrDefault(false)
   }
 
-  fun isLocked(): Boolean = preferences.getBoolean(KEY_IS_LOCKED, false)
+  fun isManualLockActive(): Boolean =
+    preferences.getBoolean(KEY_MANUAL_LOCKED, false)
 
-  fun setLocked(locked: Boolean) {
-    preferences.edit().putBoolean(KEY_IS_LOCKED, locked).apply()
+  fun setManualLock(locked: Boolean) {
+    preferences.edit().putBoolean(KEY_MANUAL_LOCKED, locked).apply()
+  }
+
+  fun isScheduleLockActive(): Boolean =
+    preferences.getBoolean(KEY_SCHEDULE_LOCKED, false)
+
+  fun setScheduleLock(locked: Boolean) {
+    preferences.edit().putBoolean(KEY_SCHEDULE_LOCKED, locked).apply()
+  }
+
+  fun isEffectivelyLocked(): Boolean =
+    isManualLockActive() || isScheduleLockActive()
+
+  fun clearAllLocks() {
+    preferences
+      .edit()
+      .putBoolean(KEY_MANUAL_LOCKED, false)
+      .putBoolean(KEY_SCHEDULE_LOCKED, false)
+      .apply()
   }
 
   fun getWeeklySchedule(): WeeklySchedule =
@@ -57,6 +77,23 @@ class ChildSettingsStore(context: Context) {
   fun currentScheduledUnlockLabel(calendar: Calendar = Calendar.getInstance()): String? =
     getWeeklySchedule().currentUnlockTimeLabel(calendar)
 
+  fun registerLockStateListener(
+    onChanged: () -> Unit,
+  ): SharedPreferences.OnSharedPreferenceChangeListener {
+    val listener =
+      SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == KEY_MANUAL_LOCKED || key == KEY_SCHEDULE_LOCKED) {
+          onChanged()
+        }
+      }
+    preferences.registerOnSharedPreferenceChangeListener(listener)
+    return listener
+  }
+
+  fun unregisterLockStateListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+    preferences.unregisterOnSharedPreferenceChangeListener(listener)
+  }
+
   private fun hashPin(pin: String, salt: ByteArray): ByteArray =
     MessageDigest.getInstance("SHA-256").run {
       update(salt)
@@ -67,7 +104,8 @@ class ChildSettingsStore(context: Context) {
     const val PREFERENCES_NAME = "phone_guard_child_settings"
     const val KEY_PIN_SALT = "parent_pin_salt"
     const val KEY_PIN_HASH = "parent_pin_hash"
-    const val KEY_IS_LOCKED = "is_locked"
+    const val KEY_MANUAL_LOCKED = "manual_locked"
+    const val KEY_SCHEDULE_LOCKED = "schedule_locked"
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
     const val SALT_SIZE_BYTES = 16
 
