@@ -95,6 +95,26 @@ class ChildSettingsStore(context: Context) {
       .apply()
   }
 
+  fun getOrCreateDeviceSecret(): String {
+    preferences.getString(KEY_DEVICE_SECRET, null)?.let { existing ->
+      if (existing.isNotBlank()) return existing
+    }
+
+    val secretBytes = ByteArray(32).also(SecureRandom()::nextBytes)
+    val secret =
+      Base64.encodeToString(
+        secretBytes,
+        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING,
+      )
+
+    preferences
+      .edit()
+      .putString(KEY_DEVICE_SECRET, secret)
+      .apply()
+
+    return secret
+  }
+
   fun getOrCreatePairingIdentity(): PairingIdentity {
     val existingDeviceId = preferences.getString(KEY_DEVICE_ID, null)
     val existingPairingCode = preferences.getString(KEY_PAIRING_CODE, null)
@@ -193,6 +213,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
     const val KEY_DEVICE_ID = "device_id"
     const val KEY_PAIRING_CODE = "pairing_code"
+    const val KEY_DEVICE_SECRET = "device_secret"
     const val KEY_TEMPORARY_ALLOW_UNTIL = "temporary_allow_until"
     const val SALT_SIZE_BYTES = 16
     const val PAIRING_CODE_LENGTH = 6
