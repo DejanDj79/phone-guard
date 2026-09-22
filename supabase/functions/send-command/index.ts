@@ -279,7 +279,8 @@ export default {
             data,
             android: {
               priority: "high",
-              ttl: "0s",
+              ttl: "60s",
+              collapse_key: "phoneguard-control",
             },
           },
         }),
