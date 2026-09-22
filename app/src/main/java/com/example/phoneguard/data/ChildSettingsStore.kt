@@ -55,14 +55,43 @@ class ChildSettingsStore(context: Context) {
     preferences.edit().putBoolean(KEY_SCHEDULE_LOCKED, locked).apply()
   }
 
-  fun isEffectivelyLocked(): Boolean =
-    isManualLockActive() || isScheduleLockActive()
+  fun temporaryAllowanceUntilMillis(): Long =
+    preferences.getLong(KEY_TEMPORARY_ALLOW_UNTIL, 0L)
+
+  fun isTemporaryAllowanceActive(nowMillis: Long = System.currentTimeMillis()): Boolean =
+    temporaryAllowanceUntilMillis() > nowMillis
+
+  fun grantTemporaryAllowance(
+    minutes: Int,
+    nowMillis: Long = System.currentTimeMillis(),
+  ): Long {
+    require(minutes > 0) { "Temporary allowance must be positive." }
+
+    val base = maxOf(nowMillis, temporaryAllowanceUntilMillis())
+    val until = base + minutes * 60_000L
+
+    preferences
+      .edit()
+      .putLong(KEY_TEMPORARY_ALLOW_UNTIL, until)
+      .apply()
+
+    return until
+  }
+
+  fun clearTemporaryAllowance() {
+    preferences.edit().remove(KEY_TEMPORARY_ALLOW_UNTIL).apply()
+  }
+
+  fun isEffectivelyLocked(nowMillis: Long = System.currentTimeMillis()): Boolean =
+    !isTemporaryAllowanceActive(nowMillis) &&
+      (isManualLockActive() || isScheduleLockActive())
 
   fun clearAllLocks() {
     preferences
       .edit()
       .putBoolean(KEY_MANUAL_LOCKED, false)
       .putBoolean(KEY_SCHEDULE_LOCKED, false)
+      .remove(KEY_TEMPORARY_ALLOW_UNTIL)
       .apply()
   }
 
@@ -126,7 +155,11 @@ class ChildSettingsStore(context: Context) {
   ): SharedPreferences.OnSharedPreferenceChangeListener {
     val listener =
       SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == KEY_MANUAL_LOCKED || key == KEY_SCHEDULE_LOCKED) {
+        if (
+          key == KEY_MANUAL_LOCKED ||
+          key == KEY_SCHEDULE_LOCKED ||
+          key == KEY_TEMPORARY_ALLOW_UNTIL
+        ) {
           onChanged()
         }
       }
@@ -160,6 +193,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
     const val KEY_DEVICE_ID = "device_id"
     const val KEY_PAIRING_CODE = "pairing_code"
+    const val KEY_TEMPORARY_ALLOW_UNTIL = "temporary_allow_until"
     const val SALT_SIZE_BYTES = 16
     const val PAIRING_CODE_LENGTH = 6
     const val PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
