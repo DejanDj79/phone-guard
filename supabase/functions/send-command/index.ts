@@ -231,6 +231,24 @@ export default {
       return json({ error: "device_has_no_fcm_token" }, 409);
     }
 
+    const { data: commandRow, error: commandInsertError } =
+      await ctx.supabaseAdmin
+        .from("device_commands")
+        .insert({
+          device_id: deviceId,
+          command,
+          bonus_minutes: command === "BONUS_TIME" ? bonusMinutes : null,
+          status: "PENDING",
+        })
+        .select("command_id")
+        .single();
+
+    if (commandInsertError || !commandRow) {
+      return json({ error: "command_create_failed" }, 500);
+    }
+
+    const commandId = commandRow.command_id as string;
+
     let serviceAccount: ServiceAccount;
     try {
       serviceAccount = loadFirebaseServiceAccount();
@@ -258,6 +276,7 @@ export default {
 
     const data: Record<string, string> = {
       command,
+      command_id: commandId,
     };
     if (command === "BONUS_TIME") {
       data.bonus_minutes = String(bonusMinutes);
@@ -290,6 +309,14 @@ export default {
     const fcmBody = await fcmResponse.text();
 
     if (!fcmResponse.ok) {
+      await ctx.supabaseAdmin
+        .from("device_commands")
+        .update({
+          status: "FAILED",
+          error_code: "fcm_send_failed",
+        })
+        .eq("command_id", commandId);
+
       return json(
         {
           error: "fcm_send_failed",
@@ -301,6 +328,19 @@ export default {
     }
 
     const now = new Date();
+
+    const { error: commandSentError } = await ctx.supabaseAdmin
+      .from("device_commands")
+      .update({
+        status: "SENT",
+        sent_at: now.toISOString(),
+        error_code: null,
+      })
+      .eq("command_id", commandId);
+
+    if (commandSentError) {
+      return json({ error: "command_status_update_failed" }, 500);
+    }
     let accessState = "ALLOWED";
     let temporaryAllowUntil: string | null = null;
 
@@ -329,6 +369,8 @@ export default {
 
     return json({
       ok: true,
+      commandId,
+      deliveryStatus: "SENT",
       device: {
         deviceId: device.device_id,
         displayName: device.display_name,
