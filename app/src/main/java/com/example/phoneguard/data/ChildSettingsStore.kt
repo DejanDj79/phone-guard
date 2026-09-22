@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Base64
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Calendar
 
 class ChildSettingsStore(context: Context) {
   private val preferences =
@@ -43,6 +44,19 @@ class ChildSettingsStore(context: Context) {
     preferences.edit().putBoolean(KEY_IS_LOCKED, locked).apply()
   }
 
+  fun getWeeklySchedule(): WeeklySchedule =
+    WeeklySchedule.decode(preferences.getString(KEY_WEEKLY_SCHEDULE, null))
+
+  fun saveWeeklySchedule(schedule: WeeklySchedule) {
+    preferences.edit().putString(KEY_WEEKLY_SCHEDULE, schedule.encode()).apply()
+  }
+
+  fun shouldBeRestrictedNow(calendar: Calendar = Calendar.getInstance()): Boolean =
+    getWeeklySchedule().isRestrictedAt(calendar)
+
+  fun currentScheduledUnlockLabel(calendar: Calendar = Calendar.getInstance()): String? =
+    getWeeklySchedule().currentUnlockTimeLabel(calendar)
+
   private fun hashPin(pin: String, salt: ByteArray): ByteArray =
     MessageDigest.getInstance("SHA-256").run {
       update(salt)
@@ -54,6 +68,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_PIN_SALT = "parent_pin_salt"
     const val KEY_PIN_HASH = "parent_pin_hash"
     const val KEY_IS_LOCKED = "is_locked"
+    const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
     const val SALT_SIZE_BYTES = 16
 
     val PIN_PATTERN = Regex("^\\d{4,6}$")
