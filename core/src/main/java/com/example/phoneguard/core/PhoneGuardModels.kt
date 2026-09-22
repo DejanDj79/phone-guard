@@ -79,3 +79,39 @@ data class PairingIdentity(
     }
   }
 }
+
+
+data class PairingRequest(
+  val pairingCode: String,
+) {
+  init {
+    require(pairingCode.matches(Regex("^[A-Z0-9]{6}$"))) {
+      "pairingCode must contain exactly 6 uppercase letters or digits."
+    }
+  }
+
+  companion object {
+    fun fromUserInput(value: String): PairingRequest =
+      PairingRequest(
+        pairingCode =
+          value
+            .trim()
+            .uppercase()
+            .filter(Char::isLetterOrDigit),
+      )
+  }
+}
+
+sealed interface PairingResult {
+  data class Success(
+    val device: ChildDevice,
+  ) : PairingResult
+
+  data class InvalidCode(
+    val message: String = "Pairing code is invalid or expired.",
+  ) : PairingResult
+
+  data class Error(
+    val message: String,
+  ) : PairingResult
+}
