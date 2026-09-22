@@ -3,9 +3,11 @@ package com.example.phoneguard.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
+import com.example.phoneguard.core.PairingIdentity
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Calendar
+import java.util.UUID
 
 class ChildSettingsStore(context: Context) {
   private val preferences =
@@ -64,6 +66,48 @@ class ChildSettingsStore(context: Context) {
       .apply()
   }
 
+  fun getOrCreatePairingIdentity(): PairingIdentity {
+    val existingDeviceId = preferences.getString(KEY_DEVICE_ID, null)
+    val existingPairingCode = preferences.getString(KEY_PAIRING_CODE, null)
+
+    if (
+      !existingDeviceId.isNullOrBlank() &&
+      !existingPairingCode.isNullOrBlank()
+    ) {
+      return PairingIdentity(
+        deviceId = existingDeviceId,
+        pairingCode = existingPairingCode,
+      )
+    }
+
+    val identity =
+      PairingIdentity(
+        deviceId = UUID.randomUUID().toString(),
+        pairingCode = generatePairingCode(),
+      )
+
+    preferences
+      .edit()
+      .putString(KEY_DEVICE_ID, identity.deviceId)
+      .putString(KEY_PAIRING_CODE, identity.pairingCode)
+      .apply()
+
+    return identity
+  }
+
+  fun regeneratePairingCode(): PairingIdentity {
+    val current = getOrCreatePairingIdentity()
+    val refreshed =
+      current.copy(pairingCode = generatePairingCode())
+
+    preferences
+      .edit()
+      .putString(KEY_PAIRING_CODE, refreshed.pairingCode)
+      .apply()
+
+    return refreshed
+  }
+
   fun getWeeklySchedule(): WeeklySchedule =
     WeeklySchedule.decode(preferences.getString(KEY_WEEKLY_SCHEDULE, null))
 
@@ -94,6 +138,13 @@ class ChildSettingsStore(context: Context) {
     preferences.unregisterOnSharedPreferenceChangeListener(listener)
   }
 
+  private fun generatePairingCode(): String =
+    buildString(PAIRING_CODE_LENGTH) {
+      repeat(PAIRING_CODE_LENGTH) {
+        append(PAIRING_ALPHABET[SecureRandom().nextInt(PAIRING_ALPHABET.length)])
+      }
+    }
+
   private fun hashPin(pin: String, salt: ByteArray): ByteArray =
     MessageDigest.getInstance("SHA-256").run {
       update(salt)
@@ -107,7 +158,11 @@ class ChildSettingsStore(context: Context) {
     const val KEY_MANUAL_LOCKED = "manual_locked"
     const val KEY_SCHEDULE_LOCKED = "schedule_locked"
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
+    const val KEY_DEVICE_ID = "device_id"
+    const val KEY_PAIRING_CODE = "pairing_code"
     const val SALT_SIZE_BYTES = 16
+    const val PAIRING_CODE_LENGTH = 6
+    const val PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
     val PIN_PATTERN = Regex("^\\d{4,6}$")
   }
