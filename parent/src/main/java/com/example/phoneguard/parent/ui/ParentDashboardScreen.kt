@@ -38,12 +38,14 @@ import com.example.phoneguard.core.PairingRequest
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
+import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.PairingGateway
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -66,6 +68,7 @@ fun ParentDashboardScreen(
     mutableStateOf(settingsStore.loadPairedDevice())
   }
   var lastCommand by remember { mutableStateOf<RemoteCommand?>(null) }
+  var commandDeliveryStatus by remember { mutableStateOf<String?>(null) }
   var commandInProgress by remember { mutableStateOf(false) }
   var commandError by remember { mutableStateOf<String?>(null) }
   var showBonusTimePicker by remember { mutableStateOf(false) }
@@ -126,6 +129,7 @@ fun ParentDashboardScreen(
     scope.launch {
       commandInProgress = true
       commandError = null
+      commandDeliveryStatus = null
 
       when (
         val result =
@@ -144,6 +148,35 @@ fun ParentDashboardScreen(
             controlToken = controlToken,
           )
           lastCommand = command
+          commandDeliveryStatus = result.deliveryStatus
+
+          for (attempt in 1..12) {
+            if (commandDeliveryStatus == "APPLIED" || commandDeliveryStatus == "FAILED") {
+              break
+            }
+
+            delay(500)
+
+            when (
+              val statusResult =
+                withContext(Dispatchers.IO) {
+                  commandGateway.status(
+                    deviceId = device.deviceId,
+                    controlToken = controlToken,
+                    commandId = result.commandId,
+                  )
+                }
+            ) {
+              is CommandDeliveryResult.Success -> {
+                commandDeliveryStatus = statusResult.status
+              }
+
+              is CommandDeliveryResult.Error -> {
+                commandError = statusResult.message
+                break
+              }
+            }
+          }
         }
 
         is CommandResult.Error -> {
@@ -290,6 +323,19 @@ fun ParentDashboardScreen(
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
         )
+
+        commandDeliveryStatus?.let { status ->
+          Text(
+            text = deliveryStatusLabel(status),
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+              if (status == "FAILED") {
+                MaterialTheme.colorScheme.error
+              } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+              },
+          )
+        }
       }
     }
 
@@ -511,6 +557,15 @@ private fun deviceStateLabel(device: ChildDevice): String =
         device.temporaryAccessMinutesRemaining +
         " min"
     DeviceAccessState.OFFLINE -> "○ Uređaj je offline"
+  }
+
+private fun deliveryStatusLabel(status: String): String =
+  when (status) {
+    "PENDING" -> "○ Priprema slanja"
+    "SENT" -> "◌ Poslato — čeka potvrdu Child uređaja"
+    "APPLIED" -> "✓ Primljeno i izvršeno na Child uređaju"
+    "FAILED" -> "✕ Komanda nije izvršena"
+    else -> status
   }
 
 private fun commandLabel(command: RemoteCommand?): String =
