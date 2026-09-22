@@ -13,6 +13,35 @@ type ServiceAccount = {
   token_uri?: string;
 };
 
+function decodeBase64Utf8(value: string): string {
+  const binary = atob(value.trim());
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function loadFirebaseServiceAccount(): ServiceAccount {
+  const encoded = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_B64");
+  const raw = encoded
+    ? decodeBase64Utf8(encoded)
+    : Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+  if (!raw) {
+    throw new Error("firebase_not_configured");
+  }
+
+  const serviceAccount = JSON.parse(raw) as ServiceAccount;
+
+  if (
+    !serviceAccount.project_id ||
+    !serviceAccount.client_email ||
+    !serviceAccount.private_key
+  ) {
+    throw new Error("firebase_credentials_invalid");
+  }
+
+  return serviceAccount;
+}
+
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -202,24 +231,22 @@ export default {
       return json({ error: "device_has_no_fcm_token" }, 409);
     }
 
-    const serviceAccountRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
-    if (!serviceAccountRaw) {
-      return json({ error: "firebase_not_configured" }, 503);
-    }
-
     let serviceAccount: ServiceAccount;
     try {
-      serviceAccount = JSON.parse(serviceAccountRaw) as ServiceAccount;
-    } catch {
-      return json({ error: "firebase_credentials_invalid" }, 500);
-    }
+      serviceAccount = loadFirebaseServiceAccount();
+    } catch (error) {
+      const code =
+        error instanceof Error ? error.message : "firebase_credentials_invalid";
 
-    if (
-      !serviceAccount.project_id ||
-      !serviceAccount.client_email ||
-      !serviceAccount.private_key
-    ) {
-      return json({ error: "firebase_credentials_invalid" }, 500);
+      return json(
+        {
+          error:
+            code === "firebase_not_configured"
+              ? "firebase_not_configured"
+              : "firebase_credentials_invalid",
+        },
+        code === "firebase_not_configured" ? 503 : 500,
+      );
     }
 
     let accessToken: string;
