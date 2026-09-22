@@ -31,3 +31,4 @@ plugins {
 
 rootProject.name = "PhoneGuard"
 include(":app")
+include(":parent")
