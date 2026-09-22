@@ -34,6 +34,8 @@ import com.example.phoneguard.core.PairingRequest
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
+import com.example.phoneguard.parent.data.CommandResult
+import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.PairingGateway
 import com.example.phoneguard.parent.data.ParentSettingsStore
@@ -53,11 +55,15 @@ fun ParentDashboardScreen(
     }
   val defaultGateway = remember { HttpPairingGateway() }
   val gateway = pairingGateway ?: defaultGateway
+  val commandGateway = remember { HttpCommandGateway() }
+  val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
     mutableStateOf(settingsStore.loadPairedDevice())
   }
   var lastCommand by remember { mutableStateOf<RemoteCommand?>(null) }
+  var commandInProgress by remember { mutableStateOf(false) }
+  var commandError by remember { mutableStateOf<String?>(null) }
 
   if (pairedDevice == null) {
     PairDeviceScreen(
@@ -102,29 +108,45 @@ fun ParentDashboardScreen(
 
   val device = pairedDevice!!
 
-  fun applyMockCommand(command: RemoteCommand) {
-    lastCommand = command
+  fun sendCommand(command: RemoteCommand) {
+    if (commandInProgress) return
 
-    pairedDevice =
-      when (command.type) {
-        RemoteCommandType.LOCK ->
-          device.copy(
-            state = DeviceAccessState.LOCKED,
-            temporaryAccessMinutesRemaining = null,
-          )
+    val controlToken = settingsStore.controlToken()
+    if (controlToken.isNullOrBlank()) {
+      commandError = "Nedostaje control token. Potrebno je ponovno uparivanje."
+      return
+    }
 
-        RemoteCommandType.UNLOCK ->
-          device.copy(
-            state = DeviceAccessState.ALLOWED,
-            temporaryAccessMinutesRemaining = null,
-          )
+    scope.launch {
+      commandInProgress = true
+      commandError = null
 
-        RemoteCommandType.BONUS_TIME ->
-          device.copy(
-            state = DeviceAccessState.TEMPORARILY_ALLOWED,
-            temporaryAccessMinutesRemaining = command.bonusMinutes,
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            commandGateway.send(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+              command = command,
+            )
+          }
+      ) {
+        is CommandResult.Success -> {
+          pairedDevice = result.device
+          settingsStore.savePairing(
+            device = result.device,
+            controlToken = controlToken,
           )
+          lastCommand = command
+        }
+
+        is CommandResult.Error -> {
+          commandError = result.message
+        }
       }
+
+      commandInProgress = false
+    }
   }
 
   Column(
@@ -181,7 +203,7 @@ fun ParentDashboardScreen(
         )
 
         Text(
-          text = "Command transport: mock dok ne povežemo FCM.",
+          text = "✓ FCM command transport ready",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -200,14 +222,16 @@ fun ParentDashboardScreen(
         )
 
         Button(
-          onClick = { applyMockCommand(RemoteCommand.lock()) },
+          onClick = { sendCommand(RemoteCommand.lock()) },
+          enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("LOCK NOW")
         }
 
         OutlinedButton(
-          onClick = { applyMockCommand(RemoteCommand.unlock()) },
+          onClick = { sendCommand(RemoteCommand.unlock()) },
+          enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("UNLOCK")
@@ -226,8 +250,9 @@ fun ParentDashboardScreen(
           listOf(15, 30, 60).forEach { minutes ->
             OutlinedButton(
               onClick = {
-                applyMockCommand(RemoteCommand.bonusTime(minutes))
+                sendCommand(RemoteCommand.bonusTime(minutes))
               },
+              enabled = !commandInProgress,
               modifier = Modifier.weight(1f),
             ) {
               Text("+" + minutes)
@@ -235,6 +260,22 @@ fun ParentDashboardScreen(
           }
         }
       }
+    }
+
+    if (commandInProgress) {
+      Text(
+        text = "Šaljem komandu…",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+
+    commandError?.let { message ->
+      Text(
+        text = message,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.error,
+      )
     }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
