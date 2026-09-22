@@ -17,6 +17,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.data.WeeklySchedule
+import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
 import java.util.Calendar
 
@@ -44,11 +47,28 @@ fun MainScreen(
 ) {
   val context = LocalContext.current
   val settingsStore = remember(context) { ChildSettingsStore(context.applicationContext) }
+  val alarmScheduler = remember(context) { ScheduleAlarmScheduler(context.applicationContext) }
 
   var hasParentPin by remember { mutableStateOf(settingsStore.hasParentPin()) }
-  var isLocked by remember { mutableStateOf(settingsStore.isLocked()) }
+  var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
   var weeklySchedule by remember { mutableStateOf(settingsStore.getWeeklySchedule()) }
   var editingSchedule by remember { mutableStateOf(false) }
+
+  DisposableEffect(settingsStore) {
+    val listener =
+      settingsStore.registerLockStateListener {
+        isLocked = settingsStore.isEffectivelyLocked()
+      }
+
+    onDispose {
+      settingsStore.unregisterLockStateListener(listener)
+    }
+  }
+
+  LaunchedEffect(Unit) {
+    alarmScheduler.syncCurrentStateAndScheduleNext()
+    isLocked = settingsStore.isEffectivelyLocked()
+  }
 
   when {
     !hasParentPin -> {
@@ -66,6 +86,8 @@ fun MainScreen(
         onSave = { schedule ->
           settingsStore.saveWeeklySchedule(schedule)
           weeklySchedule = schedule
+          alarmScheduler.syncCurrentStateAndScheduleNext()
+          isLocked = settingsStore.isEffectivelyLocked()
           editingSchedule = false
         },
         onCancel = { editingSchedule = false },
@@ -81,7 +103,8 @@ fun MainScreen(
         onUnlock = { pin ->
           val accepted = settingsStore.verifyParentPin(pin)
           if (accepted) {
-            settingsStore.setLocked(false)
+            settingsStore.clearAllLocks()
+            alarmScheduler.scheduleNext()
             isLocked = false
           }
           accepted
@@ -93,9 +116,13 @@ fun MainScreen(
       ChildDashboard(
         modifier = modifier,
         weeklySchedule = weeklySchedule,
+        exactAlarmAccess = alarmScheduler.hasExactAlarmAccess(),
+        onRequestExactAlarmAccess = {
+          alarmScheduler.exactAlarmPermissionIntent()?.let(context::startActivity)
+        },
         onEditSchedule = { editingSchedule = true },
         onTestLock = {
-          settingsStore.setLocked(true)
+          settingsStore.setManualLock(true)
           isLocked = true
         },
       )
@@ -212,6 +239,8 @@ private fun PinField(
 @Composable
 private fun ChildDashboard(
   weeklySchedule: WeeklySchedule,
+  exactAlarmAccess: Boolean,
+  onRequestExactAlarmAccess: () -> Unit,
   onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
   modifier: Modifier = Modifier,
@@ -286,6 +315,21 @@ private fun ChildDashboard(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
+
+          if (!exactAlarmAccess) {
+            Text(
+              text = "Precise scheduling is not enabled. Android may delay lock/unlock events.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+
+            OutlinedButton(
+              onClick = onRequestExactAlarmAccess,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("ALLOW PRECISE SCHEDULING")
+            }
+          }
         }
 
         OutlinedButton(
@@ -421,6 +465,8 @@ private fun ChildDashboardPreview() {
   PhoneGuardTheme {
     ChildDashboard(
       weeklySchedule = WeeklySchedule(),
+      exactAlarmAccess = false,
+      onRequestExactAlarmAccess = {},
       onEditSchedule = {},
       onTestLock = {},
     )
