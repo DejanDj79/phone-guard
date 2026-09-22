@@ -22,6 +22,20 @@ class RemoteCommandTest {
   }
 
   @Test
+  fun pairingRequestNormalizesUserInput() {
+    val request = PairingRequest.fromUserInput(" ab-12cd ")
+
+    assertEquals("AB12CD", request.pairingCode)
+  }
+
+  @Test
+  fun invalidPairingCodeIsRejected() {
+    assertThrows(IllegalArgumentException::class.java) {
+      PairingRequest.fromUserInput("123")
+    }
+  }
+
+  @Test
   fun invalidBonusDurationIsRejected() {
     assertThrows(IllegalArgumentException::class.java) {
       RemoteCommand.bonusTime(0)
