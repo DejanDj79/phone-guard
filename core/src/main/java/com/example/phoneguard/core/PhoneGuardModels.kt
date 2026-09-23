@@ -52,12 +52,27 @@ enum class DeviceAccessState {
   OFFLINE,
 }
 
+data class DeviceProtectionStatus(
+  val accessibilityEnabled: Boolean? = null,
+  val preciseTimingEnabled: Boolean? = null,
+  val batteryUnrestricted: Boolean? = null,
+) {
+  val criticalProtectionComplete: Boolean?
+    get() =
+      if (accessibilityEnabled == null || preciseTimingEnabled == null) {
+        null
+      } else {
+        accessibilityEnabled && preciseTimingEnabled
+      }
+}
+
 data class ChildDevice(
   val deviceId: String,
   val displayName: String,
   val state: DeviceAccessState,
   val temporaryAccessMinutesRemaining: Int? = null,
   val isOnline: Boolean = true,
+  val protectionStatus: DeviceProtectionStatus = DeviceProtectionStatus(),
 ) {
   init {
     require(deviceId.isNotBlank()) { "deviceId must not be blank." }
