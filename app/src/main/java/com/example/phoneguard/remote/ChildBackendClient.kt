@@ -367,5 +367,7 @@ class ChildBackendClient {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/ack-command"
     const val SYNC_COMMANDS_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/sync-commands"
+    const val HEARTBEAT_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/heartbeat"
   }
 }
