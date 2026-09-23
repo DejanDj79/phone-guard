@@ -12,6 +12,8 @@ class RemoteCommandSyncer(context: Context) {
   private val executor = RemoteCommandExecutor(appContext)
 
   fun sync() {
+    RemoteScheduleSyncer(appContext).sync()
+
     val identity = settingsStore.getOrCreatePairingIdentity()
     val deviceSecret = settingsStore.getOrCreateDeviceSecret()
 
@@ -39,6 +41,8 @@ class RemoteCommandSyncer(context: Context) {
 
                 RemoteCommand.bonusTime(minutes)
               }
+
+              "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
 
               else -> {
                 Log.e(TAG, "Unknown remote command: " + pending.command)
