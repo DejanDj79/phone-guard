@@ -17,6 +17,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,8 @@ import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
+import com.example.phoneguard.parent.data.DeviceStatusResult
+import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.PairingGateway
@@ -62,6 +65,7 @@ fun ParentDashboardScreen(
   val defaultGateway = remember { HttpPairingGateway() }
   val gateway = pairingGateway ?: defaultGateway
   val commandGateway = remember { HttpCommandGateway() }
+  val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
   val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
@@ -116,6 +120,35 @@ fun ParentDashboardScreen(
   }
 
   val device = pairedDevice!!
+
+  LaunchedEffect(device.deviceId) {
+    val controlToken = settingsStore.controlToken()
+    if (controlToken.isNullOrBlank()) {
+      commandError = "Nedostaje control token. Potrebno je ponovno uparivanje."
+    } else {
+      when (
+        val statusResult =
+          withContext(Dispatchers.IO) {
+            deviceStatusGateway.fetch(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+            )
+          }
+      ) {
+        is DeviceStatusResult.Success -> {
+          pairedDevice = statusResult.device
+          settingsStore.savePairing(
+            device = statusResult.device,
+            controlToken = controlToken,
+          )
+        }
+
+        is DeviceStatusResult.Error -> {
+          commandError = statusResult.message
+        }
+      }
+    }
+  }
 
   fun sendCommand(command: RemoteCommand) {
     if (commandInProgress) return
