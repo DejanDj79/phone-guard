@@ -126,26 +126,30 @@ fun ParentDashboardScreen(
     if (controlToken.isNullOrBlank()) {
       commandError = "Nedostaje control token. Potrebno je ponovno uparivanje."
     } else {
-      when (
-        val statusResult =
-          withContext(Dispatchers.IO) {
-            deviceStatusGateway.fetch(
-              deviceId = device.deviceId,
+      while (true) {
+        when (
+          val statusResult =
+            withContext(Dispatchers.IO) {
+              deviceStatusGateway.fetch(
+                deviceId = device.deviceId,
+                controlToken = controlToken,
+              )
+            }
+        ) {
+          is DeviceStatusResult.Success -> {
+            pairedDevice = statusResult.device
+            settingsStore.savePairing(
+              device = statusResult.device,
               controlToken = controlToken,
             )
           }
-      ) {
-        is DeviceStatusResult.Success -> {
-          pairedDevice = statusResult.device
-          settingsStore.savePairing(
-            device = statusResult.device,
-            controlToken = controlToken,
-          )
+
+          is DeviceStatusResult.Error -> {
+            commandError = statusResult.message
+          }
         }
 
-        is DeviceStatusResult.Error -> {
-          commandError = statusResult.message
-        }
+        delay(15_000)
       }
     }
   }
@@ -263,6 +267,17 @@ fun ParentDashboardScreen(
         Text(
           text = deviceStateLabel(device),
           style = MaterialTheme.typography.bodyLarge,
+        )
+
+        Text(
+          text =
+            if (device.isOnline) {
+              "● Online"
+            } else {
+              "○ Uređaj je offline"
+            },
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Text(
@@ -592,7 +607,7 @@ private fun deviceStateLabel(device: ChildDevice): String =
       "● Dodatno vreme: " +
         device.temporaryAccessMinutesRemaining +
         " min"
-    DeviceAccessState.OFFLINE -> "○ Uređaj je offline"
+    DeviceAccessState.OFFLINE -> "○ Stanje uređaja nije poznato"
   }
 
 private fun deliveryStatusLabel(status: String): String =
