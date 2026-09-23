@@ -21,6 +21,8 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         deviceSecret = settingsStore.getOrCreateDeviceSecret(),
         fcmToken = token,
       )
+
+      RemoteCommandSyncer(applicationContext).sync()
     }.start()
   }
 
@@ -60,7 +62,11 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
 
   override fun onDeletedMessages() {
     super.onDeletedMessages()
-    Log.w(TAG, "FCM reported deleted pending messages")
+    Log.w(TAG, "FCM reported deleted pending messages; syncing backend")
+
+    Thread {
+      RemoteCommandSyncer(applicationContext).sync()
+    }.start()
   }
 
   private companion object {
