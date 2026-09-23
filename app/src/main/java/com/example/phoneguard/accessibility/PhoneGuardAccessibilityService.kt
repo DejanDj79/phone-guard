@@ -1,6 +1,7 @@
 package com.example.phoneguard.accessibility
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -95,6 +96,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   }
 
   override fun onInterrupt() = Unit
+
+  override fun onUnbind(intent: Intent?): Boolean {
+    if (::heartbeatSender.isInitialized) {
+      Thread {
+        heartbeatSender.send(accessibilityEnabledOverride = false)
+      }.start()
+    }
+    return super.onUnbind(intent)
+  }
 
   override fun onDestroy() {
     mainHandler.removeCallbacks(heartbeatRunnable)
