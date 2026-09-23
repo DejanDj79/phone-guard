@@ -2,7 +2,7 @@ import { withSupabase } from "npm:@supabase/server@1.7.1";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const VALID_COMMANDS = new Set(["LOCK", "UNLOCK", "BONUS_TIME"]);
+const VALID_COMMANDS = new Set(["LOCK", "UNLOCK", "BONUS_TIME", "SYNC_SCHEDULE"]);
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const DEFAULT_TOKEN_URI = "https://oauth2.googleapis.com/token";
 
@@ -216,7 +216,7 @@ export default {
 
     const { data: device, error: deviceError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_id, display_name, fcm_token")
+      .select("device_id, display_name, fcm_token, access_state, temporary_allow_until")
       .eq("device_id", deviceId)
       .eq("control_token_hash", controlTokenHash)
       .maybeSingle();
@@ -341,11 +341,19 @@ export default {
     if (commandSentError) {
       return json({ error: "command_status_update_failed" }, 500);
     }
-    let accessState = "ALLOWED";
-    let temporaryAllowUntil: string | null = null;
+    let accessState =
+      typeof device.access_state === "string" ? device.access_state : "ALLOWED";
+    let temporaryAllowUntil =
+      typeof device.temporary_allow_until === "string"
+        ? device.temporary_allow_until
+        : null;
 
     if (command === "LOCK") {
       accessState = "LOCKED";
+      temporaryAllowUntil = null;
+    } else if (command === "UNLOCK") {
+      accessState = "ALLOWED";
+      temporaryAllowUntil = null;
     } else if (command === "BONUS_TIME") {
       accessState = "TEMPORARILY_ALLOWED";
       temporaryAllowUntil =
@@ -363,8 +371,15 @@ export default {
         displayName: device.display_name,
         state: accessState,
         temporaryAccessMinutesRemaining:
-          accessState === "TEMPORARILY_ALLOWED"
-            ? bonusMinutes
+          accessState === "TEMPORARILY_ALLOWED" &&
+            temporaryAllowUntil !== null
+            ? Math.max(
+                0,
+                Math.ceil(
+                  (new Date(temporaryAllowUntil).getTime() - Date.now()) /
+                    60_000,
+                ),
+              )
             : null,
       },
     });
