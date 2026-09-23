@@ -49,7 +49,7 @@ export default {
 
     const { data: device, error: deviceError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_id, temporary_allow_until")
+      .select("device_id, access_state, temporary_allow_until")
       .eq("device_id", deviceId)
       .eq("device_secret_hash", deviceSecretHash)
       .maybeSingle();
@@ -83,11 +83,19 @@ export default {
     }
 
     const now = new Date();
-    let accessState = "ALLOWED";
-    let temporaryAllowUntil: string | null = null;
+    let accessState =
+      typeof device.access_state === "string" ? device.access_state : "ALLOWED";
+    let temporaryAllowUntil =
+      typeof device.temporary_allow_until === "string"
+        ? device.temporary_allow_until
+        : null;
 
     if (commandRow.command === "LOCK") {
       accessState = "LOCKED";
+      temporaryAllowUntil = null;
+    } else if (commandRow.command === "UNLOCK") {
+      accessState = "ALLOWED";
+      temporaryAllowUntil = null;
     } else if (commandRow.command === "BONUS_TIME") {
       accessState = "TEMPORARILY_ALLOWED";
 
