@@ -2,6 +2,7 @@ package com.example.phoneguard.parent.data
 
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
+import com.example.phoneguard.core.DeviceProtectionStatus
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -69,6 +70,8 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
             null
           }
 
+        val protectionJson = deviceJson.optJSONObject("protection")
+
         DeviceStatusResult.Success(
           device =
             ChildDevice(
@@ -77,6 +80,15 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
               isOnline = deviceJson.optBoolean("isOnline", false),
+              protectionStatus =
+                DeviceProtectionStatus(
+                  accessibilityEnabled =
+                    protectionJson?.nullableBoolean("accessibilityEnabled"),
+                  preciseTimingEnabled =
+                    protectionJson?.nullableBoolean("preciseTimingEnabled"),
+                  batteryUnrestricted =
+                    protectionJson?.nullableBoolean("batteryUnrestricted"),
+                ),
             ),
         )
       } else {
@@ -107,3 +119,7 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/device-status"
   }
 }
+
+
+private fun JSONObject.nullableBoolean(name: String): Boolean? =
+  if (isNull(name)) null else getBoolean(name)
