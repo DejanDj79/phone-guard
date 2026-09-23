@@ -2,6 +2,7 @@ package com.example.phoneguard.parent.data
 
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
+import com.example.phoneguard.core.DeviceProtectionStatus
 import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
 import org.json.JSONObject
@@ -105,6 +106,7 @@ class HttpCommandGateway : CommandGateway {
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              protectionStatus = deviceJson.protectionStatus(),
             ),
           commandId = json.getString("commandId"),
           deliveryStatus = json.optString("deliveryStatus", "SENT"),
@@ -195,6 +197,7 @@ class HttpCommandGateway : CommandGateway {
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              protectionStatus = deviceJson.protectionStatus(),
             ),
         )
       } else {
@@ -229,3 +232,21 @@ class HttpCommandGateway : CommandGateway {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/command-status"
   }
 }
+
+
+private fun JSONObject.protectionStatus(): DeviceProtectionStatus {
+  val protection = optJSONObject("protection")
+    ?: return DeviceProtectionStatus()
+
+  return DeviceProtectionStatus(
+    accessibilityEnabled =
+      protection.nullableBoolean("accessibilityEnabled"),
+    preciseTimingEnabled =
+      protection.nullableBoolean("preciseTimingEnabled"),
+    batteryUnrestricted =
+      protection.nullableBoolean("batteryUnrestricted"),
+  )
+}
+
+private fun JSONObject.nullableBoolean(name: String): Boolean? =
+  if (isNull(name)) null else getBoolean(name)
