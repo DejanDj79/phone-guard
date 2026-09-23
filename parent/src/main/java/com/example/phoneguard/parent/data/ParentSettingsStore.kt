@@ -7,6 +7,7 @@ import com.example.phoneguard.core.DeviceAccessState
 class ParentSettingsStore(context: Context) {
   private val preferences =
     context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+  private val tokenCipher = ParentTokenCipher()
 
   fun savePairing(
     device: ChildDevice,
@@ -23,7 +24,11 @@ class ParentSettingsStore(context: Context) {
         KEY_TEMPORARY_MINUTES,
         device.temporaryAccessMinutesRemaining ?: 0,
       )
-      .putString(KEY_CONTROL_TOKEN, controlToken)
+      .putString(
+        KEY_CONTROL_TOKEN_ENCRYPTED,
+        tokenCipher.encrypt(controlToken),
+      )
+      .remove(KEY_CONTROL_TOKEN)
       .apply()
   }
 
@@ -53,11 +58,31 @@ class ParentSettingsStore(context: Context) {
     }.getOrNull()
   }
 
-  fun controlToken(): String? =
-    preferences.getString(KEY_CONTROL_TOKEN, null)
+  fun controlToken(): String? {
+    preferences.getString(KEY_CONTROL_TOKEN_ENCRYPTED, null)?.let { encrypted ->
+      return tokenCipher.decrypt(encrypted)
+    }
+
+    val legacyToken =
+      preferences.getString(KEY_CONTROL_TOKEN, null)
+        ?.takeIf { it.isNotBlank() }
+        ?: return null
+
+    return runCatching {
+      val encrypted = tokenCipher.encrypt(legacyToken)
+      preferences
+        .edit()
+        .putString(KEY_CONTROL_TOKEN_ENCRYPTED, encrypted)
+        .remove(KEY_CONTROL_TOKEN)
+        .commit()
+
+      legacyToken
+    }.getOrNull()
+  }
 
   fun clearPairing() {
     preferences.edit().clear().apply()
+    runCatching { tokenCipher.deleteKey() }
   }
 
   private companion object {
@@ -67,5 +92,6 @@ class ParentSettingsStore(context: Context) {
     const val KEY_DEVICE_STATE = "device_state"
     const val KEY_TEMPORARY_MINUTES = "temporary_minutes"
     const val KEY_CONTROL_TOKEN = "control_token"
+    const val KEY_CONTROL_TOKEN_ENCRYPTED = "control_token_encrypted"
   }
 }
