@@ -23,7 +23,21 @@ class RemoteCommandExecutor(context: Context) {
       if (alreadyApplied) {
         Log.i(logTag, "Duplicate command skipped: " + commandId)
       } else {
-        RemoteCommandProcessor(appContext).apply(command)
+        val applied =
+          runCatching {
+            RemoteCommandProcessor(appContext).apply(command)
+          }.onFailure { error ->
+            Log.e(
+              logTag,
+              "Remote command failed: " + command.type.name,
+              error,
+            )
+          }.isSuccess
+
+        if (!applied) {
+          return
+        }
+
         Log.i(logTag, "Remote command applied: " + command.type.name)
 
         if (
