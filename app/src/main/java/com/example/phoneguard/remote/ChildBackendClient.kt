@@ -32,6 +32,14 @@ sealed interface ChildCommandSyncResult {
   ) : ChildCommandSyncResult
 }
 
+sealed interface ChildHeartbeatResult {
+  data object Success : ChildHeartbeatResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildHeartbeatResult
+}
+
 sealed interface ChildCommandAckResult {
   data object Success : ChildCommandAckResult
 
@@ -293,6 +301,56 @@ class ChildBackendClient {
       }
     } catch (error: Exception) {
       ChildCommandSyncResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
+  fun heartbeat(
+    deviceId: String,
+    deviceSecret: String,
+  ): ChildHeartbeatResult {
+    val connection =
+      (URL(HEARTBEAT_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        ChildHeartbeatResult.Success
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildHeartbeatResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildHeartbeatResult.Failure(
         error.message ?: error::class.java.simpleName,
       )
     } finally {
