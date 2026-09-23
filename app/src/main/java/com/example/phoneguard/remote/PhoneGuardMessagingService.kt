@@ -51,47 +51,11 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         else -> return
       }
 
-    val settingsStore = ChildSettingsStore(applicationContext)
-    val alreadyApplied =
-      commandId.isNotBlank() &&
-        settingsStore.hasAppliedRemoteCommand(commandId)
-
-    if (alreadyApplied) {
-      Log.i(TAG, "Duplicate command skipped: " + commandId)
-    } else {
-      RemoteCommandProcessor(applicationContext).apply(command)
-      Log.i(TAG, "Remote command applied: " + command.type.name)
-
-      if (
-        commandId.isNotBlank() &&
-        !settingsStore.markRemoteCommandApplied(commandId)
-      ) {
-        Log.e(TAG, "Failed to persist applied command id: " + commandId)
-      }
-    }
-
-    if (commandId.isBlank()) {
-      Log.w(TAG, "Command has no command_id; ACK skipped")
-      return
-    }
-
-    when (
-      val ackResult =
-        ChildBackendClient().acknowledgeCommand(
-          deviceId = settingsStore.getOrCreatePairingIdentity().deviceId,
-          deviceSecret = settingsStore.getOrCreateDeviceSecret(),
-          commandId = commandId,
-        )
-    ) {
-      ChildCommandAckResult.Success ->
-        Log.i(TAG, "Command ACK applied: " + commandId)
-
-      is ChildCommandAckResult.Failure ->
-        Log.e(
-          TAG,
-          "Command ACK failed: " + ackResult.message,
-        )
-    }
+    RemoteCommandExecutor(applicationContext).applyAndAcknowledge(
+      commandId = commandId,
+      command = command,
+      logTag = TAG,
+    )
   }
 
   override fun onDeletedMessages() {
