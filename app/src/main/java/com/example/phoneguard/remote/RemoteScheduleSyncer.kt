@@ -26,7 +26,52 @@ class RemoteScheduleSyncer(context: Context) {
       is ChildScheduleResult.Success -> {
         val localVersion = settingsStore.remoteScheduleVersion()
 
-        if (result.version <= localVersion || result.config.isNullOrBlank()) {
+        if (result.config.isNullOrBlank() && result.version == 0L) {
+          val localSchedule = settingsStore.getWeeklySchedule()
+
+          when (
+            val initializeResult =
+              backendClient.initializeSchedule(
+                deviceId = identity.deviceId,
+                deviceSecret = deviceSecret,
+                scheduleConfig = localSchedule.encode(),
+              )
+          ) {
+            is ChildScheduleInitializeResult.Success -> {
+              val stored =
+                settingsStore.saveRemoteWeeklySchedule(
+                  schedule = localSchedule,
+                  version = initializeResult.version,
+                )
+
+              if (!stored) {
+                Log.e(TAG, "Failed to persist bootstrapped schedule version")
+                false
+              } else {
+                Log.i(
+                  TAG,
+                  "Backend schedule initialized from Child: version=" +
+                    initializeResult.version,
+                )
+                true
+              }
+            }
+
+            is ChildScheduleInitializeResult.Failure -> {
+              Log.w(
+                TAG,
+                "Schedule initialization failed: " + initializeResult.message,
+              )
+              false
+            }
+          }
+        } else if (result.config.isNullOrBlank()) {
+          Log.w(
+            TAG,
+            "Remote schedule missing for version=" + result.version,
+          )
+          false
+        } else if (result.version <= localVersion) {
           Log.i(
             TAG,
             "Schedule already current: local=" +
