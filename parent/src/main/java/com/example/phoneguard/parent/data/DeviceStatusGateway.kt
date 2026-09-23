@@ -76,6 +76,7 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              isOnline = deviceJson.optBoolean("isOnline", false),
             ),
         )
       } else {
