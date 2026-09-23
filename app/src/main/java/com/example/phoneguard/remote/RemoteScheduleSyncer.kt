@@ -48,6 +48,7 @@ class RemoteScheduleSyncer(context: Context) {
             false
           } else {
             alarmScheduler.syncCurrentStateAndScheduleNext()
+            ChildHeartbeatSender(appContext).send()
             Log.i(TAG, "Remote schedule applied: version=" + result.version)
             true
           }
