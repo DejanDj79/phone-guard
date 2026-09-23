@@ -50,6 +50,8 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
           RemoteCommand.bonusTime(minutes)
         }
 
+        "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
+
         else -> return
       }
 
