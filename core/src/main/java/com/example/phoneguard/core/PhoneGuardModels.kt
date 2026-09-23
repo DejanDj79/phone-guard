@@ -61,9 +61,9 @@ data class ChildDevice(
     if (state == DeviceAccessState.TEMPORARILY_ALLOWED) {
       require(
         temporaryAccessMinutesRemaining != null &&
-          temporaryAccessMinutesRemaining > 0,
+          temporaryAccessMinutesRemaining >= 0,
       ) {
-        "TEMPORARILY_ALLOWED requires remaining minutes."
+        "TEMPORARILY_ALLOWED requires non-negative remaining minutes."
       }
     }
   }
