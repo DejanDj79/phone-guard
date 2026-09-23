@@ -16,6 +16,22 @@ sealed interface ChildRegistrationResult {
   ) : ChildRegistrationResult
 }
 
+data class PendingRemoteCommand(
+  val commandId: String,
+  val command: String,
+  val bonusMinutes: Int?,
+)
+
+sealed interface ChildCommandSyncResult {
+  data class Success(
+    val commands: List<PendingRemoteCommand>,
+  ) : ChildCommandSyncResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildCommandSyncResult
+}
+
 sealed interface ChildCommandAckResult {
   data object Success : ChildCommandAckResult
 
@@ -211,6 +227,79 @@ class ChildBackendClient {
     }
   }
 
+  fun syncCommands(
+    deviceId: String,
+    deviceSecret: String,
+  ): ChildCommandSyncResult {
+    val connection =
+      (URL(SYNC_COMMANDS_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        val json = JSONObject(responseBody)
+        val commandsJson = json.optJSONArray("commands")
+        val commands =
+          buildList {
+            if (commandsJson != null) {
+              for (index in 0 until commandsJson.length()) {
+                val item = commandsJson.getJSONObject(index)
+                add(
+                  PendingRemoteCommand(
+                    commandId = item.getString("commandId"),
+                    command = item.getString("command"),
+                    bonusMinutes =
+                      if (item.isNull("bonusMinutes")) {
+                        null
+                      } else {
+                        item.getInt("bonusMinutes")
+                      },
+                  ),
+                )
+              }
+            }
+          }
+
+        ChildCommandSyncResult.Success(commands)
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildCommandSyncResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildCommandSyncResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
   private companion object {
     const val REGISTER_CHILD_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/register-child"
@@ -218,5 +307,7 @@ class ChildBackendClient {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/reset-pairing"
     const val ACK_COMMAND_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/ack-command"
+    const val SYNC_COMMANDS_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/sync-commands"
   }
 }
