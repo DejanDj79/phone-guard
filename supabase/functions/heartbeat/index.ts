@@ -32,12 +32,27 @@ export default {
       typeof payload.deviceId === "string" ? payload.deviceId.trim() : "";
     const deviceSecret =
       typeof payload.deviceSecret === "string" ? payload.deviceSecret : "";
+    const accessState =
+      typeof payload.accessState === "string" ? payload.accessState : "";
+    const temporaryAllowUntil =
+      typeof payload.temporaryAllowUntil === "string"
+        ? payload.temporaryAllowUntil
+        : null;
 
     if (!UUID_PATTERN.test(deviceId)) {
       return json({ error: "invalid_device_id" }, 400);
     }
     if (deviceSecret.length < 32 || deviceSecret.length > 256) {
       return json({ error: "invalid_device_secret" }, 400);
+    }
+    if (!["ALLOWED", "LOCKED", "TEMPORARILY_ALLOWED"].includes(accessState)) {
+      return json({ error: "invalid_access_state" }, 400);
+    }
+    if (
+      accessState === "TEMPORARILY_ALLOWED" &&
+      temporaryAllowUntil === null
+    ) {
+      return json({ error: "temporary_allow_until_required" }, 400);
     }
 
     const deviceSecretHash = await sha256Hex(deviceSecret);
@@ -46,6 +61,9 @@ export default {
     const { data: device, error } = await ctx.supabaseAdmin
       .from("child_devices")
       .update({
+        access_state: accessState,
+        temporary_allow_until:
+          accessState === "TEMPORARILY_ALLOWED" ? temporaryAllowUntil : null,
         last_seen_at: now,
         updated_at: now,
       })
