@@ -20,6 +20,8 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.example.phoneguard.data.ChildSettingsStore
+import com.example.phoneguard.remote.ChildBackendClient
+import com.example.phoneguard.remote.ChildHeartbeatResult
 import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 
@@ -31,6 +33,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private val mainHandler = Handler(Looper.getMainLooper())
 
+  private val heartbeatRunnable =
+    object : Runnable {
+      override fun run() {
+        sendHeartbeat()
+        mainHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS)
+      }
+    }
+
   private var overlayView: View? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
@@ -39,6 +49,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       override fun onAvailable(network: Network) {
         Log.i(TAG, "Network available; syncing pending commands")
         syncPendingCommands()
+        sendHeartbeat()
       }
     }
 
@@ -72,6 +83,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }
 
     syncPendingCommands()
+    mainHandler.removeCallbacks(heartbeatRunnable)
+    heartbeatRunnable.run()
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -83,6 +96,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   override fun onInterrupt() = Unit
 
   override fun onDestroy() {
+    mainHandler.removeCallbacks(heartbeatRunnable)
     lockStateListener?.let(settingsStore::unregisterLockStateListener)
     if (::connectivityManager.isInitialized) {
       runCatching {
@@ -91,6 +105,25 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }
     hideOverlay()
     super.onDestroy()
+  }
+
+  private fun sendHeartbeat() {
+    Thread {
+      val identity = settingsStore.getOrCreatePairingIdentity()
+      when (
+        val result =
+          ChildBackendClient().heartbeat(
+            deviceId = identity.deviceId,
+            deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+          )
+      ) {
+        ChildHeartbeatResult.Success ->
+          Log.i(HEARTBEAT_TAG, "Heartbeat accepted")
+
+        is ChildHeartbeatResult.Failure ->
+          Log.w(HEARTBEAT_TAG, "Heartbeat failed: " + result.message)
+      }
+    }.start()
   }
 
   private fun syncPendingCommands() {
@@ -272,5 +305,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private companion object {
     const val TAG = "PhoneGuardAccessibility"
+    const val HEARTBEAT_TAG = "PhoneGuardHeartbeat"
+    const val HEARTBEAT_INTERVAL_MS = 30_000L
   }
 }
