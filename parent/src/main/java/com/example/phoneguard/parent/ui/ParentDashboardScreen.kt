@@ -418,38 +418,38 @@ fun ParentDashboardScreen(
 
         OutlinedButton(
           onClick = {
-            if (scheduleLoading) return@OutlinedButton
+            if (!scheduleLoading) {
+              val controlToken = settingsStore.controlToken()
+              if (controlToken.isNullOrBlank()) {
+                commandError =
+                  "Nedostaje control token. Potrebno je ponovno uparivanje."
+              } else {
+                scope.launch {
+                  scheduleLoading = true
+                  scheduleError = null
+                  commandError = null
+                  scheduleNotice = null
 
-            val controlToken = settingsStore.controlToken()
-            if (controlToken.isNullOrBlank()) {
-              commandError =
-                "Nedostaje control token. Potrebno je ponovno uparivanje."
-            } else {
-              scope.launch {
-                scheduleLoading = true
-                scheduleError = null
-                commandError = null
-                scheduleNotice = null
-
-                when (
-                  val result =
-                    withContext(Dispatchers.IO) {
-                      scheduleGateway.fetch(
-                        deviceId = device.deviceId,
-                        controlToken = controlToken,
-                      )
+                  when (
+                    val result =
+                      withContext(Dispatchers.IO) {
+                        scheduleGateway.fetch(
+                          deviceId = device.deviceId,
+                          controlToken = controlToken,
+                        )
+                      }
+                  ) {
+                    is ScheduleFetchResult.Success -> {
+                      scheduleEditorSchedule = result.schedule
                     }
-                ) {
-                  is ScheduleFetchResult.Success -> {
-                    scheduleEditorSchedule = result.schedule
+
+                    is ScheduleFetchResult.Error -> {
+                      commandError = result.message
+                    }
                   }
 
-                  is ScheduleFetchResult.Error -> {
-                    commandError = result.message
-                  }
+                  scheduleLoading = false
                 }
-
-                scheduleLoading = false
               }
             }
           },
