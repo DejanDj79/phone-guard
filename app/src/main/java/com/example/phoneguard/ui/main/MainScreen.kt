@@ -227,10 +227,6 @@ fun MainScreen(
             result
           }
         },
-        onTestLock = {
-          settingsStore.setManualLock(true)
-          isLocked = true
-        },
       )
     }
   }
@@ -356,7 +352,6 @@ private fun ChildDashboard(
   onRegeneratePairingCode: () -> Unit,
   onRetryRegistration: () -> Unit,
   onResetPairing: suspend (String) -> ChildPairingResetResult,
-  onTestLock: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val registrationFailure =
@@ -385,7 +380,7 @@ private fun ChildDashboard(
     )
 
     Text(
-      text = "Child device",
+      text = "Zaštićeni uređaj",
       style = MaterialTheme.typography.titleMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -396,7 +391,7 @@ private fun ChildDashboard(
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Text(
-          text = "Protection health",
+          text = "Status zaštite",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -408,9 +403,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (protectionReady) {
-              "● Core protection ready"
+              "● Zaštita je aktivna"
             } else {
-              "○ Protection incomplete"
+              "○ Zaštita nije kompletna"
             },
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
@@ -419,9 +414,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (accessibilityEnabled) {
-              "✓ Accessibility overlay"
+              "✓ Zaštita ekrana je uključena"
             } else {
-              "✕ Accessibility overlay"
+              "✕ Zaštita ekrana nije uključena"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
@@ -429,9 +424,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (exactAlarmAccess) {
-              "✓ Precise lock timing"
+              "✓ Precizno vreme zaključavanja"
             } else {
-              "△ Precise lock timing not granted"
+              "△ Precizno vreme zaključavanja nije dozvoljeno"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
@@ -439,15 +434,15 @@ private fun ChildDashboard(
         Text(
           text =
             if (batteryOptimizationIgnored) {
-              "✓ Background battery restriction relaxed"
+              "✓ Rad u pozadini je dozvoljen"
             } else {
-              "△ Battery optimization may restrict background work"
+              "△ Android može ograničiti rad u pozadini"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
 
         Text(
-          text = "PhoneGuard uses Accessibility only to keep the parental lock screen above other apps while protection is active. It does not request access to read screen content.",
+          text = "PhoneGuard koristi Accessibility samo da bi ekran roditeljske zaštite ostao iznad drugih aplikacija dok je zaključavanje aktivno.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -457,7 +452,7 @@ private fun ChildDashboard(
             onClick = onEnableAccessibility,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("ENABLE ACCESSIBILITY")
+            Text("UKLJUČI ZAŠTITU EKRANA")
           }
         }
 
@@ -466,7 +461,7 @@ private fun ChildDashboard(
             onClick = onOpenBatterySettings,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("BATTERY SETTINGS")
+            Text("PODEŠAVANJA BATERIJE")
           }
         }
 
@@ -475,17 +470,10 @@ private fun ChildDashboard(
             onClick = onRequestExactAlarmAccess,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("ALLOW PRECISE TIMING")
+            Text("DOZVOLI PRECIZNO VREME")
           }
         }
       }
-    }
-
-    Button(
-      onClick = onTestLock,
-      modifier = Modifier.fillMaxWidth(),
-    ) {
-      Text("TEST LOCK")
     }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -494,7 +482,7 @@ private fun ChildDashboard(
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Text(
-          text = "Pairing",
+          text = "Povezivanje sa roditeljem",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -502,12 +490,12 @@ private fun ChildDashboard(
         Text(
           text =
             when {
-              registrationInProgress -> "Backend: registering…"
-              paired -> "Backend: paired"
-              registrationSuccess != null -> "Backend: ready for pairing"
+              registrationInProgress -> "Povezujem uređaj…"
+              paired -> "● Povezan sa Parent aplikacijom"
+              registrationSuccess != null -> "Spreman za uparivanje"
               registrationFailure != null ->
-                "Backend error: " + registrationFailure.message
-              else -> "Backend: not registered yet"
+                "Greška pri povezivanju: " + registrationFailure.message
+              else -> "Povezivanje još nije završeno"
             },
           style = MaterialTheme.typography.bodyMedium,
           color =
@@ -520,7 +508,7 @@ private fun ChildDashboard(
 
         if (paired) {
           Text(
-            text = "Ovaj Child uređaj je već uparen sa Parent aplikacijom.",
+            text = "Ovim uređajem trenutno upravlja uparena Parent aplikacija.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
@@ -534,7 +522,7 @@ private fun ChildDashboard(
               },
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text("PAIR NEW PARENT")
+              Text("POVEŽI NOVOG RODITELJA")
             }
           } else {
             Text(
@@ -586,7 +574,7 @@ private fun ChildDashboard(
             ) {
               Text(
                 if (resetInProgress) {
-                  "RESETTING…"
+                  "MENJAM…"
                 } else {
                   "CONFIRM NEW PAIRING"
                 },
@@ -602,7 +590,7 @@ private fun ChildDashboard(
               enabled = !resetInProgress,
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text("CANCEL")
+              Text("OTKAŽI")
             }
           }
         } else {
@@ -620,7 +608,7 @@ private fun ChildDashboard(
 
           if (registrationSuccess != null) {
             Text(
-              text = "Pairing code is active for about 15 minutes from registration.",
+              text = "Kod za uparivanje važi približno 15 minuta.",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -631,7 +619,7 @@ private fun ChildDashboard(
             enabled = !registrationInProgress,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("GENERATE NEW CODE")
+            Text("GENERIŠI NOVI KOD")
           }
         }
 
@@ -640,15 +628,10 @@ private fun ChildDashboard(
             onClick = onRetryRegistration,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("RETRY BACKEND REGISTRATION")
+            Text("POKUŠAJ PONOVO")
           }
         }
 
-        Text(
-          text = "Device ID: " + pairingIdentity.deviceId,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
       }
     }
 
@@ -796,7 +779,6 @@ private fun ChildDashboardPreview() {
       onRegeneratePairingCode = {},
       onRetryRegistration = {},
       onResetPairing = { ChildPairingResetResult.Success("preview-expiry") },
-      onTestLock = {},
     )
   }
 }
