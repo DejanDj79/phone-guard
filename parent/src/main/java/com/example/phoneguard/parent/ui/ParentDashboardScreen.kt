@@ -38,7 +38,6 @@ import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.PairingRequest
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
-import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.DeviceStatusResult
@@ -71,8 +70,6 @@ fun ParentDashboardScreen(
   var pairedDevice by remember {
     mutableStateOf(settingsStore.loadPairedDevice())
   }
-  var lastCommand by remember { mutableStateOf<RemoteCommand?>(null) }
-  var commandDeliveryStatus by remember { mutableStateOf<String?>(null) }
   var commandInProgress by remember { mutableStateOf(false) }
   var commandError by remember { mutableStateOf<String?>(null) }
   var showBonusTimePicker by remember { mutableStateOf(false) }
@@ -166,7 +163,6 @@ fun ParentDashboardScreen(
     scope.launch {
       commandInProgress = true
       commandError = null
-      commandDeliveryStatus = null
 
       when (
         val result =
@@ -179,11 +175,10 @@ fun ParentDashboardScreen(
           }
       ) {
         is CommandResult.Success -> {
-          lastCommand = command
-          commandDeliveryStatus = result.deliveryStatus
+          var deliveryStatus = result.deliveryStatus
 
           for (attempt in 1..12) {
-            if (commandDeliveryStatus == "APPLIED" || commandDeliveryStatus == "FAILED") {
+            if (deliveryStatus == "APPLIED" || deliveryStatus == "FAILED") {
               break
             }
 
@@ -200,7 +195,7 @@ fun ParentDashboardScreen(
                 }
             ) {
               is CommandDeliveryResult.Success -> {
-                commandDeliveryStatus = statusResult.status
+                deliveryStatus = statusResult.status
 
                 if (statusResult.status == "APPLIED") {
                   pairedDevice = statusResult.device
@@ -279,24 +274,6 @@ fun ParentDashboardScreen(
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-
-        Text(
-          text = "Device ID: " + device.deviceId,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Text(
-          text = "✓ Real backend pairing",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Text(
-          text = "✓ FCM command transport ready",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
       }
     }
 
@@ -340,6 +317,14 @@ fun ParentDashboardScreen(
         ) {
           Text("ADD TIME")
         }
+
+        if (!device.isOnline) {
+          Text(
+            text = "Uređaj je offline. Poslate komande će se primeniti kada se ponovo poveže.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
       }
     }
 
@@ -358,38 +343,6 @@ fun ParentDashboardScreen(
         color = MaterialTheme.colorScheme.error,
       )
     }
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-      ) {
-        Text(
-          text = "Poslednja komanda",
-          style = MaterialTheme.typography.labelLarge,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-          text = commandLabel(lastCommand),
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-        )
-
-        commandDeliveryStatus?.let { status ->
-          Text(
-            text = deliveryStatusLabel(status),
-            style = MaterialTheme.typography.bodyMedium,
-            color =
-              if (status == "FAILED") {
-                MaterialTheme.colorScheme.error
-              } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-              },
-          )
-        }
-      }
-    }
-
     Spacer(modifier = Modifier.height(8.dp))
   }
 
@@ -608,24 +561,6 @@ private fun deviceStateLabel(device: ChildDevice): String =
         device.temporaryAccessMinutesRemaining +
         " min"
     DeviceAccessState.OFFLINE -> "○ Stanje uređaja nije poznato"
-  }
-
-private fun deliveryStatusLabel(status: String): String =
-  when (status) {
-    "PENDING" -> "○ Priprema slanja"
-    "SENT" -> "◌ Poslato — čeka potvrdu Child uređaja"
-    "APPLIED" -> "✓ Primljeno i izvršeno na Child uređaju"
-    "FAILED" -> "✕ Komanda nije izvršena"
-    else -> status
-  }
-
-private fun commandLabel(command: RemoteCommand?): String =
-  when (command?.type) {
-    null -> "Nema poslatih komandi"
-    RemoteCommandType.LOCK -> "LOCK NOW"
-    RemoteCommandType.UNLOCK -> "UNLOCK"
-    RemoteCommandType.BONUS_TIME ->
-      "+" + command.bonusMinutes + " min"
   }
 
 @Preview(showBackground = true)
