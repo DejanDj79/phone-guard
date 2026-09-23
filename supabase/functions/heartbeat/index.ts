@@ -38,6 +38,18 @@ export default {
       typeof payload.temporaryAllowUntilMillis === "number"
         ? payload.temporaryAllowUntilMillis
         : null;
+    const accessibilityEnabled =
+      typeof payload.accessibilityEnabled === "boolean"
+        ? payload.accessibilityEnabled
+        : null;
+    const preciseTimingEnabled =
+      typeof payload.preciseTimingEnabled === "boolean"
+        ? payload.preciseTimingEnabled
+        : null;
+    const batteryUnrestricted =
+      typeof payload.batteryUnrestricted === "boolean"
+        ? payload.batteryUnrestricted
+        : null;
 
     if (!UUID_PATTERN.test(deviceId)) {
       return json({ error: "invalid_device_id" }, 400);
@@ -70,6 +82,10 @@ export default {
           accessState === "TEMPORARILY_ALLOWED"
             ? new Date(temporaryAllowUntilMillis!).toISOString()
             : null,
+        accessibility_enabled: accessibilityEnabled,
+        precise_timing_enabled: preciseTimingEnabled,
+        battery_unrestricted: batteryUnrestricted,
+        protection_updated_at: now,
         last_seen_at: now,
         updated_at: now,
       })
