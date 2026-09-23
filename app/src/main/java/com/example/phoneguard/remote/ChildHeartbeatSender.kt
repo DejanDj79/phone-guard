@@ -2,12 +2,17 @@ package com.example.phoneguard.remote
 
 import android.content.Context
 import android.util.Log
+import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.data.ChildSettingsStore
+import com.example.phoneguard.protection.BackgroundProtectionStatus
+import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 
 class ChildHeartbeatSender(context: Context) {
-  private val settingsStore = ChildSettingsStore(context.applicationContext)
+  private val appContext = context.applicationContext
+  private val settingsStore = ChildSettingsStore(appContext)
+  private val alarmScheduler = ScheduleAlarmScheduler(appContext)
 
-  fun send() {
+  fun send(accessibilityEnabledOverride: Boolean? = null) {
     val identity = settingsStore.getOrCreatePairingIdentity()
     val now = System.currentTimeMillis()
     val temporaryAllowanceUntil = settingsStore.temporaryAllowanceUntilMillis()
@@ -19,6 +24,13 @@ class ChildHeartbeatSender(context: Context) {
         else -> "ALLOWED"
       }
 
+    val accessibilityEnabled =
+      accessibilityEnabledOverride
+        ?: PhoneGuardAccessibilityStatus.isEnabled(appContext)
+    val preciseTimingEnabled = alarmScheduler.hasExactAlarmAccess()
+    val batteryUnrestricted =
+      BackgroundProtectionStatus.isBatteryOptimizationIgnored(appContext)
+
     when (
       val result =
         ChildBackendClient().heartbeat(
@@ -27,6 +39,9 @@ class ChildHeartbeatSender(context: Context) {
           accessState = accessState,
           temporaryAllowUntilMillis =
             temporaryAllowanceUntil.takeIf { temporaryAllowanceActive },
+          accessibilityEnabled = accessibilityEnabled,
+          preciseTimingEnabled = preciseTimingEnabled,
+          batteryUnrestricted = batteryUnrestricted,
         )
     ) {
       ChildHeartbeatResult.Success ->
