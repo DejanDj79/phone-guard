@@ -346,51 +346,63 @@ fun ParentDashboardScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        if (device.isOnline) {
-          val protection = device.protectionStatus
+        val protection = device.protectionStatus
+        val protectionComplete = protection.criticalProtectionComplete
 
+        Text(
+          text =
+            when {
+              device.isOnline && protectionComplete == true ->
+                "✓ Zaštita uređaja je aktivna"
+              device.isOnline && protectionComplete == false ->
+                "⚠ Zaštita uređaja nije kompletna"
+              device.isOnline ->
+                "Proveravam zaštitu uređaja…"
+              protectionComplete == false ->
+                "⚠ Poslednje poznato stanje: zaštita nije kompletna"
+              protectionComplete == true ->
+                "Poslednje poznato stanje: zaštita je bila aktivna"
+              else ->
+                "Status zaštite nije poznat"
+            },
+          style = MaterialTheme.typography.bodyMedium,
+          color =
+            if (protectionComplete == false) {
+              MaterialTheme.colorScheme.error
+            } else {
+              MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+
+        if (protection.accessibilityEnabled == false) {
           Text(
             text =
-              when (protection.criticalProtectionComplete) {
-                true -> "✓ Zaštita uređaja je aktivna"
-                false -> "⚠ Zaštita uređaja nije kompletna"
-                null -> "Proveravam zaštitu uređaja…"
-              },
-            style = MaterialTheme.typography.bodyMedium,
-            color =
-              if (protection.criticalProtectionComplete == false) {
-                MaterialTheme.colorScheme.error
+              if (device.isOnline) {
+                "Accessibility zaštita je isključena."
               } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+                "Poslednje poznato: Accessibility zaštita je bila isključena."
               },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
           )
+        }
 
-          if (protection.accessibilityEnabled == false) {
-            Text(
-              text = "Accessibility zaštita je isključena.",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-
-          if (protection.preciseTimingEnabled == false) {
-            Text(
-              text = "Precizno vreme zaključavanja nije dozvoljeno.",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-
-          if (protection.batteryUnrestricted == false) {
-            Text(
-              text = "Android može ograničiti rad PhoneGuard-a u pozadini.",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
-        } else {
+        if (protection.preciseTimingEnabled == false) {
           Text(
-            text = "Status zaštite će se osvežiti kada se uređaj poveže.",
+            text =
+              if (device.isOnline) {
+                "Precizno vreme zaključavanja nije dozvoljeno."
+              } else {
+                "Poslednje poznato: precizno vreme zaključavanja nije bilo dozvoljeno."
+              },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+          )
+        }
+
+        if (protection.batteryUnrestricted == false) {
+          Text(
+            text = "Android može ograničiti rad PhoneGuard-a u pozadini.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
