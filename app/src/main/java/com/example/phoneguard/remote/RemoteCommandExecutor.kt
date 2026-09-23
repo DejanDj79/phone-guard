@@ -15,21 +15,23 @@ class RemoteCommandExecutor(context: Context) {
     command: RemoteCommand,
     logTag: String,
   ) {
-    val alreadyApplied =
-      commandId.isNotBlank() &&
-        settingsStore.hasAppliedRemoteCommand(commandId)
-
-    if (alreadyApplied) {
-      Log.i(logTag, "Duplicate command skipped: " + commandId)
-    } else {
-      RemoteCommandProcessor(appContext).apply(command)
-      Log.i(logTag, "Remote command applied: " + command.type.name)
-
-      if (
+    synchronized(executionLock) {
+      val alreadyApplied =
         commandId.isNotBlank() &&
-        !settingsStore.markRemoteCommandApplied(commandId)
-      ) {
-        Log.e(logTag, "Failed to persist applied command id: " + commandId)
+          settingsStore.hasAppliedRemoteCommand(commandId)
+
+      if (alreadyApplied) {
+        Log.i(logTag, "Duplicate command skipped: " + commandId)
+      } else {
+        RemoteCommandProcessor(appContext).apply(command)
+        Log.i(logTag, "Remote command applied: " + command.type.name)
+
+        if (
+          commandId.isNotBlank() &&
+          !settingsStore.markRemoteCommandApplied(commandId)
+        ) {
+          Log.e(logTag, "Failed to persist applied command id: " + commandId)
+        }
       }
     }
 
@@ -55,5 +57,9 @@ class RemoteCommandExecutor(context: Context) {
           "Command ACK failed: " + ackResult.message,
         )
     }
+  }
+
+  private companion object {
+    val executionLock = Any()
   }
 }
