@@ -2,6 +2,7 @@ import { withSupabase } from "npm:@supabase/server@1.7.1";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ONLINE_THRESHOLD_MS = 75_000;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -70,6 +71,14 @@ export default {
           )
         : null;
 
+    const lastSeenMillis =
+      typeof device.last_seen_at === "string"
+        ? new Date(device.last_seen_at).getTime()
+        : Number.NaN;
+    const isOnline =
+      Number.isFinite(lastSeenMillis) &&
+      Date.now() - lastSeenMillis <= ONLINE_THRESHOLD_MS;
+
     return json({
       ok: true,
       device: {
@@ -77,6 +86,7 @@ export default {
         displayName: device.display_name,
         state: device.access_state,
         temporaryAccessMinutesRemaining,
+        isOnline,
         lastSeenAt: device.last_seen_at,
       },
     });
