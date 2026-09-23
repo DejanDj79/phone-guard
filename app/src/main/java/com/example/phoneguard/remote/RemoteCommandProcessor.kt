@@ -30,6 +30,12 @@ class RemoteCommandProcessor(context: Context) {
         settingsStore.grantTemporaryAllowance(minutes)
         alarmScheduler.syncTemporaryAllowanceAlarm()
       }
+
+      RemoteCommandType.SYNC_SCHEDULE -> {
+        check(RemoteScheduleSyncer(appContext).sync()) {
+          "Remote schedule sync failed."
+        }
+      }
     }
   }
 }
