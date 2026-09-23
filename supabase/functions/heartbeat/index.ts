@@ -34,9 +34,9 @@ export default {
       typeof payload.deviceSecret === "string" ? payload.deviceSecret : "";
     const accessState =
       typeof payload.accessState === "string" ? payload.accessState : "";
-    const temporaryAllowUntil =
-      typeof payload.temporaryAllowUntil === "string"
-        ? payload.temporaryAllowUntil
+    const temporaryAllowUntilMillis =
+      typeof payload.temporaryAllowUntilMillis === "number"
+        ? payload.temporaryAllowUntilMillis
         : null;
 
     if (!UUID_PATTERN.test(deviceId)) {
@@ -50,9 +50,13 @@ export default {
     }
     if (
       accessState === "TEMPORARILY_ALLOWED" &&
-      temporaryAllowUntil === null
+      (
+        temporaryAllowUntilMillis === null ||
+        !Number.isFinite(temporaryAllowUntilMillis) ||
+        temporaryAllowUntilMillis <= Date.now()
+      )
     ) {
-      return json({ error: "temporary_allow_until_required" }, 400);
+      return json({ error: "temporary_allow_until_invalid" }, 400);
     }
 
     const deviceSecretHash = await sha256Hex(deviceSecret);
@@ -63,7 +67,9 @@ export default {
       .update({
         access_state: accessState,
         temporary_allow_until:
-          accessState === "TEMPORARILY_ALLOWED" ? temporaryAllowUntil : null,
+          accessState === "TEMPORARILY_ALLOWED"
+            ? new Date(temporaryAllowUntilMillis!).toISOString()
+            : null,
         last_seen_at: now,
         updated_at: now,
       })
