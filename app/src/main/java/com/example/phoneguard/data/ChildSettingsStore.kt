@@ -82,6 +82,43 @@ class ChildSettingsStore(context: Context) {
     preferences.edit().remove(KEY_TEMPORARY_ALLOW_UNTIL).apply()
   }
 
+  fun hasAppliedRemoteCommand(commandId: String): Boolean {
+    if (commandId.isBlank()) return false
+
+    return appliedRemoteCommandIds().contains(commandId)
+  }
+
+  fun markRemoteCommandApplied(commandId: String): Boolean {
+    require(commandId.isNotBlank()) { "commandId must not be blank." }
+
+    val updated =
+      buildList {
+        add(commandId)
+        addAll(
+          appliedRemoteCommandIds()
+            .filterNot { it == commandId },
+        )
+      }
+        .take(MAX_APPLIED_REMOTE_COMMAND_IDS)
+
+    return preferences
+      .edit()
+      .putString(
+        KEY_APPLIED_REMOTE_COMMAND_IDS,
+        updated.joinToString("\n"),
+      )
+      .commit()
+  }
+
+  private fun appliedRemoteCommandIds(): List<String> =
+    preferences
+      .getString(KEY_APPLIED_REMOTE_COMMAND_IDS, "")
+      .orEmpty()
+      .lineSequence()
+      .map(String::trim)
+      .filter(String::isNotEmpty)
+      .toList()
+
   fun isEffectivelyLocked(nowMillis: Long = System.currentTimeMillis()): Boolean =
     !isTemporaryAllowanceActive(nowMillis) &&
       (isManualLockActive() || isScheduleLockActive())
@@ -215,6 +252,8 @@ class ChildSettingsStore(context: Context) {
     const val KEY_PAIRING_CODE = "pairing_code"
     const val KEY_DEVICE_SECRET = "device_secret"
     const val KEY_TEMPORARY_ALLOW_UNTIL = "temporary_allow_until"
+    const val KEY_APPLIED_REMOTE_COMMAND_IDS = "applied_remote_command_ids"
+    const val MAX_APPLIED_REMOTE_COMMAND_IDS = 100
     const val SALT_SIZE_BYTES = 16
     const val PAIRING_CODE_LENGTH = 6
     const val PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
