@@ -12,6 +12,7 @@ import java.util.UUID
 class ChildSettingsStore(context: Context) {
   private val preferences =
     context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+  private val secretCipher = ChildSecretCipher()
 
   fun hasParentPin(): Boolean =
     preferences.contains(KEY_PIN_HASH) && preferences.contains(KEY_PIN_SALT)
@@ -133,9 +134,26 @@ class ChildSettingsStore(context: Context) {
   }
 
   fun getOrCreateDeviceSecret(): String {
-    preferences.getString(KEY_DEVICE_SECRET, null)?.let { existing ->
-      if (existing.isNotBlank()) return existing
+    preferences.getString(KEY_DEVICE_SECRET_ENCRYPTED, null)?.let { encrypted ->
+      return secretCipher.decrypt(encrypted)
+        ?.takeIf { it.isNotBlank() }
+        ?: error("Stored device secret could not be decrypted.")
     }
+
+    preferences.getString(KEY_DEVICE_SECRET, null)
+      ?.takeIf { it.isNotBlank() }
+      ?.let { legacySecret ->
+        val encrypted = secretCipher.encrypt(legacySecret)
+        val migrated =
+          preferences
+            .edit()
+            .putString(KEY_DEVICE_SECRET_ENCRYPTED, encrypted)
+            .remove(KEY_DEVICE_SECRET)
+            .commit()
+
+        check(migrated) { "Failed to migrate device secret to encrypted storage." }
+        return legacySecret
+      }
 
     val secretBytes = ByteArray(32).also(SecureRandom()::nextBytes)
     val secret =
@@ -144,11 +162,15 @@ class ChildSettingsStore(context: Context) {
         Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING,
       )
 
-    preferences
-      .edit()
-      .putString(KEY_DEVICE_SECRET, secret)
-      .apply()
+    val encrypted = secretCipher.encrypt(secret)
+    val saved =
+      preferences
+        .edit()
+        .putString(KEY_DEVICE_SECRET_ENCRYPTED, encrypted)
+        .remove(KEY_DEVICE_SECRET)
+        .commit()
 
+    check(saved) { "Failed to persist encrypted device secret." }
     return secret
   }
 
@@ -251,6 +273,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_DEVICE_ID = "device_id"
     const val KEY_PAIRING_CODE = "pairing_code"
     const val KEY_DEVICE_SECRET = "device_secret"
+    const val KEY_DEVICE_SECRET_ENCRYPTED = "device_secret_encrypted"
     const val KEY_TEMPORARY_ALLOW_UNTIL = "temporary_allow_until"
     const val KEY_APPLIED_REMOTE_COMMAND_IDS = "applied_remote_command_ids"
     const val MAX_APPLIED_REMOTE_COMMAND_IDS = 100
