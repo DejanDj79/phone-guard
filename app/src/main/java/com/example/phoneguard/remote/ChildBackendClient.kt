@@ -43,6 +43,16 @@ sealed interface ChildScheduleResult {
   ) : ChildScheduleResult
 }
 
+sealed interface ChildScheduleInitializeResult {
+  data class Success(
+    val version: Long,
+  ) : ChildScheduleInitializeResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildScheduleInitializeResult
+}
+
 sealed interface ChildHeartbeatResult {
   data object Success : ChildHeartbeatResult
 
@@ -378,6 +388,61 @@ class ChildBackendClient {
     }
   }
 
+  fun initializeSchedule(
+    deviceId: String,
+    deviceSecret: String,
+    scheduleConfig: String,
+  ): ChildScheduleInitializeResult {
+    val connection =
+      (URL(INITIALIZE_SCHEDULE_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .put("scheduleConfig", scheduleConfig)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        val json = JSONObject(responseBody)
+        ChildScheduleInitializeResult.Success(
+          version = json.optLong("version", 0L),
+        )
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildScheduleInitializeResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildScheduleInitializeResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
   fun heartbeat(
     deviceId: String,
     deviceSecret: String,
@@ -449,5 +514,7 @@ class ChildBackendClient {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/heartbeat"
     const val GET_SCHEDULE_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/get-schedule"
+    const val INITIALIZE_SCHEDULE_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/initialize-schedule"
   }
 }
