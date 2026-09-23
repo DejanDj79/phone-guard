@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -135,43 +137,43 @@ fun ParentDashboardScreen(
       saving = scheduleSaving,
       saveError = scheduleError,
       onSave = { updatedSchedule ->
-        if (scheduleSaving) return@ParentScheduleEditorScreen
+        if (!scheduleSaving) {
+          val controlToken = settingsStore.controlToken()
+          if (controlToken.isNullOrBlank()) {
+            scheduleError =
+              "Nedostaje control token. Potrebno je ponovno uparivanje."
+          } else {
+            scope.launch {
+              scheduleSaving = true
+              scheduleError = null
 
-        val controlToken = settingsStore.controlToken()
-        if (controlToken.isNullOrBlank()) {
-          scheduleError =
-            "Nedostaje control token. Potrebno je ponovno uparivanje."
-        } else {
-          scope.launch {
-            scheduleSaving = true
-            scheduleError = null
-
-            when (
-              val result =
-                withContext(Dispatchers.IO) {
-                  scheduleGateway.save(
-                    deviceId = device.deviceId,
-                    controlToken = controlToken,
-                    schedule = updatedSchedule,
-                  )
-                }
-            ) {
-              is ScheduleSaveResult.Success -> {
-                scheduleEditorSchedule = null
-                scheduleNotice =
-                  if (device.isOnline) {
-                    "Raspored je sačuvan i poslat Child uređaju."
-                  } else {
-                    "Raspored je sačuvan i primeniće se kada se Child ponovo poveže."
+              when (
+                val result =
+                  withContext(Dispatchers.IO) {
+                    scheduleGateway.save(
+                      deviceId = device.deviceId,
+                      controlToken = controlToken,
+                      schedule = updatedSchedule,
+                    )
                   }
+              ) {
+                is ScheduleSaveResult.Success -> {
+                  scheduleEditorSchedule = null
+                  scheduleNotice =
+                    if (device.isOnline) {
+                      "Raspored je sačuvan i poslat Child uređaju."
+                    } else {
+                      "Raspored je sačuvan i primeniće se kada se Child ponovo poveže."
+                    }
+                }
+
+                is ScheduleSaveResult.Error -> {
+                  scheduleError = result.message
+                }
               }
 
-              is ScheduleSaveResult.Error -> {
-                scheduleError = result.message
-              }
+              scheduleSaving = false
             }
-
-            scheduleSaving = false
           }
         }
       },
@@ -295,6 +297,7 @@ fun ParentDashboardScreen(
     modifier =
       modifier
         .fillMaxSize()
+        .verticalScroll(rememberScrollState())
         .padding(horizontal = 24.dp, vertical = 32.dp),
     verticalArrangement = Arrangement.spacedBy(20.dp),
   ) {
