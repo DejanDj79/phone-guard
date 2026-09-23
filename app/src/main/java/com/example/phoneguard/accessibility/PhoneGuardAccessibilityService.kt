@@ -20,8 +20,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.example.phoneguard.data.ChildSettingsStore
-import com.example.phoneguard.remote.ChildBackendClient
-import com.example.phoneguard.remote.ChildHeartbeatResult
+import com.example.phoneguard.remote.ChildHeartbeatSender
 import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 
@@ -30,6 +29,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private lateinit var alarmScheduler: ScheduleAlarmScheduler
   private lateinit var windowManager: WindowManager
   private lateinit var connectivityManager: ConnectivityManager
+  private lateinit var heartbeatSender: ChildHeartbeatSender
 
   private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -60,6 +60,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     alarmScheduler = ScheduleAlarmScheduler(applicationContext)
     windowManager = getSystemService(WindowManager::class.java)
     connectivityManager = getSystemService(ConnectivityManager::class.java)
+    heartbeatSender = ChildHeartbeatSender(applicationContext)
 
     Log.i(TAG, "Accessibility service connected")
 
@@ -109,33 +110,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private fun sendHeartbeat() {
     Thread {
-      val identity = settingsStore.getOrCreatePairingIdentity()
-      val now = System.currentTimeMillis()
-      val temporaryAllowanceUntil = settingsStore.temporaryAllowanceUntilMillis()
-      val temporaryAllowanceActive = temporaryAllowanceUntil > now
-      val accessState =
-        when {
-          temporaryAllowanceActive -> "TEMPORARILY_ALLOWED"
-          settingsStore.isEffectivelyLocked(now) -> "LOCKED"
-          else -> "ALLOWED"
-        }
-
-      when (
-        val result =
-          ChildBackendClient().heartbeat(
-            deviceId = identity.deviceId,
-            deviceSecret = settingsStore.getOrCreateDeviceSecret(),
-            accessState = accessState,
-            temporaryAllowUntilMillis =
-              temporaryAllowanceUntil.takeIf { temporaryAllowanceActive },
-          )
-      ) {
-        ChildHeartbeatResult.Success ->
-          Log.i(HEARTBEAT_TAG, "Heartbeat accepted")
-
-        is ChildHeartbeatResult.Failure ->
-          Log.w(HEARTBEAT_TAG, "Heartbeat failed: " + result.message)
-      }
+      heartbeatSender.send()
     }.start()
   }
 
@@ -318,7 +293,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private companion object {
     const val TAG = "PhoneGuardAccessibility"
-    const val HEARTBEAT_TAG = "PhoneGuardHeartbeat"
     const val HEARTBEAT_INTERVAL_MS = 30_000L
   }
 }
