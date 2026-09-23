@@ -115,7 +115,7 @@ class ChildSettingsStore(context: Context) {
       .getString(KEY_APPLIED_REMOTE_COMMAND_IDS, "")
       .orEmpty()
       .lineSequence()
-      .map(String::trim)
+      .map { it.trim() }
       .filter(String::isNotEmpty)
       .toList()
 
