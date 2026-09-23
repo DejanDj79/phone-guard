@@ -44,7 +44,6 @@ import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.core.PairingIdentity
 import com.example.phoneguard.data.ChildSettingsStore
-import com.example.phoneguard.data.WeeklySchedule
 import com.example.phoneguard.protection.BackgroundProtectionStatus
 import com.example.phoneguard.remote.ChildBackendClient
 import com.example.phoneguard.remote.ChildPairingResetResult
@@ -52,7 +51,6 @@ import com.example.phoneguard.remote.ChildRegistrationResult
 import com.example.phoneguard.remote.FcmTokenProvider
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
-import java.util.Calendar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,7 +77,6 @@ fun MainScreen(
     mutableStateOf(BackgroundProtectionStatus.isBatteryOptimizationIgnored(context))
   }
   var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
-  var weeklySchedule by remember { mutableStateOf(settingsStore.getWeeklySchedule()) }
   var pairingIdentity by remember {
     mutableStateOf(settingsStore.getOrCreatePairingIdentity())
   }
@@ -88,7 +85,6 @@ fun MainScreen(
   }
   var registrationInProgress by remember { mutableStateOf(false) }
   var registrationRetryKey by remember { mutableStateOf(0) }
-  var editingSchedule by remember { mutableStateOf(false) }
 
   DisposableEffect(lifecycleOwner, context) {
     val observer =
@@ -152,20 +148,6 @@ fun MainScreen(
       )
     }
 
-    editingSchedule -> {
-      ScheduleEditorScreen(
-        schedule = weeklySchedule,
-        onSave = { schedule ->
-          settingsStore.saveWeeklySchedule(schedule)
-          weeklySchedule = schedule
-          alarmScheduler.syncCurrentStateAndScheduleNext()
-          isLocked = settingsStore.isEffectivelyLocked()
-          editingSchedule = false
-        },
-        onCancel = { editingSchedule = false },
-      )
-    }
-
     isLocked -> {
       BackHandler(enabled = true) {
         // Intentionally consume Back while the child device is locked.
@@ -193,7 +175,6 @@ fun MainScreen(
     else -> {
       ChildDashboard(
         modifier = modifier,
-        weeklySchedule = weeklySchedule,
         pairingIdentity = pairingIdentity,
         registrationResult = registrationResult,
         registrationInProgress = registrationInProgress,
@@ -246,7 +227,6 @@ fun MainScreen(
             result
           }
         },
-        onEditSchedule = { editingSchedule = true },
         onTestLock = {
           settingsStore.setManualLock(true)
           isLocked = true
@@ -364,7 +344,6 @@ private fun PinField(
 
 @Composable
 private fun ChildDashboard(
-  weeklySchedule: WeeklySchedule,
   pairingIdentity: PairingIdentity,
   registrationResult: ChildRegistrationResult?,
   registrationInProgress: Boolean,
@@ -377,12 +356,9 @@ private fun ChildDashboard(
   onRegeneratePairingCode: () -> Unit,
   onRetryRegistration: () -> Unit,
   onResetPairing: suspend (String) -> ChildPairingResetResult,
-  onEditSchedule: () -> Unit,
   onTestLock: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val enabledDays = weeklySchedule.enabledDaysCount()
-  val restrictedNow = weeklySchedule.isRestrictedAt(Calendar.getInstance())
   val registrationFailure =
     registrationResult as? ChildRegistrationResult.Failure
   val registrationSuccess =
@@ -427,7 +403,7 @@ private fun ChildDashboard(
 
         val protectionReady =
           accessibilityEnabled &&
-            (enabledDays == 0 || exactAlarmAccess)
+            exactAlarmAccess
 
         Text(
           text =
@@ -453,9 +429,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (exactAlarmAccess) {
-              "✓ Precise schedule timing"
+              "✓ Precise lock timing"
             } else {
-              "△ Precise schedule timing not granted"
+              "△ Precise lock timing not granted"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
@@ -491,6 +467,15 @@ private fun ChildDashboard(
             modifier = Modifier.fillMaxWidth(),
           ) {
             Text("BATTERY SETTINGS")
+          }
+        }
+
+        if (!exactAlarmAccess) {
+          OutlinedButton(
+            onClick = onRequestExactAlarmAccess,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("ALLOW PRECISE TIMING")
           }
         }
       }
@@ -667,65 +652,6 @@ private fun ChildDashboard(
       }
     }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-      ) {
-        Text(
-          text = "Schedule",
-          style = MaterialTheme.typography.labelLarge,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Text(
-          text =
-            if (enabledDays == 0) {
-              "No schedule configured"
-            } else {
-              enabledDays.toString() + " days configured"
-            },
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-        )
-
-        if (enabledDays > 0) {
-          Text(
-            text =
-              if (restrictedNow) {
-                "Current schedule state: LOCKED"
-              } else {
-                "Current schedule state: allowed"
-              },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-
-          if (!exactAlarmAccess) {
-            Text(
-              text = "Precise scheduling is not enabled. Android may delay lock/unlock events.",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-
-            OutlinedButton(
-              onClick = onRequestExactAlarmAccess,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
-              Text("ALLOW PRECISE SCHEDULING")
-            }
-          }
-        }
-
-        OutlinedButton(
-          onClick = onEditSchedule,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("EDIT SCHEDULE")
-        }
-      }
-    }
-
   }
 }
 
@@ -850,7 +776,6 @@ private fun ParentPinSetupPreview() {
 private fun ChildDashboardPreview() {
   PhoneGuardTheme {
     ChildDashboard(
-      weeklySchedule = WeeklySchedule(),
       pairingIdentity =
         PairingIdentity(
           deviceId = "preview-device-id",
@@ -871,7 +796,6 @@ private fun ChildDashboardPreview() {
       onRegeneratePairingCode = {},
       onRetryRegistration = {},
       onResetPairing = { ChildPairingResetResult.Success("preview-expiry") },
-      onEditSchedule = {},
       onTestLock = {},
     )
   }
