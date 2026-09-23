@@ -448,6 +448,9 @@ class ChildBackendClient {
     deviceSecret: String,
     accessState: String,
     temporaryAllowUntilMillis: Long?,
+    accessibilityEnabled: Boolean,
+    preciseTimingEnabled: Boolean,
+    batteryUnrestricted: Boolean,
   ): ChildHeartbeatResult {
     val connection =
       (URL(HEARTBEAT_URL).openConnection() as HttpURLConnection).apply {
@@ -464,6 +467,9 @@ class ChildBackendClient {
           .put("deviceId", deviceId)
           .put("deviceSecret", deviceSecret)
           .put("accessState", accessState)
+          .put("accessibilityEnabled", accessibilityEnabled)
+          .put("preciseTimingEnabled", preciseTimingEnabled)
+          .put("batteryUnrestricted", batteryUnrestricted)
           .also { json ->
             if (temporaryAllowUntilMillis != null) {
               json.put("temporaryAllowUntilMillis", temporaryAllowUntilMillis)
