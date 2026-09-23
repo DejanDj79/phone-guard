@@ -125,7 +125,8 @@ fun ParentScheduleEditorScreen(
             OutlinedTextField(
               value = row.start,
               onValueChange = { value ->
-                rows = rows + (day to row.copy(start = value.take(5)))
+                rows =
+                  rows + (day to row.copy(start = formatTimeInput(value)))
                 validationError = null
               },
               enabled = row.enabled && !saving,
@@ -140,7 +141,8 @@ fun ParentScheduleEditorScreen(
             OutlinedTextField(
               value = row.end,
               onValueChange = { value ->
-                rows = rows + (day to row.copy(end = value.take(5)))
+                rows =
+                  rows + (day to row.copy(end = formatTimeInput(value)))
                 validationError = null
               },
               enabled = row.enabled && !saving,
@@ -224,5 +226,15 @@ fun ParentScheduleEditorScreen(
 
       Spacer(modifier = Modifier.height(24.dp))
     }
+  }
+}
+
+
+private fun formatTimeInput(value: String): String {
+  val digits = value.filter(Char::isDigit).take(4)
+
+  return when {
+    digits.length <= 2 -> digits
+    else -> digits.take(2) + ":" + digits.drop(2)
   }
 }
