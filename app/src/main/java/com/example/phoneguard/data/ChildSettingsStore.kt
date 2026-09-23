@@ -223,6 +223,22 @@ class ChildSettingsStore(context: Context) {
     preferences.edit().putString(KEY_WEEKLY_SCHEDULE, schedule.encode()).apply()
   }
 
+  fun remoteScheduleVersion(): Long =
+    preferences.getLong(KEY_REMOTE_SCHEDULE_VERSION, 0L)
+
+  fun saveRemoteWeeklySchedule(
+    schedule: WeeklySchedule,
+    version: Long,
+  ): Boolean {
+    require(version >= 0L) { "Schedule version must not be negative." }
+
+    return preferences
+      .edit()
+      .putString(KEY_WEEKLY_SCHEDULE, schedule.encode())
+      .putLong(KEY_REMOTE_SCHEDULE_VERSION, version)
+      .commit()
+  }
+
   fun shouldBeRestrictedNow(calendar: Calendar = Calendar.getInstance()): Boolean =
     getWeeklySchedule().isRestrictedAt(calendar)
 
@@ -270,6 +286,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_MANUAL_LOCKED = "manual_locked"
     const val KEY_SCHEDULE_LOCKED = "schedule_locked"
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
+    const val KEY_REMOTE_SCHEDULE_VERSION = "remote_schedule_version"
     const val KEY_DEVICE_ID = "device_id"
     const val KEY_PAIRING_CODE = "pairing_code"
     const val KEY_DEVICE_SECRET = "device_secret"
