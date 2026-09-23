@@ -46,7 +46,7 @@ export default {
     const { data: device, error } = await ctx.supabaseAdmin
       .from("child_devices")
       .select(
-        "device_id, display_name, access_state, temporary_allow_until, last_seen_at",
+        "device_id, display_name, access_state, temporary_allow_until, last_seen_at, accessibility_enabled, precise_timing_enabled, battery_unrestricted, protection_updated_at",
       )
       .eq("device_id", deviceId)
       .eq("control_token_hash", controlTokenHash)
@@ -88,6 +88,21 @@ export default {
         temporaryAccessMinutesRemaining,
         isOnline,
         lastSeenAt: device.last_seen_at,
+        protection: {
+          accessibilityEnabled:
+            typeof device.accessibility_enabled === "boolean"
+              ? device.accessibility_enabled
+              : null,
+          preciseTimingEnabled:
+            typeof device.precise_timing_enabled === "boolean"
+              ? device.precise_timing_enabled
+              : null,
+          batteryUnrestricted:
+            typeof device.battery_unrestricted === "boolean"
+              ? device.battery_unrestricted
+              : null,
+          updatedAt: device.protection_updated_at,
+        },
       },
     });
   }),
