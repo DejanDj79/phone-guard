@@ -51,15 +51,30 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         else -> return
       }
 
-    RemoteCommandProcessor(applicationContext).apply(command)
-    Log.i(TAG, "Remote command applied: " + command.type.name)
+    val settingsStore = ChildSettingsStore(applicationContext)
+    val alreadyApplied =
+      commandId.isNotBlank() &&
+        settingsStore.hasAppliedRemoteCommand(commandId)
+
+    if (alreadyApplied) {
+      Log.i(TAG, "Duplicate command skipped: " + commandId)
+    } else {
+      RemoteCommandProcessor(applicationContext).apply(command)
+      Log.i(TAG, "Remote command applied: " + command.type.name)
+
+      if (
+        commandId.isNotBlank() &&
+        !settingsStore.markRemoteCommandApplied(commandId)
+      ) {
+        Log.e(TAG, "Failed to persist applied command id: " + commandId)
+      }
+    }
 
     if (commandId.isBlank()) {
       Log.w(TAG, "Command has no command_id; ACK skipped")
       return
     }
 
-    val settingsStore = ChildSettingsStore(applicationContext)
     when (
       val ackResult =
         ChildBackendClient().acknowledgeCommand(
