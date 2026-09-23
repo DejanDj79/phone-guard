@@ -142,11 +142,6 @@ fun ParentDashboardScreen(
           }
       ) {
         is CommandResult.Success -> {
-          pairedDevice = result.device
-          settingsStore.savePairing(
-            device = result.device,
-            controlToken = controlToken,
-          )
           lastCommand = command
           commandDeliveryStatus = result.deliveryStatus
 
@@ -169,6 +164,14 @@ fun ParentDashboardScreen(
             ) {
               is CommandDeliveryResult.Success -> {
                 commandDeliveryStatus = statusResult.status
+
+                if (statusResult.status == "APPLIED") {
+                  pairedDevice = statusResult.device
+                  settingsStore.savePairing(
+                    device = statusResult.device,
+                    controlToken = controlToken,
+                  )
+                }
               }
 
               is CommandDeliveryResult.Error -> {
