@@ -4,6 +4,8 @@ import android.accessibilityservice.AccessibilityService
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -18,17 +20,27 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.example.phoneguard.data.ChildSettingsStore
+import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 
 class PhoneGuardAccessibilityService : AccessibilityService() {
   private lateinit var settingsStore: ChildSettingsStore
   private lateinit var alarmScheduler: ScheduleAlarmScheduler
   private lateinit var windowManager: WindowManager
+  private lateinit var connectivityManager: ConnectivityManager
 
   private val mainHandler = Handler(Looper.getMainLooper())
 
   private var overlayView: View? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+
+  private val networkCallback =
+    object : ConnectivityManager.NetworkCallback() {
+      override fun onAvailable(network: Network) {
+        Log.i(TAG, "Network available; syncing pending commands")
+        syncPendingCommands()
+      }
+    }
 
   override fun onServiceConnected() {
     super.onServiceConnected()
@@ -36,6 +48,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     settingsStore = ChildSettingsStore(applicationContext)
     alarmScheduler = ScheduleAlarmScheduler(applicationContext)
     windowManager = getSystemService(WindowManager::class.java)
+    connectivityManager = getSystemService(ConnectivityManager::class.java)
 
     Log.i(TAG, "Accessibility service connected")
 
@@ -51,6 +64,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     alarmScheduler.syncCurrentStateAndScheduleNext()
     refreshOverlayOnMainThread()
+
+    runCatching {
+      connectivityManager.registerDefaultNetworkCallback(networkCallback)
+    }.onFailure { error ->
+      Log.w(TAG, "Failed to register network callback", error)
+    }
+
+    syncPendingCommands()
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -63,8 +84,19 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   override fun onDestroy() {
     lockStateListener?.let(settingsStore::unregisterLockStateListener)
+    if (::connectivityManager.isInitialized) {
+      runCatching {
+        connectivityManager.unregisterNetworkCallback(networkCallback)
+      }
+    }
     hideOverlay()
     super.onDestroy()
+  }
+
+  private fun syncPendingCommands() {
+    Thread {
+      RemoteCommandSyncer(applicationContext).sync()
+    }.start()
   }
 
   private fun refreshOverlayOnMainThread() {
