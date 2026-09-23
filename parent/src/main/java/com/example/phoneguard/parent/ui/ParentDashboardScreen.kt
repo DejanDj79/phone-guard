@@ -556,9 +556,13 @@ private fun deviceStateLabel(device: ChildDevice): String =
     DeviceAccessState.ALLOWED -> "● Telefon je dostupan"
     DeviceAccessState.LOCKED -> "● Telefon je zaključan"
     DeviceAccessState.TEMPORARILY_ALLOWED ->
-      "● Dodatno vreme: " +
-        device.temporaryAccessMinutesRemaining +
-        " min"
+      if ((device.temporaryAccessMinutesRemaining ?: 0) > 0) {
+        "● Dodatno vreme: " +
+          device.temporaryAccessMinutesRemaining +
+          " min"
+      } else {
+        "Dodatno vreme je isteklo — ažuriram stanje"
+      }
     DeviceAccessState.OFFLINE -> "○ Stanje uređaja nije poznato"
   }
 
