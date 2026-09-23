@@ -42,7 +42,7 @@ class ParentSettingsStore(context: Context) {
 
     val temporaryMinutes =
       if (state == DeviceAccessState.TEMPORARILY_ALLOWED) {
-        preferences.getInt(KEY_TEMPORARY_MINUTES, 0).takeIf { it > 0 }
+        preferences.getInt(KEY_TEMPORARY_MINUTES, 0).takeIf { it >= 0 }
           ?: return null
       } else {
         null
