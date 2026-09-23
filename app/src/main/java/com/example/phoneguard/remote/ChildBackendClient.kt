@@ -253,12 +253,6 @@ class ChildBackendClient {
         JSONObject()
           .put("deviceId", deviceId)
           .put("deviceSecret", deviceSecret)
-          .put("accessState", accessState)
-          .also { json ->
-            if (temporaryAllowUntilMillis != null) {
-              json.put("temporaryAllowUntilMillis", temporaryAllowUntilMillis)
-            }
-          }
           .toString()
 
       connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
