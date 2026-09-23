@@ -345,6 +345,56 @@ fun ParentDashboardScreen(
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        if (device.isOnline) {
+          val protection = device.protectionStatus
+
+          Text(
+            text =
+              when (protection.criticalProtectionComplete) {
+                true -> "✓ Zaštita uređaja je aktivna"
+                false -> "⚠ Zaštita uređaja nije kompletna"
+                null -> "Proveravam zaštitu uređaja…"
+              },
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+              if (protection.criticalProtectionComplete == false) {
+                MaterialTheme.colorScheme.error
+              } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+              },
+          )
+
+          if (protection.accessibilityEnabled == false) {
+            Text(
+              text = "Accessibility zaštita je isključena.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
+
+          if (protection.preciseTimingEnabled == false) {
+            Text(
+              text = "Precizno vreme zaključavanja nije dozvoljeno.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
+
+          if (protection.batteryUnrestricted == false) {
+            Text(
+              text = "Android može ograničiti rad PhoneGuard-a u pozadini.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        } else {
+          Text(
+            text = "Status zaštite će se osvežiti kada se uređaj poveže.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
       }
     }
 
