@@ -253,6 +253,12 @@ class ChildBackendClient {
         JSONObject()
           .put("deviceId", deviceId)
           .put("deviceSecret", deviceSecret)
+          .put("accessState", accessState)
+          .also { json ->
+            if (temporaryAllowUntilMillis != null) {
+              json.put("temporaryAllowUntilMillis", temporaryAllowUntilMillis)
+            }
+          }
           .toString()
 
       connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
@@ -311,6 +317,8 @@ class ChildBackendClient {
   fun heartbeat(
     deviceId: String,
     deviceSecret: String,
+    accessState: String,
+    temporaryAllowUntilMillis: Long?,
   ): ChildHeartbeatResult {
     val connection =
       (URL(HEARTBEAT_URL).openConnection() as HttpURLConnection).apply {
