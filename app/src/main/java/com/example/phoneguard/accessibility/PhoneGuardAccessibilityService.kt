@@ -110,11 +110,24 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun sendHeartbeat() {
     Thread {
       val identity = settingsStore.getOrCreatePairingIdentity()
+      val now = System.currentTimeMillis()
+      val temporaryAllowanceUntil = settingsStore.temporaryAllowanceUntilMillis()
+      val temporaryAllowanceActive = temporaryAllowanceUntil > now
+      val accessState =
+        when {
+          temporaryAllowanceActive -> "TEMPORARILY_ALLOWED"
+          settingsStore.isEffectivelyLocked(now) -> "LOCKED"
+          else -> "ALLOWED"
+        }
+
       when (
         val result =
           ChildBackendClient().heartbeat(
             deviceId = identity.deviceId,
             deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+            accessState = accessState,
+            temporaryAllowUntilMillis =
+              temporaryAllowanceUntil.takeIf { temporaryAllowanceActive },
           )
       ) {
         ChildHeartbeatResult.Success ->
