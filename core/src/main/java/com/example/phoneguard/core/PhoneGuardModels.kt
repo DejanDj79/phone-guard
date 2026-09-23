@@ -52,6 +52,7 @@ data class ChildDevice(
   val displayName: String,
   val state: DeviceAccessState,
   val temporaryAccessMinutesRemaining: Int? = null,
+  val isOnline: Boolean = true,
 ) {
   init {
     require(deviceId.isNotBlank()) { "deviceId must not be blank." }
