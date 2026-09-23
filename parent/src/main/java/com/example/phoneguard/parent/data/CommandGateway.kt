@@ -23,6 +23,7 @@ sealed interface CommandResult {
 sealed interface CommandDeliveryResult {
   data class Success(
     val status: String,
+    val device: ChildDevice,
   ) : CommandDeliveryResult
 
   data class Error(
@@ -174,8 +175,27 @@ class HttpCommandGateway : CommandGateway {
 
       if (statusCode in 200..299) {
         val json = JSONObject(responseBody)
+        val deviceJson = json.getJSONObject("device")
+        val state = DeviceAccessState.valueOf(deviceJson.getString("state"))
+        val temporaryMinutes =
+          if (
+            state == DeviceAccessState.TEMPORARILY_ALLOWED &&
+            !deviceJson.isNull("temporaryAccessMinutesRemaining")
+          ) {
+            deviceJson.getInt("temporaryAccessMinutesRemaining")
+          } else {
+            null
+          }
+
         CommandDeliveryResult.Success(
           status = json.optString("status", "SENT"),
+          device =
+            ChildDevice(
+              deviceId = deviceJson.getString("deviceId"),
+              displayName = deviceJson.getString("displayName"),
+              state = state,
+              temporaryAccessMinutesRemaining = temporaryMinutes,
+            ),
         )
       } else {
         val errorCode =
