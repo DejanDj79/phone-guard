@@ -17,10 +17,14 @@ class ParentTokenCipher {
     cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
 
     val encrypted = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
-    val payload = ByteArray(cipher.iv.size + encrypted.size)
+    val iv = cipher.iv
+    require(iv.size in 1..255) { "Unexpected GCM IV size." }
 
-    System.arraycopy(cipher.iv, 0, payload, 0, cipher.iv.size)
-    System.arraycopy(encrypted, 0, payload, cipher.iv.size, encrypted.size)
+    val payload = ByteArray(1 + iv.size + encrypted.size)
+    payload[0] = iv.size.toByte()
+
+    System.arraycopy(iv, 0, payload, 1, iv.size)
+    System.arraycopy(encrypted, 0, payload, 1 + iv.size, encrypted.size)
 
     return Base64.encodeToString(
       payload,
@@ -36,10 +40,15 @@ class ParentTokenCipher {
           Base64.NO_WRAP or Base64.NO_PADDING,
         )
 
-      require(payload.size > IV_SIZE_BYTES) { "Encrypted token payload is invalid." }
+      require(payload.size > 2) { "Encrypted token payload is invalid." }
 
-      val iv = payload.copyOfRange(0, IV_SIZE_BYTES)
-      val encrypted = payload.copyOfRange(IV_SIZE_BYTES, payload.size)
+      val ivSize = payload[0].toInt() and 0xff
+      require(ivSize > 0 && payload.size > 1 + ivSize) {
+        "Encrypted token payload is invalid."
+      }
+
+      val iv = payload.copyOfRange(1, 1 + ivSize)
+      val encrypted = payload.copyOfRange(1 + ivSize, payload.size)
 
       val cipher = Cipher.getInstance(TRANSFORMATION)
       cipher.init(
@@ -94,7 +103,6 @@ class ParentTokenCipher {
     const val KEYSTORE_PROVIDER = "AndroidKeyStore"
     const val KEY_ALIAS = "phone_guard_parent_control_token"
     const val TRANSFORMATION = "AES/GCM/NoPadding"
-    const val IV_SIZE_BYTES = 12
     const val GCM_TAG_LENGTH_BITS = 128
   }
 }
