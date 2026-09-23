@@ -46,7 +46,7 @@ export default {
 
     const { data: device, error: deviceError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_id")
+      .select("device_id, display_name, access_state, temporary_allow_until")
       .eq("device_id", deviceId)
       .eq("control_token_hash", controlTokenHash)
       .maybeSingle();
@@ -72,6 +72,18 @@ export default {
       return json({ error: "command_not_found" }, 404);
     }
 
+    const temporaryAccessMinutesRemaining =
+      device.access_state === "TEMPORARILY_ALLOWED" &&
+        typeof device.temporary_allow_until === "string"
+        ? Math.max(
+            0,
+            Math.ceil(
+              (new Date(device.temporary_allow_until).getTime() - Date.now()) /
+                60_000,
+            ),
+          )
+        : null;
+
     return json({
       ok: true,
       commandId: command.command_id,
@@ -79,6 +91,12 @@ export default {
       errorCode: command.error_code,
       sentAt: command.sent_at,
       appliedAt: command.applied_at,
+      device: {
+        deviceId: device.device_id,
+        displayName: device.display_name,
+        state: device.access_state,
+        temporaryAccessMinutesRemaining,
+      },
     });
   }),
 };
