@@ -4,6 +4,7 @@ enum class RemoteCommandType {
   LOCK,
   UNLOCK,
   BONUS_TIME,
+  SYNC_SCHEDULE,
 }
 
 data class RemoteCommand(
@@ -18,7 +19,8 @@ data class RemoteCommand(
         }
 
       RemoteCommandType.LOCK,
-      RemoteCommandType.UNLOCK ->
+      RemoteCommandType.UNLOCK,
+      RemoteCommandType.SYNC_SCHEDULE ->
         require(bonusMinutes == null) {
           "$type must not include bonusMinutes."
         }
@@ -37,6 +39,9 @@ data class RemoteCommand(
         type = RemoteCommandType.BONUS_TIME,
         bonusMinutes = minutes,
       )
+
+    fun syncSchedule(): RemoteCommand =
+      RemoteCommand(RemoteCommandType.SYNC_SCHEDULE)
   }
 }
 
