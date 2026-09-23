@@ -37,6 +37,7 @@ import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.PairingRequest
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
+import com.example.phoneguard.core.RemoteWeeklySchedule
 import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.DeviceStatusResult
@@ -45,6 +46,9 @@ import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.PairingGateway
 import com.example.phoneguard.parent.data.ParentSettingsStore
+import com.example.phoneguard.parent.data.HttpScheduleGateway
+import com.example.phoneguard.parent.data.ScheduleFetchResult
+import com.example.phoneguard.parent.data.ScheduleSaveResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -64,6 +68,7 @@ fun ParentDashboardScreen(
   val gateway = pairingGateway ?: defaultGateway
   val commandGateway = remember { HttpCommandGateway() }
   val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
+  val scheduleGateway = remember { HttpScheduleGateway() }
   val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
@@ -73,6 +78,13 @@ fun ParentDashboardScreen(
   var commandError by remember { mutableStateOf<String?>(null) }
   var showBonusTimePicker by remember { mutableStateOf(false) }
   var selectedBonusMinutes by remember { mutableStateOf(15) }
+  var scheduleEditorSchedule by remember {
+    mutableStateOf<RemoteWeeklySchedule?>(null)
+  }
+  var scheduleLoading by remember { mutableStateOf(false) }
+  var scheduleSaving by remember { mutableStateOf(false) }
+  var scheduleError by remember { mutableStateOf<String?>(null) }
+  var scheduleNotice by remember { mutableStateOf<String?>(null) }
 
   if (pairedDevice == null) {
     PairDeviceScreen(
@@ -116,6 +128,63 @@ fun ParentDashboardScreen(
   }
 
   val device = pairedDevice!!
+
+  scheduleEditorSchedule?.let { schedule ->
+    ParentScheduleEditorScreen(
+      schedule = schedule,
+      saving = scheduleSaving,
+      saveError = scheduleError,
+      onSave = { updatedSchedule ->
+        if (scheduleSaving) return@ParentScheduleEditorScreen
+
+        val controlToken = settingsStore.controlToken()
+        if (controlToken.isNullOrBlank()) {
+          scheduleError =
+            "Nedostaje control token. Potrebno je ponovno uparivanje."
+        } else {
+          scope.launch {
+            scheduleSaving = true
+            scheduleError = null
+
+            when (
+              val result =
+                withContext(Dispatchers.IO) {
+                  scheduleGateway.save(
+                    deviceId = device.deviceId,
+                    controlToken = controlToken,
+                    schedule = updatedSchedule,
+                  )
+                }
+            ) {
+              is ScheduleSaveResult.Success -> {
+                scheduleEditorSchedule = null
+                scheduleNotice =
+                  if (device.isOnline) {
+                    "Raspored je sačuvan i poslat Child uređaju."
+                  } else {
+                    "Raspored je sačuvan i primeniće se kada se Child ponovo poveže."
+                  }
+              }
+
+              is ScheduleSaveResult.Error -> {
+                scheduleError = result.message
+              }
+            }
+
+            scheduleSaving = false
+          }
+        }
+      },
+      onCancel = {
+        if (!scheduleSaving) {
+          scheduleEditorSchedule = null
+          scheduleError = null
+        }
+      },
+      modifier = modifier,
+    )
+    return
+  }
 
   LaunchedEffect(device.deviceId) {
     val controlToken = settingsStore.controlToken()
@@ -325,6 +394,76 @@ fun ParentDashboardScreen(
           )
         }
       }
+    }
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        Text(
+          text = "Raspored zaključavanja",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+        )
+
+        Text(
+          text = "Podesi dane i vreme kada će se Child telefon automatski zaključavati.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        OutlinedButton(
+          onClick = {
+            if (scheduleLoading) return@OutlinedButton
+
+            val controlToken = settingsStore.controlToken()
+            if (controlToken.isNullOrBlank()) {
+              commandError =
+                "Nedostaje control token. Potrebno je ponovno uparivanje."
+            } else {
+              scope.launch {
+                scheduleLoading = true
+                scheduleError = null
+                commandError = null
+                scheduleNotice = null
+
+                when (
+                  val result =
+                    withContext(Dispatchers.IO) {
+                      scheduleGateway.fetch(
+                        deviceId = device.deviceId,
+                        controlToken = controlToken,
+                      )
+                    }
+                ) {
+                  is ScheduleFetchResult.Success -> {
+                    scheduleEditorSchedule = result.schedule
+                  }
+
+                  is ScheduleFetchResult.Error -> {
+                    commandError = result.message
+                  }
+                }
+
+                scheduleLoading = false
+              }
+            }
+          },
+          enabled = !scheduleLoading && !commandInProgress,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text(if (scheduleLoading) "UČITAVAM…" else "PODESI RASPORED")
+        }
+      }
+    }
+
+    scheduleNotice?.let { message ->
+      Text(
+        text = message,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
     }
 
     if (commandInProgress) {
