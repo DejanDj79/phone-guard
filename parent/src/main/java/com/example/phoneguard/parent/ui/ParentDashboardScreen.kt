@@ -60,6 +60,8 @@ import com.example.phoneguard.parent.data.PairingGateway
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.data.HttpScheduleGateway
 import com.example.phoneguard.parent.data.HttpTimeRequestGateway
+import com.example.phoneguard.parent.data.HttpDailyLimitGateway
+import com.example.phoneguard.parent.data.DailyLimitSaveResult
 import com.example.phoneguard.parent.data.RenameDeviceResult
 import com.example.phoneguard.parent.data.ScheduleFetchResult
 import com.example.phoneguard.parent.data.ScheduleSaveResult
@@ -91,6 +93,7 @@ fun ParentDashboardScreen(
   val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
   val deviceManagementGateway = remember { HttpDeviceManagementGateway() }
   val timeRequestGateway = remember { HttpTimeRequestGateway() }
+  val dailyLimitGateway = remember { HttpDailyLimitGateway() }
   val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
@@ -136,6 +139,13 @@ fun ParentDashboardScreen(
   var timeRequestResponding by remember { mutableStateOf(false) }
   var timeRequestError by remember { mutableStateOf<String?>(null) }
   var timeRequestNotice by remember { mutableStateOf<String?>(null) }
+  var showDailyLimitPicker by remember { mutableStateOf(false) }
+  var selectedDailyLimitMinutes by remember {
+    mutableStateOf(pairedDevice?.dailyScreenTime?.limitMinutes ?: 120)
+  }
+  var dailyLimitSaving by remember { mutableStateOf(false) }
+  var dailyLimitError by remember { mutableStateOf<String?>(null) }
+  var dailyLimitNotice by remember { mutableStateOf<String?>(null) }
 
   fun removeInvalidPairing(
     deviceId: String,
@@ -158,6 +168,9 @@ fun ParentDashboardScreen(
     pendingTimeRequest = null
     timeRequestError = null
     timeRequestNotice = null
+    showDailyLimitPicker = false
+    dailyLimitError = null
+    dailyLimitNotice = null
     showDevices = false
     selectedTab = 0
 
@@ -238,6 +251,7 @@ fun ParentDashboardScreen(
           scheduleSaving ||
           allowedAppsLoading ||
           allowedAppsSaving ||
+          dailyLimitSaving ||
           deviceRenaming ||
           deviceUnpairing,
       onSelectDevice = { selected ->
@@ -259,6 +273,11 @@ fun ParentDashboardScreen(
           pendingTimeRequest = null
           timeRequestError = null
           timeRequestNotice = null
+          showDailyLimitPicker = false
+          selectedDailyLimitMinutes =
+            pairedDevice?.dailyScreenTime?.limitMinutes ?: 120
+          dailyLimitError = null
+          dailyLimitNotice = null
           showDevices = false
           selectedTab = 0
         }
