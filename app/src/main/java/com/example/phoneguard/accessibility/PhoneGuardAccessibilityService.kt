@@ -314,7 +314,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     listOf(
       "SOUND" to AudioManager.RINGER_MODE_NORMAL,
       "VIBRATE" to AudioManager.RINGER_MODE_VIBRATE,
-      "SILENT" to AudioManager.RINGER_MODE_SILENT,
     ).forEach { (label, mode) ->
       soundControls.addView(
         Button(this).apply {
@@ -459,7 +458,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     when (mode) {
       AudioManager.RINGER_MODE_NORMAL -> "Current mode: Sound"
       AudioManager.RINGER_MODE_VIBRATE -> "Current mode: Vibrate"
-      AudioManager.RINGER_MODE_SILENT -> "Current mode: Silent"
       else -> "Current sound mode"
     }
 
