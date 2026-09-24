@@ -1,6 +1,7 @@
 package com.example.phoneguard.usage
 
 import android.content.Context
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
@@ -12,6 +13,16 @@ class AppUsageTracker(context: Context) {
   private val settingsStore = ChildSettingsStore(appContext)
   private val packageManager = appContext.packageManager
   private val powerManager = appContext.getSystemService(PowerManager::class.java)
+  private val homePackage =
+    runCatching {
+      packageManager
+        .resolveActivity(
+          Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+          0,
+        )
+        ?.activityInfo
+        ?.packageName
+    }.getOrNull()
   private val handler = Handler(Looper.getMainLooper())
 
   private val trackablePackageCache = mutableMapOf<String, Boolean>()
@@ -134,6 +145,7 @@ class AppUsageTracker(context: Context) {
     trackablePackageCache.getOrPut(packageName) {
       if (
         packageName == appContext.packageName ||
+        packageName == homePackage ||
         packageName == "com.android.systemui" ||
         packageName == "com.android.settings" ||
         packageName == "com.miui.securitycenter" ||
