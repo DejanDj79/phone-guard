@@ -167,7 +167,7 @@ class ParentMessagingService : FirebaseMessagingService() {
         "Protection alerts",
         NotificationManager.IMPORTANCE_HIGH,
       ).apply {
-        description = "Alerts when PhoneGuard protection is disabled on a Child device."
+        description = "Alerts when PhoneGuard protection is disabled or a Child device goes offline."
       },
     )
   }
