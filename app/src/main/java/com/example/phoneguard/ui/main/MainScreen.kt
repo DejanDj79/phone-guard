@@ -1039,20 +1039,25 @@ private fun RequestMoreTimeDialog(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        listOf(5, 15, 30, 60).forEach { minutes ->
-          if (selectedMinutes == minutes) {
-            Button(
-              onClick = { selectedMinutes = minutes },
-              modifier = Modifier.fillMaxWidth(),
-            ) {
-              Text(minutes.toString() + " minutes")
-            }
-          } else {
-            OutlinedButton(
-              onClick = { selectedMinutes = minutes },
-              modifier = Modifier.fillMaxWidth(),
-            ) {
-              Text(minutes.toString() + " minutes")
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          listOf(5, 15, 30).forEach { minutes ->
+            if (selectedMinutes == minutes) {
+              Button(
+                onClick = { selectedMinutes = minutes },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text(minutes.toString() + " min")
+              }
+            } else {
+              OutlinedButton(
+                onClick = { selectedMinutes = minutes },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text(minutes.toString() + " min")
+              }
             }
           }
         }
