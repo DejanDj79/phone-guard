@@ -42,6 +42,12 @@ class RemoteCommandProcessor(context: Context) {
           "Remote allowed apps sync failed."
         }
       }
+
+      RemoteCommandType.SYNC_DAILY_LIMIT -> {
+        check(RemoteDailyLimitSyncer(appContext).sync()) {
+          "Remote daily limit sync failed."
+        }
+      }
     }
   }
 }
