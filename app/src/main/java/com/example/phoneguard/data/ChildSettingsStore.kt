@@ -6,7 +6,10 @@ import android.util.Base64
 import com.example.phoneguard.core.PairingIdentity
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 class ChildSettingsStore(context: Context) {
@@ -83,6 +86,73 @@ class ChildSettingsStore(context: Context) {
     preferences.edit().remove(KEY_TEMPORARY_ALLOW_UNTIL).apply()
   }
 
+  fun dailyLimitMinutes(): Int? =
+    preferences
+      .getInt(KEY_DAILY_LIMIT_MINUTES, 0)
+      .takeIf { it > 0 }
+
+  fun remoteDailyLimitVersion(): Long =
+    preferences.getLong(KEY_REMOTE_DAILY_LIMIT_VERSION, 0L)
+
+  fun saveRemoteDailyLimit(
+    minutes: Int?,
+    version: Long,
+  ): Boolean {
+    require(minutes == null || minutes in 1..1440) {
+      "Daily limit must be disabled or between 1 and 1440 minutes."
+    }
+    require(version >= 0L) { "Daily limit version must not be negative." }
+
+    val editor =
+      preferences
+        .edit()
+        .putLong(KEY_REMOTE_DAILY_LIMIT_VERSION, version)
+
+    if (minutes == null) {
+      editor.remove(KEY_DAILY_LIMIT_MINUTES)
+    } else {
+      editor.putInt(KEY_DAILY_LIMIT_MINUTES, minutes)
+    }
+
+    return editor.commit()
+  }
+
+  fun currentLocalDateKey(nowMillis: Long = System.currentTimeMillis()): String =
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(nowMillis))
+
+  fun dailyUsageMillisForToday(nowMillis: Long = System.currentTimeMillis()): Long {
+    val today = currentLocalDateKey(nowMillis)
+    if (preferences.getString(KEY_DAILY_USAGE_DATE, null) != today) {
+      return 0L
+    }
+
+    return preferences.getLong(KEY_DAILY_USAGE_MILLIS, 0L).coerceAtLeast(0L)
+  }
+
+  fun dailyUsageSecondsForToday(nowMillis: Long = System.currentTimeMillis()): Int =
+    (dailyUsageMillisForToday(nowMillis) / 1000L)
+      .coerceIn(0L, Int.MAX_VALUE.toLong())
+      .toInt()
+
+  fun saveDailyUsage(
+    date: String,
+    usedMillis: Long,
+  ): Boolean {
+    require(date.matches(LOCAL_DATE_PATTERN)) { "Invalid local date." }
+    require(usedMillis >= 0L) { "Daily usage must not be negative." }
+
+    return preferences
+      .edit()
+      .putString(KEY_DAILY_USAGE_DATE, date)
+      .putLong(KEY_DAILY_USAGE_MILLIS, usedMillis)
+      .commit()
+  }
+
+  fun isDailyLimitLockActive(nowMillis: Long = System.currentTimeMillis()): Boolean {
+    val limitMinutes = dailyLimitMinutes() ?: return false
+    return dailyUsageMillisForToday(nowMillis) >= limitMinutes * 60_000L
+  }
+
   fun hasAppliedRemoteCommand(commandId: String): Boolean {
     if (commandId.isBlank()) return false
 
@@ -122,7 +192,11 @@ class ChildSettingsStore(context: Context) {
 
   fun isEffectivelyLocked(nowMillis: Long = System.currentTimeMillis()): Boolean =
     !isTemporaryAllowanceActive(nowMillis) &&
-      (isManualLockActive() || isScheduleLockActive())
+      (
+        isManualLockActive() ||
+          isScheduleLockActive() ||
+          isDailyLimitLockActive(nowMillis)
+      )
 
   fun clearAllLocks() {
     preferences
@@ -320,7 +394,10 @@ class ChildSettingsStore(context: Context) {
           key == KEY_SCHEDULE_LOCKED ||
           key == KEY_TEMPORARY_ALLOW_UNTIL ||
           key == KEY_ALLOWED_APPS ||
-          key == KEY_TIME_REQUEST_FEEDBACK
+          key == KEY_TIME_REQUEST_FEEDBACK ||
+          key == KEY_DAILY_LIMIT_MINUTES ||
+          key == KEY_DAILY_USAGE_DATE ||
+          key == KEY_DAILY_USAGE_MILLIS
         ) {
           onChanged()
         }
@@ -364,11 +441,16 @@ class ChildSettingsStore(context: Context) {
     const val KEY_TEMPORARY_ALLOW_UNTIL = "temporary_allow_until"
     const val KEY_APPLIED_REMOTE_COMMAND_IDS = "applied_remote_command_ids"
     const val KEY_TIME_REQUEST_FEEDBACK = "time_request_feedback"
+    const val KEY_DAILY_LIMIT_MINUTES = "daily_limit_minutes"
+    const val KEY_REMOTE_DAILY_LIMIT_VERSION = "remote_daily_limit_version"
+    const val KEY_DAILY_USAGE_DATE = "daily_usage_date"
+    const val KEY_DAILY_USAGE_MILLIS = "daily_usage_millis"
     const val MAX_APPLIED_REMOTE_COMMAND_IDS = 100
     const val SALT_SIZE_BYTES = 16
     const val PAIRING_CODE_LENGTH = 6
     const val PAIRING_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
     val PIN_PATTERN = Regex("^\\d{4,6}$")
+    val LOCAL_DATE_PATTERN = Regex("^\\d{4}-\\d{2}-\\d{2}$")
   }
 }
