@@ -61,6 +61,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private var foregroundPackage: String? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
   private val lastProtectionEventAt = mutableMapOf<String, Long>()
+  private var lastPhoneGuardAppInfoSeenAt = 0L
 
   private val networkCallback =
     object : ConnectivityManager.NetworkCallback() {
@@ -154,13 +155,53 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
       event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     ) {
-      detectProtectionBypassEvent(event)?.let(::reportProtectionEvent)
+      val protectionEvent =
+        detectSystemUiUninstallConfirmation(event)
+          ?: detectProtectionBypassEvent(event)
+
+      protectionEvent?.let { detectedEvent ->
+        if (detectedEvent == PROTECTION_EVENT_APP_INFO_OPENED) {
+          lastPhoneGuardAppInfoSeenAt = System.currentTimeMillis()
+        }
+        reportProtectionEvent(detectedEvent)
+      }
     }
 
     refreshOverlayOnMainThread()
   }
 
   override fun onInterrupt() = Unit
+
+  private fun detectSystemUiUninstallConfirmation(
+    event: AccessibilityEvent,
+  ): String? {
+    if (
+      event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ||
+      event.packageName?.toString() != "com.android.systemui"
+    ) {
+      return null
+    }
+
+    val now = System.currentTimeMillis()
+    if (now - lastPhoneGuardAppInfoSeenAt > APP_INFO_CONTEXT_WINDOW_MS) {
+      return null
+    }
+
+    val activeText = activeWindowText().lowercase()
+    val isUninstallConfirmation =
+      (
+        activeText.contains("uninstall now") ||
+          activeText.contains("uninstalling will remove all app data")
+      ) &&
+        activeText.contains("cancel") &&
+        activeText.contains("ok")
+
+    return if (isUninstallConfirmation) {
+      PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
+    } else {
+      null
+    }
+  }
 
   private fun detectUninstallActionClick(event: AccessibilityEvent): String? {
     val eventPackage = event.packageName?.toString().orEmpty()
@@ -931,6 +972,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     const val TAG = "PhoneGuardAccessibility"
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
+    const val APP_INFO_CONTEXT_WINDOW_MS = 60_000L
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
     const val MAX_DIAGNOSTIC_TEXT_LENGTH = 800
     const val PROTECTION_EVENT_APP_INFO_OPENED = "APP_INFO_OPENED"
