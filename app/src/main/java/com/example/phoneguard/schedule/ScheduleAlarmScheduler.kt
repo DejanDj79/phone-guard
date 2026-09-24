@@ -69,6 +69,15 @@ class ScheduleAlarmScheduler(context: Context) {
     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
   }
 
+  fun scheduleProtectionStatusCheck(delayMillis: Long = 3_000L) {
+    val triggerAtMillis = System.currentTimeMillis() + delayMillis.coerceAtLeast(1_000L)
+
+    scheduleAlarm(
+      triggerAtMillis = triggerAtMillis,
+      operation = protectionStatusPendingIntent(),
+    )
+  }
+
   private fun scheduleAlarm(
     triggerAtMillis: Long,
     operation: PendingIntent,
@@ -112,8 +121,17 @@ class ScheduleAlarmScheduler(context: Context) {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
+  private fun protectionStatusPendingIntent(): PendingIntent =
+    PendingIntent.getBroadcast(
+      appContext,
+      REQUEST_CODE_PROTECTION_STATUS,
+      Intent(appContext, ProtectionStatusReceiver::class.java),
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
   private companion object {
     const val REQUEST_CODE_SCHEDULE_TRANSITION = 4101
     const val REQUEST_CODE_TEMPORARY_ALLOWANCE = 4102
+    const val REQUEST_CODE_PROTECTION_STATUS = 4103
   }
 }
