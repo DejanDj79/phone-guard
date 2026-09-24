@@ -230,6 +230,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     if (now - previous < PROTECTION_EVENT_DEBOUNCE_MS) return
 
     lastProtectionEventAt[protectionEvent] = now
+    Log.i(TAG, "Protection bypass event detected: " + protectionEvent)
 
     Thread {
       heartbeatSender.send(protectionEvent = protectionEvent)
