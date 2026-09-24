@@ -157,6 +157,12 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     if (!mentionsPhoneGuard) return null
 
+    Log.i(
+      TAG,
+      "PhoneGuard settings screen: package=" + eventPackage +
+        ", class=" + className,
+    )
+
     val normalizedText = visibleText.lowercase()
 
     val uninstallScreen =
