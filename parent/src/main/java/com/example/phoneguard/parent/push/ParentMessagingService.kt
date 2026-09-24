@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.phoneguard.parent.MainActivity
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -76,6 +77,8 @@ class ParentMessagingService : FirebaseMessagingService() {
   }
 
   private fun showProtectionAlertNotification(message: RemoteMessage) {
+    Log.i(TAG, "Protection alert received: " + message.data)
+
     val alert =
       message.data["alert"]
         ?.takeIf { it.isNotBlank() }
@@ -174,6 +177,7 @@ class ParentMessagingService : FirebaseMessagingService() {
   }
 
   companion object {
+    private const val TAG = "PhoneGuardParentPush"
     const val EXTRA_TIME_REQUEST_DEVICE_ID = "time_request_device_id"
     const val EXTRA_TIME_REQUEST_ID = "time_request_id"
     private const val TYPE_TIME_REQUEST = "TIME_REQUEST"
