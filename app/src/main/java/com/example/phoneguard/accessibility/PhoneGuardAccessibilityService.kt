@@ -479,29 +479,18 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     }
 
-    val appInfoByClass =
-      className.contains("InstalledAppDetails", ignoreCase = true) ||
-        className.contains("AppInfoDashboard", ignoreCase = true)
-
-    val isSettingsPackage =
-      eventPackage == "com.android.settings" ||
-        eventPackage == "com.miui.securitycenter"
-
-    val appInfoByContent =
-      isSettingsPackage &&
+    val isAndroidSettingsAppInfo =
+      eventPackage == "com.android.settings" &&
         (
-          normalizedText.contains("force stop") ||
-            (
-              normalizedText.contains("uninstall") &&
-                (
-                  normalizedText.contains("permissions") ||
-                    normalizedText.contains("storage") ||
-                    normalizedText.contains("battery")
-                )
-            )
+          className.contains("InstalledAppDetails", ignoreCase = true) ||
+            className.contains("AppInfoDashboard", ignoreCase = true)
         )
 
-    return if (isSettingsPackage && (appInfoByClass || appInfoByContent)) {
+    val isMiuiAppInfo =
+      eventPackage == "com.miui.securitycenter" &&
+        className.contains("ApplicationsDetailsActivity", ignoreCase = true)
+
+    return if (isAndroidSettingsAppInfo || isMiuiAppInfo) {
       PROTECTION_EVENT_APP_INFO_OPENED
     } else {
       null
