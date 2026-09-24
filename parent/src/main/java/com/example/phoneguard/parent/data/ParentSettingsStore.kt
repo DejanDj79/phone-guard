@@ -39,7 +39,10 @@ class ParentSettingsStore(context: Context) {
     }
 
     savePairingsInternal(pairings)
-    preferences.edit().putString(KEY_SELECTED_DEVICE_ID, device.deviceId).apply()
+
+    if (!preferences.contains(KEY_SELECTED_DEVICE_ID)) {
+      preferences.edit().putString(KEY_SELECTED_DEVICE_ID, device.deviceId).apply()
+    }
   }
 
   fun loadPairedDevices(): List<ChildDevice> {
@@ -132,27 +135,27 @@ class ParentSettingsStore(context: Context) {
 
   private fun loadPairingsInternal(): List<PairedChildDevice> {
     val raw = preferences.getString(KEY_PAIRED_DEVICES, null) ?: return emptyList()
+    val array = runCatching { JSONArray(raw) }.getOrNull() ?: return emptyList()
 
-    return runCatching {
-      val array = JSONArray(raw)
-      buildList {
-        for (index in 0 until array.length()) {
-          val json = array.getJSONObject(index)
-          val state = DeviceAccessState.valueOf(json.getString("state"))
-          val temporaryMinutes =
-            if (state == DeviceAccessState.TEMPORARILY_ALLOWED) {
-              json.optInt("temporaryMinutes", 0).coerceAtLeast(0)
-            } else {
-              null
-            }
+    return buildList {
+      for (index in 0 until array.length()) {
+        val pairing =
+          runCatching {
+            val json = array.getJSONObject(index)
+            val state = DeviceAccessState.valueOf(json.getString("state"))
+            val temporaryMinutes =
+              if (state == DeviceAccessState.TEMPORARILY_ALLOWED) {
+                json.optInt("temporaryMinutes", 0).coerceAtLeast(0)
+              } else {
+                null
+              }
 
-          val encryptedToken = json.getString("controlTokenEncrypted")
-          val controlToken =
-            tokenCipher.decrypt(encryptedToken)
-              ?.takeIf { it.isNotBlank() }
-              ?: continue
+            val encryptedToken = json.getString("controlTokenEncrypted")
+            val controlToken =
+              tokenCipher.decrypt(encryptedToken)
+                ?.takeIf { it.isNotBlank() }
+                ?: return@runCatching null
 
-          add(
             PairedChildDevice(
               device =
                 ChildDevice(
@@ -170,11 +173,12 @@ class ParentSettingsStore(context: Context) {
                     ),
                 ),
               controlToken = controlToken,
-            ),
-          )
-        }
+            )
+          }.getOrNull()
+
+        if (pairing != null) add(pairing)
       }
-    }.getOrDefault(emptyList())
+    }
   }
 
   private fun savePairingsInternal(pairings: List<PairedChildDevice>) {
