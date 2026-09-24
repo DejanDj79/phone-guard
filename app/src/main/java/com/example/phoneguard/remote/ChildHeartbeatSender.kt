@@ -16,6 +16,8 @@ class ChildHeartbeatSender(context: Context) {
     val identity = settingsStore.getOrCreatePairingIdentity()
     val now = System.currentTimeMillis()
     val temporaryAllowanceUntil = settingsStore.temporaryAllowanceUntilMillis()
+    val dailyUsageDate = settingsStore.currentLocalDateKey(now)
+    val dailyUsageSeconds = settingsStore.dailyUsageSecondsForToday(now)
     val temporaryAllowanceActive = temporaryAllowanceUntil > now
     val accessState =
       when {
@@ -42,6 +44,8 @@ class ChildHeartbeatSender(context: Context) {
           accessibilityEnabled = accessibilityEnabled,
           preciseTimingEnabled = preciseTimingEnabled,
           batteryUnrestricted = batteryUnrestricted,
+          dailyUsageDate = dailyUsageDate,
+          dailyUsageSeconds = dailyUsageSeconds,
         )
     ) {
       ChildHeartbeatResult.Success ->
