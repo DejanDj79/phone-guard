@@ -107,12 +107,6 @@ export default {
       try {
         await sendFirebaseMessage({
           token: device.parent_fcm_token,
-          title: "More time requested",
-          body:
-            device.display_name +
-            " is asking for " +
-            requestedMinutes +
-            " more minutes.",
           data: {
             type: "TIME_REQUEST",
             request_id: requestRow.request_id,
