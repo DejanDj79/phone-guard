@@ -65,6 +65,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".schedule.ProtectionStatusReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".schedule.ScheduleRestoreReceiver"
             android:exported="false">
             <intent-filter>
