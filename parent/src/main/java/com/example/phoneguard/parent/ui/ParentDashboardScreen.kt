@@ -933,7 +933,8 @@ private fun commandMatchesDeviceState(
       device.state == DeviceAccessState.ALLOWED
     com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
       device.state == DeviceAccessState.TEMPORARILY_ALLOWED
-    com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
+    com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE,
+    com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
       false
   }
 
@@ -953,6 +954,8 @@ private fun commandSendingLabel(
         "Adding " + command.bonusMinutes + " min…"
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
         "Syncing schedule…"
+      com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
+        "Syncing allowed apps…"
     }
   }
 
@@ -966,6 +969,8 @@ private fun commandAppliedLabel(command: RemoteCommand): String =
       "Added " + command.bonusMinutes + " min ✓"
     com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
       "Schedule applied ✓"
+    com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
+      "Allowed apps updated ✓"
   }
 
 private fun commandQueuedLabel(
@@ -982,6 +987,8 @@ private fun commandQueuedLabel(
         "Bonus time queued and will be applied when the Child reconnects."
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
         "The schedule will be applied when the Child reconnects."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
+        "Allowed apps will be applied when the Child reconnects."
     }
   } else {
     when (command.type) {
@@ -993,6 +1000,8 @@ private fun commandQueuedLabel(
         "Bonus time sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
         "Schedule sent. Waiting for the Child device to confirm."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
+        "Allowed apps sent. Waiting for the Child device to confirm."
     }
   }
 
