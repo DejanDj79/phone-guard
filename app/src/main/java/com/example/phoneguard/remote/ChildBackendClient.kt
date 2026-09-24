@@ -74,6 +74,17 @@ sealed interface ChildAllowedAppsResult {
   ) : ChildAllowedAppsResult
 }
 
+sealed interface ChildDailyLimitResult {
+  data class Success(
+    val minutes: Int?,
+    val version: Long,
+  ) : ChildDailyLimitResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildDailyLimitResult
+}
+
 sealed interface ChildHeartbeatResult {
   data object Success : ChildHeartbeatResult
 
@@ -604,6 +615,65 @@ class ChildBackendClient {
     }
   }
 
+  fun fetchDailyLimit(
+    deviceId: String,
+    deviceSecret: String,
+  ): ChildDailyLimitResult {
+    val connection =
+      (URL(GET_DAILY_LIMIT_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        val limit = JSONObject(responseBody).getJSONObject("dailyLimit")
+        ChildDailyLimitResult.Success(
+          minutes =
+            if (limit.isNull("minutes")) {
+              null
+            } else {
+              limit.getInt("minutes")
+            },
+          version = limit.optLong("version", 0L),
+        )
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildDailyLimitResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildDailyLimitResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
   fun requestMoreTime(
     deviceId: String,
     deviceSecret: String,
@@ -678,6 +748,8 @@ class ChildBackendClient {
     accessibilityEnabled: Boolean,
     preciseTimingEnabled: Boolean,
     batteryUnrestricted: Boolean,
+    dailyUsageDate: String,
+    dailyUsageSeconds: Int,
   ): ChildHeartbeatResult {
     val connection =
       (URL(HEARTBEAT_URL).openConnection() as HttpURLConnection).apply {
@@ -697,6 +769,8 @@ class ChildBackendClient {
           .put("accessibilityEnabled", accessibilityEnabled)
           .put("preciseTimingEnabled", preciseTimingEnabled)
           .put("batteryUnrestricted", batteryUnrestricted)
+          .put("dailyUsageDate", dailyUsageDate)
+          .put("dailyUsageSeconds", dailyUsageSeconds)
           .also { json ->
             if (temporaryAllowUntilMillis != null) {
               json.put("temporaryAllowUntilMillis", temporaryAllowUntilMillis)
@@ -755,5 +829,7 @@ class ChildBackendClient {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/sync-app-inventory"
     const val GET_ALLOWED_APPS_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/get-allowed-apps"
+    const val GET_DAILY_LIMIT_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/get-daily-limit"
   }
 }
