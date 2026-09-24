@@ -79,6 +79,7 @@ fun ParentDashboardScreen(
   var commandInProgress by remember { mutableStateOf(false) }
   var commandProgressMessage by remember { mutableStateOf<String?>(null) }
   var commandNotice by remember { mutableStateOf<String?>(null) }
+  var pendingCommandFeedback by remember { mutableStateOf<RemoteCommand?>(null) }
   var commandError by remember { mutableStateOf<String?>(null) }
   var showBonusTimePicker by remember { mutableStateOf(false) }
   var selectedBonusMinutes by remember { mutableStateOf(15) }
@@ -211,6 +212,13 @@ fun ParentDashboardScreen(
               device = statusResult.device,
               controlToken = controlToken,
             )
+
+            pendingCommandFeedback?.let { pendingCommand ->
+              if (commandMatchesDeviceState(pendingCommand, statusResult.device)) {
+                commandNotice = commandAppliedLabel(pendingCommand)
+                pendingCommandFeedback = null
+              }
+            }
           }
 
           is DeviceStatusResult.Error -> {
@@ -236,6 +244,7 @@ fun ParentDashboardScreen(
       commandInProgress = true
       commandProgressMessage = commandSendingLabel(command, device.isOnline)
       commandNotice = null
+      pendingCommandFeedback = null
       commandError = null
 
       when (
@@ -288,15 +297,26 @@ fun ParentDashboardScreen(
           }
 
           if (commandError == null) {
-            commandNotice =
-              when (deliveryStatus) {
-                "APPLIED" -> commandAppliedLabel(command)
-                "FAILED" -> null
-                else -> commandQueuedLabel(command, device.isOnline)
+            when (deliveryStatus) {
+              "APPLIED" -> {
+                commandNotice = commandAppliedLabel(command)
+                pendingCommandFeedback = null
               }
 
-            if (deliveryStatus == "FAILED") {
-              commandError = "Komanda nije mogla da se primeni. Pokušaj ponovo."
+              "FAILED" -> {
+                commandNotice = null
+                pendingCommandFeedback = null
+                commandError = "Komanda nije mogla da se primeni. Pokušaj ponovo."
+              }
+
+              else -> {
+                commandNotice =
+                  commandQueuedLabel(
+                    command = command,
+                    deviceOnline = pairedDevice?.isOnline ?: device.isOnline,
+                  )
+                pendingCommandFeedback = command
+              }
             }
           }
         }
@@ -780,6 +800,21 @@ private fun PairDeviceScreen(
     )
   }
 }
+
+private fun commandMatchesDeviceState(
+  command: RemoteCommand,
+  device: ChildDevice,
+): Boolean =
+  when (command.type) {
+    com.example.phoneguard.core.RemoteCommandType.LOCK ->
+      device.state == DeviceAccessState.LOCKED
+    com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
+      device.state == DeviceAccessState.ALLOWED
+    com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
+      device.state == DeviceAccessState.TEMPORARILY_ALLOWED
+    com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
+      false
+  }
 
 private fun commandSendingLabel(
   command: RemoteCommand,
