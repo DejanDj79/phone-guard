@@ -19,8 +19,13 @@ class ParentMessagingService : FirebaseMessagingService() {
   override fun onMessageReceived(message: RemoteMessage) {
     super.onMessageReceived(message)
 
-    if (message.data["type"] != TYPE_TIME_REQUEST) return
+    when (message.data["type"]) {
+      TYPE_TIME_REQUEST -> showTimeRequestNotification(message)
+      TYPE_PROTECTION_ALERT -> showProtectionAlertNotification(message)
+    }
+  }
 
+  private fun showTimeRequestNotification(message: RemoteMessage) {
     val displayName =
       message.data["display_name"]
         ?.takeIf { it.isNotBlank() }
@@ -35,7 +40,7 @@ class ParentMessagingService : FirebaseMessagingService() {
         ?.takeIf { it.isNotBlank() }
         ?: return
 
-    ensureChannel()
+    ensureTimeRequestChannel()
 
     val intent =
       Intent(this, MainActivity::class.java).apply {
@@ -55,7 +60,7 @@ class ParentMessagingService : FirebaseMessagingService() {
       )
 
     val notification =
-      NotificationCompat.Builder(this, CHANNEL_ID)
+      NotificationCompat.Builder(this, TIME_REQUEST_TIME_REQUEST_CHANNEL_ID)
         .setSmallIcon(android.R.drawable.ic_dialog_info)
         .setContentTitle("More time requested")
         .setContentText(
@@ -70,15 +75,60 @@ class ParentMessagingService : FirebaseMessagingService() {
     manager.notify(requestId.hashCode(), notification)
   }
 
-  private fun ensureChannel() {
+  private fun showProtectionAlertNotification(message: RemoteMessage) {
+    if (message.data["alert"] != ALERT_ACCESSIBILITY_DISABLED) return
+
+    val displayName =
+      message.data["display_name"]
+        ?.takeIf { it.isNotBlank() }
+        ?: "Child device"
+    val deviceId =
+      message.data["device_id"]
+        ?.takeIf { it.isNotBlank() }
+        ?: return
+
+    ensureProtectionAlertsChannel()
+
+    val intent =
+      Intent(this, MainActivity::class.java).apply {
+        flags =
+          Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_CLEAR_TOP
+      }
+
+    val pendingIntent =
+      PendingIntent.getActivity(
+        this,
+        ("protection:" + deviceId).hashCode(),
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+
+    val notification =
+      NotificationCompat.Builder(this, PROTECTION_ALERTS_TIME_REQUEST_CHANNEL_ID)
+        .setSmallIcon(android.R.drawable.ic_dialog_alert)
+        .setContentTitle("PhoneGuard protection disabled")
+        .setContentText(
+          "Accessibility protection was disabled on " + displayName + ".",
+        )
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setAutoCancel(true)
+        .setContentIntent(pendingIntent)
+        .build()
+
+    val manager = getSystemService(NotificationManager::class.java)
+    manager.notify(("protection:" + deviceId).hashCode(), notification)
+  }
+
+  private fun ensureTimeRequestChannel() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
     val manager = getSystemService(NotificationManager::class.java)
-    if (manager.getNotificationChannel(CHANNEL_ID) != null) return
+    if (manager.getNotificationChannel(TIME_REQUEST_CHANNEL_ID) != null) return
 
     manager.createNotificationChannel(
       NotificationChannel(
-        CHANNEL_ID,
+        TIME_REQUEST_CHANNEL_ID,
         "Time requests",
         NotificationManager.IMPORTANCE_HIGH,
       ).apply {
@@ -87,10 +137,30 @@ class ParentMessagingService : FirebaseMessagingService() {
     )
   }
 
+  private fun ensureProtectionAlertsChannel() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+    val manager = getSystemService(NotificationManager::class.java)
+    if (manager.getNotificationChannel(PROTECTION_ALERTS_CHANNEL_ID) != null) return
+
+    manager.createNotificationChannel(
+      NotificationChannel(
+        PROTECTION_ALERTS_CHANNEL_ID,
+        "Protection alerts",
+        NotificationManager.IMPORTANCE_HIGH,
+      ).apply {
+        description = "Alerts when PhoneGuard protection is disabled on a Child device."
+      },
+    )
+  }
+
   companion object {
     const val EXTRA_TIME_REQUEST_DEVICE_ID = "time_request_device_id"
     const val EXTRA_TIME_REQUEST_ID = "time_request_id"
     private const val TYPE_TIME_REQUEST = "TIME_REQUEST"
-    private const val CHANNEL_ID = "phoneguard_time_requests"
+    private const val TYPE_PROTECTION_ALERT = "PROTECTION_ALERT"
+    private const val ALERT_ACCESSIBILITY_DISABLED = "ACCESSIBILITY_DISABLED"
+    private const val TIME_REQUEST_CHANNEL_ID = "phoneguard_time_requests"
+    private const val PROTECTION_ALERTS_CHANNEL_ID = "phoneguard_protection_alerts"
   }
 }
