@@ -1,0 +1,70 @@
+import java.util.Properties
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+  localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+
+def readSigningValue = { String propertyName, String environmentName ->
+  def environmentValue = System.getenv(environmentName)
+  if (environmentValue != null && !environmentValue.trim().isEmpty()) {
+    return environmentValue.trim()
+  }
+
+  def localValue = localProperties.getProperty(propertyName)
+  if (localValue != null && !localValue.trim().isEmpty()) {
+    return localValue.trim()
+  }
+
+  return null
+}
+
+def keystorePath =
+  readSigningValue("phoneguard.keystore.file", "PHONEGUARD_KEYSTORE_FILE")
+def keystorePassword =
+  readSigningValue("phoneguard.keystore.password", "PHONEGUARD_KEYSTORE_PASSWORD")
+def keyAlias =
+  readSigningValue("phoneguard.key.alias", "PHONEGUARD_KEY_ALIAS")
+def keyPassword =
+  readSigningValue("phoneguard.key.password", "PHONEGUARD_KEY_PASSWORD")
+
+def missing = []
+if (keystorePath == null) missing.add("phoneguard.keystore.file / PHONEGUARD_KEYSTORE_FILE")
+if (keystorePassword == null) missing.add("phoneguard.keystore.password / PHONEGUARD_KEYSTORE_PASSWORD")
+if (keyAlias == null) missing.add("phoneguard.key.alias / PHONEGUARD_KEY_ALIAS")
+if (keyPassword == null) missing.add("phoneguard.key.password / PHONEGUARD_KEY_PASSWORD")
+
+if (!missing.isEmpty()) {
+  throw new GradleException(
+    "PhoneGuard shared debug signing is not configured. Missing: " +
+      missing.join(", ") +
+      ". Configure local.properties or environment variables. See docs/SIGNING.md."
+  )
+}
+
+def sharedKeystore = rootProject.file(keystorePath)
+if (!sharedKeystore.exists()) {
+  throw new GradleException(
+    "PhoneGuard shared debug keystore was not found at: " +
+      sharedKeystore.absolutePath +
+      ". See docs/SIGNING.md."
+  )
+}
+
+android {
+  signingConfigs {
+    phoneguardSharedDebug {
+      storeFile sharedKeystore
+      storePassword keystorePassword
+      keyAlias keyAlias
+      keyPassword keyPassword
+    }
+  }
+
+  buildTypes {
+    debug {
+      signingConfig signingConfigs.phoneguardSharedDebug
+    }
+  }
+}
