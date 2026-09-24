@@ -51,6 +51,10 @@ export default {
       typeof payload.batteryUnrestricted === "boolean"
         ? payload.batteryUnrestricted
         : null;
+    const protectionEvent =
+      typeof payload.protectionEvent === "string"
+        ? payload.protectionEvent.trim()
+        : "";
     const dailyUsageDate =
       typeof payload.dailyUsageDate === "string"
         ? payload.dailyUsageDate.trim()
@@ -79,6 +83,13 @@ export default {
     ) {
       return json({ error: "temporary_allow_until_invalid" }, 400);
     }
+    if (
+      protectionEvent &&
+      !["APP_INFO_OPENED", "UNINSTALL_SCREEN_OPENED"].includes(protectionEvent)
+    ) {
+      return json({ error: "invalid_protection_event" }, 400);
+    }
+
     const hasUsagePayload =
       dailyUsageDate !== null || dailyUsageSeconds !== null;
     if (
@@ -181,6 +192,14 @@ export default {
       {
         shouldSend: batteryUnrestrictedJustDisabled,
         alert: "BATTERY_UNRESTRICTED_DISABLED",
+      },
+      {
+        shouldSend: protectionEvent === "APP_INFO_OPENED",
+        alert: "APP_INFO_OPENED",
+      },
+      {
+        shouldSend: protectionEvent === "UNINSTALL_SCREEN_OPENED",
+        alert: "UNINSTALL_SCREEN_OPENED",
       },
     ];
 
