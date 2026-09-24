@@ -19,8 +19,10 @@ import android.view.accessibility.AccessibilityEvent
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import com.example.phoneguard.data.ChildSettingsStore
+import com.example.phoneguard.remote.AppInventorySyncer
 import com.example.phoneguard.remote.ChildHeartbeatSender
 import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
@@ -43,6 +45,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }
 
   private var overlayView: View? = null
+  private var foregroundPackage: String? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
   private val networkCallback =
@@ -90,9 +93,16 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-    if (::settingsStore.isInitialized) {
-      refreshOverlayOnMainThread()
+    if (!::settingsStore.isInitialized || event == null) return
+
+    if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+      val eventPackage = event.packageName?.toString()?.trim()
+      if (!eventPackage.isNullOrBlank()) {
+        foregroundPackage = eventPackage
+      }
     }
+
+    refreshOverlayOnMainThread()
   }
 
   override fun onInterrupt() = Unit
@@ -126,6 +136,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private fun syncPendingCommands() {
     Thread {
+      AppInventorySyncer(applicationContext).sync()
       RemoteCommandSyncer(applicationContext).sync()
     }.start()
   }
@@ -143,14 +154,24 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   }
 
   private fun refreshOverlay() {
+    val effectivelyLocked = settingsStore.isEffectivelyLocked()
+    val foregroundAllowed =
+      effectivelyLocked &&
+        settingsStore.isPackageAllowed(foregroundPackage)
+
     Log.i(
       TAG,
       "Refreshing overlay: effectivelyLocked=" +
-        settingsStore.isEffectivelyLocked() +
+        effectivelyLocked +
+        ", foregroundPackage=" +
+        foregroundPackage +
+        ", foregroundAllowed=" +
+        foregroundAllowed +
         ", overlayVisible=" +
         (overlayView != null),
     )
-    if (settingsStore.isEffectivelyLocked()) {
+
+    if (effectivelyLocked && !foregroundAllowed) {
       showOverlay()
     } else {
       hideOverlay()
@@ -160,12 +181,25 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun showOverlay() {
     if (overlayView != null) return
 
-    val root =
+    val content =
       LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER
         setPadding(dp(32), dp(48), dp(32), dp(48))
         setBackgroundColor(Color.rgb(18, 18, 20))
+      }
+
+    val root =
+      ScrollView(this).apply {
+        isFillViewport = true
+        setBackgroundColor(Color.rgb(18, 18, 20))
+        addView(
+          content,
+          ScrollView.LayoutParams(
+            ScrollView.LayoutParams.MATCH_PARENT,
+            ScrollView.LayoutParams.WRAP_CONTENT,
+          ),
+        )
       }
 
     val lockIcon =
@@ -195,6 +229,53 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         gravity = Gravity.CENTER
         setTextColor(Color.LTGRAY)
         setPadding(0, 0, 0, dp(28))
+      }
+
+    val allowedPackages = settingsStore.allowedPackages().sorted()
+    val allowedTitle =
+      if (allowedPackages.isNotEmpty()) {
+        TextView(this).apply {
+          text = "Allowed apps"
+          textSize = 16f
+          gravity = Gravity.CENTER
+          setTextColor(Color.WHITE)
+          setPadding(0, 0, 0, dp(8))
+        }
+      } else {
+        null
+      }
+
+    val allowedButtons =
+      allowedPackages.mapNotNull { packageName ->
+        val launchIntent =
+          packageManager.getLaunchIntentForPackage(packageName)
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ?: return@mapNotNull null
+
+        val label =
+          runCatching {
+            val applicationInfo =
+              packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationLabel(applicationInfo).toString()
+          }.getOrDefault(packageName)
+
+        Button(this).apply {
+          text = label
+          layoutParams =
+            LinearLayout.LayoutParams(
+              LinearLayout.LayoutParams.MATCH_PARENT,
+              LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+              bottomMargin = dp(6)
+            }
+          setOnClickListener {
+            runCatching {
+              startActivity(launchIntent)
+            }.onFailure { error ->
+              Log.w(TAG, "Failed to launch allowed app: " + packageName, error)
+            }
+          }
+        }
       }
 
     val disclosure =
@@ -256,13 +337,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         }
       }
 
-    root.addView(lockIcon)
-    root.addView(title)
-    root.addView(subtitle)
-    root.addView(disclosure)
-    root.addView(pinInput)
-    root.addView(error)
-    root.addView(unlockButton)
+    content.addView(lockIcon)
+    content.addView(title)
+    content.addView(subtitle)
+    allowedTitle?.let(content::addView)
+    allowedButtons.forEach(content::addView)
+    content.addView(disclosure)
+    content.addView(pinInput)
+    content.addView(error)
+    content.addView(unlockButton)
 
     val params =
       WindowManager.LayoutParams(
