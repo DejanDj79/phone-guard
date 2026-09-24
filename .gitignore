@@ -19,3 +19,8 @@ local.properties
 **/*service-account*.json
 **/firebase-adminsdk-*.json
 **/supabase/functions/.env*
+
+# Android signing keys
+*.jks
+*.keystore
+/signing/
