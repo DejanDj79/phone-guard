@@ -120,10 +120,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       if (!eventPackage.isNullOrBlank()) {
         foregroundPackage = eventPackage
 
+        val isPackageInstaller =
+          eventPackage.contains("packageinstaller", ignoreCase = true)
+
         if (
           eventPackage != "com.miui.securitycenter" &&
           eventPackage != "com.android.settings" &&
-          eventPackage != "com.android.systemui"
+          eventPackage != "com.android.systemui" &&
+          !isPackageInstaller
         ) {
           phoneGuardAppInfoActive = false
         }
@@ -139,7 +143,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     ) {
       val protectionEvent =
-        detectSystemUiUninstallConfirmation(event)
+        detectPackageInstallerUninstallScreen(event)
+          ?: detectSystemUiUninstallConfirmation(event)
           ?: detectProtectionBypassEvent(event)
 
       protectionEvent?.let { detectedEvent ->
@@ -154,6 +159,35 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   }
 
   override fun onInterrupt() = Unit
+
+  private fun detectPackageInstallerUninstallScreen(
+    event: AccessibilityEvent,
+  ): String? {
+    if (!phoneGuardAppInfoActive) return null
+
+    if (
+      event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+      event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+    ) {
+      return null
+    }
+
+    val eventPackage = event.packageName?.toString().orEmpty()
+    val className = event.className?.toString().orEmpty()
+
+    val isPackageInstaller =
+      eventPackage.contains("packageinstaller", ignoreCase = true)
+    val isUninstallClass =
+      className.contains("Uninstall", ignoreCase = true) ||
+        className.contains("Uninstaller", ignoreCase = true)
+
+    if (!isPackageInstaller && !isUninstallClass) {
+      return null
+    }
+
+    phoneGuardAppInfoActive = false
+    return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
+  }
 
   private fun detectSystemUiUninstallConfirmation(
     event: AccessibilityEvent,
