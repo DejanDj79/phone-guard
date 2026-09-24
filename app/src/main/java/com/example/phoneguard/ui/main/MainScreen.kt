@@ -87,6 +87,9 @@ fun MainScreen(
   }
   var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
   var allowedPackages by remember { mutableStateOf(settingsStore.allowedPackages()) }
+  var timeRequestFeedback by remember {
+    mutableStateOf(settingsStore.timeRequestFeedback())
+  }
   var pairingIdentity by remember {
     mutableStateOf(settingsStore.getOrCreatePairingIdentity())
   }
@@ -132,6 +135,7 @@ fun MainScreen(
       settingsStore.registerLockStateListener {
         isLocked = settingsStore.isEffectivelyLocked()
         allowedPackages = settingsStore.allowedPackages()
+        timeRequestFeedback = settingsStore.timeRequestFeedback()
       }
 
     onDispose {
@@ -180,6 +184,7 @@ fun MainScreen(
 
       LockScreen(
         allowedPackages = allowedPackages,
+        timeRequestFeedback = timeRequestFeedback,
         unlockTimeLabel =
           if (settingsStore.isScheduleLockActive()) {
             settingsStore.currentScheduledUnlockLabel()
@@ -187,6 +192,8 @@ fun MainScreen(
             null
           },
         onRequestMoreTime = { minutes ->
+          settingsStore.setTimeRequestFeedback(null)
+          timeRequestFeedback = null
           withContext(Dispatchers.IO) {
             backendClient.requestMoreTime(
               deviceId = pairingIdentity.deviceId,
@@ -676,6 +683,7 @@ private fun ChildDashboard(
 @Composable
 private fun LockScreen(
   allowedPackages: Set<String>,
+  timeRequestFeedback: String?,
   unlockTimeLabel: String?,
   onRequestMoreTime: suspend (Int) -> ChildTimeRequestResult,
   onUnlock: (String) -> Boolean,
@@ -911,6 +919,16 @@ private fun LockScreen(
         )
       }
 
+      timeRequestFeedback?.let { message ->
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.error,
+          textAlign = TextAlign.Center,
+        )
+      }
+
       Spacer(modifier = Modifier.height(16.dp))
 
       if (!showPinEntry) {
@@ -1106,6 +1124,7 @@ private fun LockScreenPreview() {
   PhoneGuardTheme {
     LockScreen(
       allowedPackages = emptySet(),
+      timeRequestFeedback = "Your request for more time was denied by Parent.",
       unlockTimeLabel = "07:00",
       onRequestMoreTime = {
         ChildTimeRequestResult.Success(
