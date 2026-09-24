@@ -1,6 +1,8 @@
 package com.example.phoneguard.remote
 
+import com.example.phoneguard.core.InstalledAppInfo
 import com.example.phoneguard.core.PairingIdentity
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -51,6 +53,25 @@ sealed interface ChildScheduleInitializeResult {
   data class Failure(
     val message: String,
   ) : ChildScheduleInitializeResult
+}
+
+sealed interface ChildAppInventorySyncResult {
+  data object Success : ChildAppInventorySyncResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildAppInventorySyncResult
+}
+
+sealed interface ChildAllowedAppsResult {
+  data class Success(
+    val packages: Set<String>,
+    val version: Long,
+  ) : ChildAllowedAppsResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildAllowedAppsResult
 }
 
 sealed interface ChildHeartbeatResult {
@@ -443,6 +464,133 @@ class ChildBackendClient {
     }
   }
 
+  fun syncAppInventory(
+    deviceId: String,
+    deviceSecret: String,
+    apps: List<InstalledAppInfo>,
+  ): ChildAppInventorySyncResult {
+    val connection =
+      (URL(SYNC_APP_INVENTORY_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val appsJson = JSONArray()
+      apps.forEach { app ->
+        appsJson.put(
+          JSONObject()
+            .put("packageName", app.packageName)
+            .put("label", app.label),
+        )
+      }
+
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .put("apps", appsJson)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        ChildAppInventorySyncResult.Success
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildAppInventorySyncResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildAppInventorySyncResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
+  fun fetchAllowedApps(
+    deviceId: String,
+    deviceSecret: String,
+  ): ChildAllowedAppsResult {
+    val connection =
+      (URL(GET_ALLOWED_APPS_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        val allowedApps =
+          JSONObject(responseBody).getJSONObject("allowedApps")
+        val packagesJson = allowedApps.optJSONArray("packages")
+        val packages =
+          buildSet {
+            if (packagesJson != null) {
+              for (index in 0 until packagesJson.length()) {
+                val packageName = packagesJson.optString(index).trim()
+                if (packageName.isNotEmpty()) add(packageName)
+              }
+            }
+          }
+
+        ChildAllowedAppsResult.Success(
+          packages = packages,
+          version = allowedApps.optLong("version", 0L),
+        )
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildAllowedAppsResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildAllowedAppsResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
   fun heartbeat(
     deviceId: String,
     deviceSecret: String,
@@ -522,5 +670,9 @@ class ChildBackendClient {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/get-schedule"
     const val INITIALIZE_SCHEDULE_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/initialize-schedule"
+    const val SYNC_APP_INVENTORY_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/sync-app-inventory"
+    const val GET_ALLOWED_APPS_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/get-allowed-apps"
   }
 }
