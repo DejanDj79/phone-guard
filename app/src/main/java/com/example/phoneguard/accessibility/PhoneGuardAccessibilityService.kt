@@ -135,7 +135,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }
 
     if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-      detectUninstallActionClick(event)?.let(::reportProtectionEvent)
+      val protectionEvent =
+        detectSensitiveActionClick(event)
+          ?: detectUninstallActionClick(event)
+
+      protectionEvent?.let(::reportProtectionEvent)
     }
 
     if (
@@ -143,7 +147,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     ) {
       val protectionEvent =
-        detectPackageInstallerUninstallScreen(event)
+        detectSensitiveActionConfirmation(event)
+          ?: detectPackageInstallerUninstallScreen(event)
           ?: detectSystemUiUninstallConfirmation(event)
           ?: detectProtectionBypassEvent(event)
 
@@ -159,6 +164,95 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   }
 
   override fun onInterrupt() = Unit
+
+  private fun detectSensitiveActionClick(
+    event: AccessibilityEvent,
+  ): String? {
+    if (!phoneGuardAppInfoActive) return null
+
+    val clickedText =
+      buildString {
+        event.text.forEach { item ->
+          append(item)
+          append(' ')
+        }
+        event.contentDescription?.let {
+          append(it)
+          append(' ')
+        }
+        event.source?.text?.let {
+          append(it)
+          append(' ')
+        }
+        event.source?.contentDescription?.let {
+          append(it)
+          append(' ')
+        }
+      }.lowercase()
+
+    return when {
+      clickedText.contains("force stop") ||
+        clickedText.contains("force-stop") ->
+        PROTECTION_EVENT_FORCE_STOP_ATTEMPT
+
+      clickedText.contains("clear data") ||
+        clickedText.contains("clear storage") ||
+        clickedText.contains("erase app data") ||
+        clickedText.contains("delete app data") ->
+        PROTECTION_EVENT_CLEAR_DATA_ATTEMPT
+
+      else -> null
+    }
+  }
+
+  private fun detectSensitiveActionConfirmation(
+    event: AccessibilityEvent,
+  ): String? {
+    if (!phoneGuardAppInfoActive) return null
+
+    if (
+      event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+      event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+    ) {
+      return null
+    }
+
+    val activeText = activeWindowText().lowercase()
+    val hasCancel =
+      activeText.contains("cancel") ||
+        activeText.contains("otka")
+    val hasConfirm =
+      activeText.contains("ok") ||
+        activeText.contains("confirm") ||
+        activeText.contains("delete") ||
+        activeText.contains("clear")
+
+    if (!hasCancel || !hasConfirm) return null
+
+    val forceStopConfirmation =
+      activeText.contains("force stop") ||
+        activeText.contains("force-stop")
+
+    if (forceStopConfirmation) {
+      return PROTECTION_EVENT_FORCE_STOP_ATTEMPT
+    }
+
+    val clearDataConfirmation =
+      activeText.contains("clear data") ||
+        activeText.contains("clear storage") ||
+        activeText.contains("clear all data") ||
+        activeText.contains("delete app data") ||
+        activeText.contains("all app data") ||
+        activeText.contains("all of this app") &&
+          activeText.contains("data") &&
+          activeText.contains("deleted")
+
+    return if (clearDataConfirmation) {
+      PROTECTION_EVENT_CLEAR_DATA_ATTEMPT
+    } else {
+      null
+    }
+  }
 
   private fun detectPackageInstallerUninstallScreen(
     event: AccessibilityEvent,
@@ -973,5 +1067,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
     const val PROTECTION_EVENT_APP_INFO_OPENED = "APP_INFO_OPENED"
     const val PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
+    const val PROTECTION_EVENT_FORCE_STOP_ATTEMPT = "FORCE_STOP_ATTEMPT"
+    const val PROTECTION_EVENT_CLEAR_DATA_ATTEMPT = "CLEAR_DATA_ATTEMPT"
   }
 }
