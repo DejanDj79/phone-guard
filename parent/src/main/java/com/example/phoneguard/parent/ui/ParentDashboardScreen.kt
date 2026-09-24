@@ -53,7 +53,10 @@ import com.example.phoneguard.parent.data.HttpDeviceManagementGateway
 import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
+import com.example.phoneguard.parent.data.HttpProtectionHistoryGateway
 import com.example.phoneguard.parent.data.PairingGateway
+import com.example.phoneguard.parent.data.ProtectionHistoryEvent
+import com.example.phoneguard.parent.data.ProtectionHistoryResult
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.data.HttpScheduleGateway
 import com.example.phoneguard.parent.data.HttpTimeRequestGateway
@@ -91,6 +94,7 @@ fun ParentDashboardScreen(
   val deviceManagementGateway = remember { HttpDeviceManagementGateway() }
   val timeRequestGateway = remember { HttpTimeRequestGateway() }
   val dailyLimitGateway = remember { HttpDailyLimitGateway() }
+  val protectionHistoryGateway = remember { HttpProtectionHistoryGateway() }
   val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
@@ -143,6 +147,12 @@ fun ParentDashboardScreen(
   var dailyLimitSaving by remember { mutableStateOf(false) }
   var dailyLimitError by remember { mutableStateOf<String?>(null) }
   var dailyLimitNotice by remember { mutableStateOf<String?>(null) }
+  var protectionHistory by remember {
+    mutableStateOf<List<ProtectionHistoryEvent>>(emptyList())
+  }
+  var protectionHistoryLoading by remember { mutableStateOf(false) }
+  var protectionHistoryError by remember { mutableStateOf<String?>(null) }
+  var showAllProtectionHistory by remember { mutableStateOf(false) }
 
   fun removeInvalidPairing(
     deviceId: String,
@@ -168,6 +178,10 @@ fun ParentDashboardScreen(
     showDailyLimitPicker = false
     dailyLimitError = null
     dailyLimitNotice = null
+    protectionHistory = emptyList()
+    protectionHistoryLoading = false
+    protectionHistoryError = null
+    showAllProtectionHistory = false
     showDevices = false
     selectedTab = 0
 
@@ -275,6 +289,10 @@ fun ParentDashboardScreen(
             pairedDevice?.dailyScreenTime?.limitMinutes ?: 120
           dailyLimitError = null
           dailyLimitNotice = null
+          protectionHistory = emptyList()
+          protectionHistoryLoading = false
+          protectionHistoryError = null
+          showAllProtectionHistory = false
           showDevices = false
           selectedTab = 0
         }
@@ -551,6 +569,53 @@ fun ParentDashboardScreen(
 
         delay(15_000)
       }
+    }
+  }
+
+  LaunchedEffect(device.deviceId, selectedTab, "protection-history-poll") {
+    if (selectedTab != 3) return@LaunchedEffect
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      protectionHistoryError =
+        "Control token is missing. Re-pairing is required."
+      return@LaunchedEffect
+    }
+
+    while (true) {
+      if (protectionHistory.isEmpty()) {
+        protectionHistoryLoading = true
+      }
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            protectionHistoryGateway.fetch(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+            )
+          }
+      ) {
+        is ProtectionHistoryResult.Success -> {
+          protectionHistory = result.events
+          protectionHistoryError = null
+        }
+
+        is ProtectionHistoryResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+            return@LaunchedEffect
+          } else {
+            protectionHistoryError = result.message
+          }
+        }
+      }
+
+      protectionHistoryLoading = false
+      delay(15_000)
     }
   }
 
@@ -1107,6 +1172,89 @@ fun ParentDashboardScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
+        }
+      }
+
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            text = "Protection history",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+
+          Text(
+            text = "Recent protection changes and bypass attempts for " +
+              device.displayName + ".",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          when {
+            protectionHistoryLoading && protectionHistory.isEmpty() -> {
+              Text(
+                text = "Loading protection history…",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+
+            protectionHistory.isEmpty() && protectionHistoryError == null -> {
+              Text(
+                text = "No protection events recorded yet.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+
+            else -> {
+              val visibleEvents =
+                if (showAllProtectionHistory) {
+                  protectionHistory
+                } else {
+                  protectionHistory.take(PROTECTION_HISTORY_PREVIEW_COUNT)
+                }
+
+              visibleEvents.forEach { event ->
+                Text(
+                  text =
+                    formatProtectionEventTime(event.createdAt) +
+                      " · " +
+                      protectionHistoryLabel(event.eventType),
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
+
+              if (protectionHistory.size > PROTECTION_HISTORY_PREVIEW_COUNT) {
+                OutlinedButton(
+                  onClick = {
+                    showAllProtectionHistory = !showAllProtectionHistory
+                  },
+                  modifier = Modifier.fillMaxWidth(),
+                ) {
+                  Text(
+                    if (showAllProtectionHistory) {
+                      "SHOW LESS"
+                    } else {
+                      "SHOW ALL (" + protectionHistory.size + ")"
+                    },
+                  )
+                }
+              }
+            }
+          }
+
+          protectionHistoryError?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
         }
       }
     }
@@ -1856,6 +2004,32 @@ private fun PairDeviceScreen(
   }
 }
 
+private fun protectionHistoryLabel(eventType: String): String =
+  when (eventType) {
+    "ACCESSIBILITY_DISABLED" ->
+      "⚠ Accessibility protection disabled"
+    "ACCESSIBILITY_RESTORED" ->
+      "✓ Accessibility protection restored"
+    "PRECISE_TIMING_DISABLED" ->
+      "⚠ Precise timing disabled"
+    "PRECISE_TIMING_RESTORED" ->
+      "✓ Precise timing restored"
+    "BATTERY_UNRESTRICTED_DISABLED" ->
+      "⚠ Background protection restricted"
+    "BATTERY_UNRESTRICTED_RESTORED" ->
+      "✓ Background protection restored"
+    "APP_INFO_OPENED" ->
+      "⚠ PhoneGuard app info opened"
+    "UNINSTALL_SCREEN_OPENED" ->
+      "⚠ Uninstall screen opened"
+    "FORCE_STOP_ATTEMPT" ->
+      "⚠ Force stop selected"
+    "CLEAR_DATA_ATTEMPT" ->
+      "⚠ Clear app data selected"
+    else ->
+      eventType.replace('_', ' ').lowercase()
+  }
+
 @Composable
 private fun ProtectionStatusLine(
   label: String,
@@ -1905,6 +2079,8 @@ private fun formatUsageSeconds(seconds: Int): String {
     formatDurationMinutes(totalMinutes)
   }
 }
+
+private const val PROTECTION_HISTORY_PREVIEW_COUNT = 8
 
 private fun commandMatchesDeviceState(
   command: RemoteCommand,
