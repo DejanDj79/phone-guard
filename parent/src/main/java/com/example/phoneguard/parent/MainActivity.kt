@@ -38,35 +38,29 @@ class MainActivity : FragmentActivity() {
   override fun onStart() {
     super.onStart()
 
-    if (FirebaseApp.getApps(this).isEmpty()) return
+    requestNotificationPermissionIfNeeded()
 
-    ParentPushRegistrar(applicationContext).registerCurrentToken()
+    if (FirebaseApp.getApps(this).isNotEmpty()) {
+      ParentPushRegistrar(applicationContext).registerCurrentToken()
+    }
+  }
+
+  private fun requestNotificationPermissionIfNeeded() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
     if (
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
       ContextCompat.checkSelfPermission(
         this,
         Manifest.permission.POST_NOTIFICATIONS,
-      ) != PackageManager.PERMISSION_GRANTED
+      ) == PackageManager.PERMISSION_GRANTED
     ) {
-      val preferences =
-        getSharedPreferences(
-          NOTIFICATION_PREFERENCES,
-          MODE_PRIVATE,
-        )
-
-      if (!preferences.getBoolean(KEY_NOTIFICATION_PERMISSION_REQUESTED, false)) {
-        preferences
-          .edit()
-          .putBoolean(KEY_NOTIFICATION_PERMISSION_REQUESTED, true)
-          .apply()
-
-        requestPermissions(
-          arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-          NOTIFICATION_PERMISSION_REQUEST_CODE,
-        )
-      }
+      return
     }
+
+    requestPermissions(
+      arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+      NOTIFICATION_PERMISSION_REQUEST_CODE,
+    )
   }
 
   override fun onNewIntent(intent: Intent) {
@@ -90,7 +84,5 @@ class MainActivity : FragmentActivity() {
 
   private companion object {
     const val NOTIFICATION_PERMISSION_REQUEST_CODE = 4101
-    const val NOTIFICATION_PREFERENCES = "phone_guard_parent_notifications"
-    const val KEY_NOTIFICATION_PERMISSION_REQUESTED = "permission_requested"
   }
 }
