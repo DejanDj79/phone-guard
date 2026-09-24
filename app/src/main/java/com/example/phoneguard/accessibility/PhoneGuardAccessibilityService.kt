@@ -119,7 +119,12 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       if (!eventPackage.isNullOrBlank()) {
         foregroundPackage = eventPackage
       }
+    }
 
+    if (
+      event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+      event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+    ) {
       detectProtectionBypassEvent(event)?.let(::reportProtectionEvent)
     }
 
@@ -170,7 +175,27 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         className.contains("Uninstaller", ignoreCase = true) ||
         className.contains("Uninstall", ignoreCase = true)
 
-    if (uninstallScreen) {
+    val hasUninstallAction =
+      normalizedText.contains("uninstall") ||
+        normalizedText.contains("deinstall") ||
+        normalizedText.contains("deinstal") ||
+        normalizedText.contains("remove app") ||
+        normalizedText.contains("ukloni aplikaciju")
+
+    val hasConfirmationAction =
+      normalizedText.contains("cancel") ||
+        normalizedText.contains("otka") ||
+        normalizedText.contains("confirm") ||
+        normalizedText.contains("potvr") ||
+        normalizedText.contains("ok")
+
+    val miuiUninstallConfirmation =
+      eventPackage == "com.miui.securitycenter" &&
+        className.contains("ApplicationsDetailsActivity", ignoreCase = true) &&
+        hasUninstallAction &&
+        hasConfirmationAction
+
+    if (uninstallScreen || miuiUninstallConfirmation) {
       return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     }
 
