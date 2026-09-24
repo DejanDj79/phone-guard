@@ -84,7 +84,6 @@ export default {
       paired = Boolean(existing.control_token_hash);
 
       const update: Record<string, unknown> = {
-        display_name: displayName || "Child device",
         last_seen_at: now.toISOString(),
         updated_at: now.toISOString(),
       };
