@@ -119,23 +119,23 @@ class HttpCommandGateway : CommandGateway {
         CommandResult.Error(
           when (errorCode) {
             "device_auth_failed" ->
-              "Parent pairing više nije važeći."
+              "Parent pairing is no longer valid."
             "device_has_no_fcm_token" ->
-              "Child uređaj još nema FCM token."
+              "Child device does not have an FCM token yet."
             "firebase_not_configured" ->
-              "Firebase server credential još nije podešen."
+              "Firebase server credentials are not configured yet."
             "firebase_oauth_failed" ->
-              "Firebase autorizacija nije uspela."
+              "Firebase authorization failed."
             "fcm_send_failed" ->
-              "FCM nije prihvatio poruku."
+              "FCM did not accept the message."
             else ->
-              errorCode.ifBlank { "Backend greška: HTTP " + statusCode }
+              errorCode.ifBlank { "Backend error: HTTP " + statusCode }
           },
         )
       }
     } catch (error: Exception) {
       CommandResult.Error(
-        error.message ?: "Mrežna greška.",
+        error.message ?: "Network error.",
       )
     } finally {
       connection.disconnect()
@@ -208,17 +208,17 @@ class HttpCommandGateway : CommandGateway {
         CommandDeliveryResult.Error(
           when (errorCode) {
             "device_auth_failed" ->
-              "Parent pairing više nije važeći."
+              "Parent pairing is no longer valid."
             "command_not_found" ->
-              "Komanda nije pronađena na backendu."
+              "Command was not found on the backend."
             else ->
-              errorCode.ifBlank { "Backend greška: HTTP " + statusCode }
+              errorCode.ifBlank { "Backend error: HTTP " + statusCode }
           },
         )
       }
     } catch (error: Exception) {
       CommandDeliveryResult.Error(
-        error.message ?: "Mrežna greška.",
+        error.message ?: "Network error.",
       )
     } finally {
       connection.disconnect()
