@@ -58,6 +58,7 @@ import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.HttpProtectionHistoryGateway
 import com.example.phoneguard.parent.data.PairingGateway
+import com.example.phoneguard.parent.data.ProtectionHistoryClearResult
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
 import com.example.phoneguard.parent.data.ProtectionHistoryResult
 import com.example.phoneguard.parent.data.ParentSettingsStore
@@ -157,6 +158,8 @@ fun ParentDashboardScreen(
   var protectionHistoryLoading by remember { mutableStateOf(false) }
   var protectionHistoryError by remember { mutableStateOf<String?>(null) }
   var showAllProtectionHistory by remember { mutableStateOf(false) }
+  var protectionHistoryClearing by remember { mutableStateOf(false) }
+  var showClearProtectionHistoryConfirm by remember { mutableStateOf(false) }
   var appUsageDays by remember {
     mutableStateOf<List<AppUsageDay>>(emptyList())
   }
@@ -191,6 +194,8 @@ fun ParentDashboardScreen(
     protectionHistoryLoading = false
     protectionHistoryError = null
     showAllProtectionHistory = false
+    protectionHistoryClearing = false
+    showClearProtectionHistoryConfirm = false
     appUsageDays = emptyList()
     appUsageLoading = false
     appUsageError = null
@@ -305,6 +310,8 @@ fun ParentDashboardScreen(
           protectionHistoryLoading = false
           protectionHistoryError = null
           showAllProtectionHistory = false
+          protectionHistoryClearing = false
+          showClearProtectionHistoryConfirm = false
           appUsageDays = emptyList()
           appUsageLoading = false
           appUsageError = null
@@ -770,6 +777,51 @@ fun ParentDashboardScreen(
       }
 
       timeRequestResponding = false
+    }
+  }
+
+  fun clearProtectionHistory() {
+    if (protectionHistoryClearing) return
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      protectionHistoryError =
+        "Control token is missing. Re-pairing is required."
+      return
+    }
+
+    scope.launch {
+      protectionHistoryClearing = true
+      protectionHistoryError = null
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            protectionHistoryGateway.clear(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+            )
+          }
+      ) {
+        ProtectionHistoryClearResult.Success -> {
+          protectionHistory = emptyList()
+          showAllProtectionHistory = false
+          showClearProtectionHistoryConfirm = false
+        }
+
+        is ProtectionHistoryClearResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+          } else {
+            protectionHistoryError = result.message
+          }
+        }
+      }
+
+      protectionHistoryClearing = false
     }
   }
 
@@ -1307,6 +1359,25 @@ fun ParentDashboardScreen(
                   )
                 }
               }
+            }
+          }
+
+          if (protectionHistory.isNotEmpty()) {
+            OutlinedButton(
+              onClick = {
+                showClearProtectionHistoryConfirm = true
+                protectionHistoryError = null
+              },
+              enabled = !protectionHistoryClearing,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text(
+                if (protectionHistoryClearing) {
+                  "CLEARING…"
+                } else {
+                  "CLEAR HISTORY"
+                },
+              )
             }
           }
 
@@ -1853,6 +1924,52 @@ fun ParentDashboardScreen(
       )
     }
     Spacer(modifier = Modifier.height(8.dp))
+  }
+
+  if (showClearProtectionHistoryConfirm) {
+    AlertDialog(
+      onDismissRequest = {
+        if (!protectionHistoryClearing) {
+          showClearProtectionHistoryConfirm = false
+        }
+      },
+      title = {
+        Text(
+          text = "Clear protection history?",
+          fontWeight = FontWeight.SemiBold,
+        )
+      },
+      text = {
+        Text(
+          text =
+            "This will permanently delete the protection history for " +
+              device.displayName +
+              ". Protection settings and alerts will not be changed.",
+        )
+      },
+      confirmButton = {
+        Button(
+          onClick = { clearProtectionHistory() },
+          enabled = !protectionHistoryClearing,
+        ) {
+          Text(
+            if (protectionHistoryClearing) {
+              "CLEARING…"
+            } else {
+              "CLEAR"
+            },
+          )
+        }
+      },
+      dismissButton = {
+        OutlinedButton(
+          onClick = { showClearProtectionHistoryConfirm = false },
+          enabled = !protectionHistoryClearing,
+        ) {
+          Text("CANCEL")
+        }
+      },
+    )
   }
 
   if (showDailyLimitPicker) {
