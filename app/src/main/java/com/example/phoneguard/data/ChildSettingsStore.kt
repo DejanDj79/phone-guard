@@ -21,6 +21,16 @@ class ChildSettingsStore(context: Context) {
   fun hasParentPin(): Boolean =
     preferences.contains(KEY_PIN_HASH) && preferences.contains(KEY_PIN_SALT)
 
+  fun isSetupWizardCompleted(): Boolean =
+    preferences.getBoolean(KEY_SETUP_WIZARD_COMPLETED, false)
+
+  fun setSetupWizardCompleted(completed: Boolean) {
+    preferences
+      .edit()
+      .putBoolean(KEY_SETUP_WIZARD_COMPLETED, completed)
+      .apply()
+  }
+
   fun setParentPin(pin: String) {
     require(PIN_PATTERN.matches(pin)) { "PIN must contain 4 to 6 digits." }
 
@@ -481,6 +491,7 @@ class ChildSettingsStore(context: Context) {
     const val PREFERENCES_NAME = "phone_guard_child_settings"
     const val KEY_PIN_SALT = "parent_pin_salt"
     const val KEY_PIN_HASH = "parent_pin_hash"
+    const val KEY_SETUP_WIZARD_COMPLETED = "setup_wizard_completed"
     const val KEY_MANUAL_LOCKED = "manual_locked"
     const val KEY_SCHEDULE_LOCKED = "schedule_locked"
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
