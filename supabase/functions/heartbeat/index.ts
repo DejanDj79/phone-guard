@@ -131,6 +131,7 @@ export default {
         battery_unrestricted: batteryUnrestricted,
         protection_updated_at: now,
         last_seen_at: now,
+        offline_alert_sent_at: null,
         updated_at: now,
         ...(hasUsagePayload
           ? {
