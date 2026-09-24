@@ -46,7 +46,7 @@ export default {
     const { data: device, error } = await ctx.supabaseAdmin
       .from("child_devices")
       .select(
-        "device_id, display_name, access_state, temporary_allow_until, last_seen_at, accessibility_enabled, precise_timing_enabled, battery_unrestricted, protection_updated_at",
+        "device_id, display_name, access_state, temporary_allow_until, last_seen_at, accessibility_enabled, precise_timing_enabled, battery_unrestricted, protection_updated_at, daily_limit_minutes, daily_usage_date, daily_usage_seconds",
       )
       .eq("device_id", deviceId)
       .eq("control_token_hash", controlTokenHash)
@@ -71,6 +71,22 @@ export default {
           )
         : null;
 
+    const dailyLimitMinutes =
+      typeof device.daily_limit_minutes === "number"
+        ? device.daily_limit_minutes
+        : null;
+    const dailyUsageSeconds =
+      typeof device.daily_usage_seconds === "number"
+        ? Math.max(0, device.daily_usage_seconds)
+        : 0;
+    const dailyRemainingMinutes =
+      dailyLimitMinutes === null
+        ? null
+        : Math.max(
+            0,
+            Math.ceil((dailyLimitMinutes * 60 - dailyUsageSeconds) / 60),
+          );
+
     const lastSeenMillis =
       typeof device.last_seen_at === "string"
         ? new Date(device.last_seen_at).getTime()
@@ -88,6 +104,15 @@ export default {
         temporaryAccessMinutesRemaining,
         isOnline,
         lastSeenAt: device.last_seen_at,
+        dailyScreenTime: {
+          limitMinutes: dailyLimitMinutes,
+          usedSeconds: dailyUsageSeconds,
+          remainingMinutes: dailyRemainingMinutes,
+          usageDate: device.daily_usage_date,
+          limitReached:
+            dailyLimitMinutes !== null &&
+            dailyUsageSeconds >= dailyLimitMinutes * 60,
+        },
         protection: {
           accessibilityEnabled:
             typeof device.accessibility_enabled === "boolean"
