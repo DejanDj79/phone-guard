@@ -139,12 +139,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private fun detectUninstallActionClick(event: AccessibilityEvent): String? {
     val eventPackage = event.packageName?.toString().orEmpty()
-    if (
-      eventPackage != "com.miui.securitycenter" &&
-      eventPackage != "com.android.settings"
-    ) {
-      return null
-    }
 
     val clickedText =
       buildString {
@@ -166,15 +160,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         }
       }.lowercase()
 
-    val uninstallClicked =
-      clickedText.contains("uninstall") ||
-        clickedText.contains("deinstall") ||
-        clickedText.contains("deinstal") ||
-        clickedText.contains("remove app") ||
-        clickedText.contains("ukloni aplikaciju")
-
-    if (!uninstallClicked) return null
-
     val activeText = activeWindowText()
     val phoneGuardLabel =
       runCatching {
@@ -188,6 +173,26 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         activeText.contains(packageName, ignoreCase = true)
 
     if (!mentionsPhoneGuard) return null
+
+    Log.i(
+      TAG,
+      "PhoneGuard screen click: package=" + eventPackage +
+        ", class=" + event.className?.toString().orEmpty() +
+        ", text=" + clickedText,
+    )
+
+    val uninstallClicked =
+      clickedText.contains("uninstall") ||
+        clickedText.contains("deinstall") ||
+        clickedText.contains("deinstal") ||
+        clickedText.contains("remove app") ||
+        clickedText.contains("remove") ||
+        clickedText.contains("delete") ||
+        clickedText.contains("ukloni aplikaciju") ||
+        clickedText.contains("obriši aplikaciju") ||
+        clickedText.contains("obrisi aplikaciju")
+
+    if (!uninstallClicked) return null
 
     Log.i(
       TAG,
