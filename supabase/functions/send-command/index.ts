@@ -2,7 +2,13 @@ import { withSupabase } from "npm:@supabase/server@1.7.1";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const VALID_COMMANDS = new Set(["LOCK", "UNLOCK", "BONUS_TIME", "SYNC_SCHEDULE"]);
+const VALID_COMMANDS = new Set([
+  "LOCK",
+  "UNLOCK",
+  "BONUS_TIME",
+  "SYNC_SCHEDULE",
+  "SYNC_ALLOWED_APPS",
+]);
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const DEFAULT_TOKEN_URI = "https://oauth2.googleapis.com/token";
 
