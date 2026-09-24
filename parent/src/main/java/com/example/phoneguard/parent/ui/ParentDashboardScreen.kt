@@ -88,6 +88,12 @@ fun ParentDashboardScreen(
   var pairedDevice by remember {
     mutableStateOf(settingsStore.loadPairedDevice())
   }
+  var pairedDevices by remember {
+    mutableStateOf(settingsStore.loadPairedDevices())
+  }
+  var showPairDevice by remember {
+    mutableStateOf(pairedDevice == null)
+  }
   var commandInProgress by remember { mutableStateOf(false) }
   var commandProgressMessage by remember { mutableStateOf<String?>(null) }
   var commandNotice by remember { mutableStateOf<String?>(null) }
@@ -115,7 +121,7 @@ fun ParentDashboardScreen(
   var deviceUnpairing by remember { mutableStateOf(false) }
   var deviceManagementError by remember { mutableStateOf<String?>(null) }
 
-  if (pairedDevice == null) {
+  if (showPairDevice || pairedDevice == null) {
     PairDeviceScreen(
       modifier = modifier,
       onPair = { rawCode ->
@@ -144,7 +150,9 @@ fun ParentDashboardScreen(
                 device = result.device,
                 controlToken = token,
               )
+              pairedDevices = settingsStore.loadPairedDevices()
               pairedDevice = result.device
+              showPairDevice = false
               result
             }
           } else {
@@ -152,6 +160,12 @@ fun ParentDashboardScreen(
           }
         }
       },
+      onCancel =
+        if (pairedDevices.isNotEmpty()) {
+          { showPairDevice = false }
+        } else {
+          null
+        },
     )
     return
   }
@@ -229,7 +243,9 @@ fun ParentDashboardScreen(
               ) {
                 UnpairDeviceResult.Success -> {
                   settingsStore.removePairing(device.deviceId)
+                  pairedDevices = settingsStore.loadPairedDevices()
                   pairedDevice = settingsStore.loadPairedDevice()
+                  showPairDevice = pairedDevice == null
                   showDeviceManagement = false
                   commandNotice = null
                   pendingCommandFeedback = null
@@ -535,6 +551,50 @@ fun ParentDashboardScreen(
       style = MaterialTheme.typography.titleMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        Text(
+          text = "Devices",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+        )
+
+        pairedDevices.forEach { paired ->
+          OutlinedButton(
+            onClick = {
+              if (settingsStore.selectDevice(paired.deviceId)) {
+                pairedDevice = settingsStore.loadPairedDevice()
+                commandNotice = null
+                commandError = null
+                pendingCommandFeedback = null
+              }
+            },
+            enabled = paired.deviceId != device.deviceId,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(
+              if (paired.deviceId == device.deviceId) {
+                "✓ " + paired.displayName
+              } else {
+                paired.displayName
+              },
+            )
+          }
+        }
+
+        Button(
+          onClick = { showPairDevice = true },
+          enabled = !commandInProgress && !deviceRenaming && !deviceUnpairing,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("+ ADD DEVICE")
+        }
+      }
+    }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
       Column(
@@ -1053,6 +1113,7 @@ private fun BonusTimeWheelDialog(
 @Composable
 private fun PairDeviceScreen(
   onPair: suspend (String) -> PairingResult,
+  onCancel: (() -> Unit)? = null,
   modifier: Modifier = Modifier,
 ) {
   val scope = rememberCoroutineScope()
@@ -1154,6 +1215,18 @@ private fun PairDeviceScreen(
     }
 
     Spacer(modifier = Modifier.height(16.dp))
+
+    onCancel?.let {
+      OutlinedButton(
+        onClick = it,
+        enabled = !pairingInProgress,
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text("CANCEL")
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+    }
 
     Text(
       text = "The code is verified by the PhoneGuard backend and can only be used while it is active.",
