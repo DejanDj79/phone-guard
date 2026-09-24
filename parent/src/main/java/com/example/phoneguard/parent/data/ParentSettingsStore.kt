@@ -27,6 +27,7 @@ class ParentSettingsStore(context: Context) {
           device.temporaryAccessMinutesRemaining ?: 0,
         )
         .putString(KEY_LAST_SEEN_AT, device.lastSeenAt)
+        .putBoolean(KEY_IS_ONLINE, device.isOnline)
         .putString(
           KEY_CONTROL_TOKEN_ENCRYPTED,
           tokenCipher.encrypt(controlToken),
@@ -68,6 +69,12 @@ class ParentSettingsStore(context: Context) {
         displayName = displayName,
         state = state,
         temporaryAccessMinutesRemaining = temporaryMinutes,
+        isOnline =
+          if (preferences.contains(KEY_IS_ONLINE)) {
+            preferences.getBoolean(KEY_IS_ONLINE, false)
+          } else {
+            true
+          },
         lastSeenAt = preferences.getString(KEY_LAST_SEEN_AT, null),
         protectionStatus =
           DeviceProtectionStatus(
@@ -116,6 +123,7 @@ class ParentSettingsStore(context: Context) {
     const val KEY_DEVICE_STATE = "device_state"
     const val KEY_TEMPORARY_MINUTES = "temporary_minutes"
     const val KEY_LAST_SEEN_AT = "last_seen_at"
+    const val KEY_IS_ONLINE = "is_online"
     const val KEY_CONTROL_TOKEN = "control_token"
     const val KEY_CONTROL_TOKEN_ENCRYPTED = "control_token_encrypted"
     const val KEY_ACCESSIBILITY_ENABLED = "accessibility_enabled"
