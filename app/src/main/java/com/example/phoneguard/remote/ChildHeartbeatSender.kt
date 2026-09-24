@@ -21,6 +21,40 @@ class ChildHeartbeatSender(context: Context) {
     val temporaryAllowanceUntil = settingsStore.temporaryAllowanceUntilMillis()
     val dailyUsageDate = settingsStore.currentLocalDateKey(now)
     val dailyUsageSeconds = settingsStore.dailyUsageSecondsForToday(now)
+    val appUsageMillis = settingsStore.appUsageMillisForToday(now)
+    val appUsageTotalSeconds =
+      (appUsageMillis.values.sum() / 1000L)
+        .coerceIn(0L, 172800L)
+        .toInt()
+    val appUsageEntries =
+      appUsageMillis.entries
+        .asSequence()
+        .filter { it.value >= 1000L }
+        .sortedByDescending { it.value }
+        .take(MAX_APP_USAGE_ENTRIES)
+        .map { (packageName, millis) ->
+          val label =
+            runCatching {
+              val appInfo =
+                appContext.packageManager.getApplicationInfo(packageName, 0)
+              appContext.packageManager
+                .getApplicationLabel(appInfo)
+                .toString()
+                .trim()
+            }
+              .getOrDefault("")
+              .ifBlank { packageName.substringAfterLast('.') }
+
+          ChildAppUsageEntry(
+            packageName = packageName,
+            label = label.take(MAX_APP_LABEL_LENGTH),
+            seconds =
+              (millis / 1000L)
+                .coerceIn(0L, 172800L)
+                .toInt(),
+          )
+        }
+        .toList()
     val temporaryAllowanceActive = temporaryAllowanceUntil > now
     val accessState =
       when {
@@ -50,6 +84,9 @@ class ChildHeartbeatSender(context: Context) {
           protectionEvent = protectionEvent,
           dailyUsageDate = dailyUsageDate,
           dailyUsageSeconds = dailyUsageSeconds,
+          appUsageDate = dailyUsageDate,
+          appUsageTotalSeconds = appUsageTotalSeconds,
+          appUsageEntries = appUsageEntries,
         )
     ) {
       ChildHeartbeatResult.Success ->
@@ -62,5 +99,7 @@ class ChildHeartbeatSender(context: Context) {
 
   private companion object {
     const val TAG = "PhoneGuardHeartbeat"
+    const val MAX_APP_USAGE_ENTRIES = 30
+    const val MAX_APP_LABEL_LENGTH = 120
   }
 }
