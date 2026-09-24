@@ -172,8 +172,12 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       className.contains("InstalledAppDetails", ignoreCase = true) ||
         className.contains("AppInfoDashboard", ignoreCase = true)
 
+    val isSettingsPackage =
+      eventPackage == "com.android.settings" ||
+        eventPackage == "com.miui.securitycenter"
+
     val appInfoByContent =
-      eventPackage == "com.android.settings" &&
+      isSettingsPackage &&
         (
           normalizedText.contains("force stop") ||
             (
@@ -186,7 +190,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
             )
         )
 
-    return if (eventPackage == "com.android.settings" && (appInfoByClass || appInfoByContent)) {
+    return if (isSettingsPackage && (appInfoByClass || appInfoByContent)) {
       PROTECTION_EVENT_APP_INFO_OPENED
     } else {
       null
