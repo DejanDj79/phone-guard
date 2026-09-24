@@ -80,6 +80,9 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
               isOnline = deviceJson.optBoolean("isOnline", false),
+              lastSeenAt =
+                deviceJson.optString("lastSeenAt")
+                  .takeIf { it.isNotBlank() && it != "null" },
               protectionStatus =
                 DeviceProtectionStatus(
                   accessibilityEnabled =
