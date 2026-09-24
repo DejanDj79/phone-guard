@@ -60,7 +60,7 @@ class ParentMessagingService : FirebaseMessagingService() {
       )
 
     val notification =
-      NotificationCompat.Builder(this, TIME_REQUEST_TIME_REQUEST_CHANNEL_ID)
+      NotificationCompat.Builder(this, TIME_REQUEST_CHANNEL_ID)
         .setSmallIcon(android.R.drawable.ic_dialog_info)
         .setContentTitle("More time requested")
         .setContentText(
@@ -105,7 +105,7 @@ class ParentMessagingService : FirebaseMessagingService() {
       )
 
     val notification =
-      NotificationCompat.Builder(this, PROTECTION_ALERTS_TIME_REQUEST_CHANNEL_ID)
+      NotificationCompat.Builder(this, PROTECTION_ALERTS_CHANNEL_ID)
         .setSmallIcon(android.R.drawable.ic_dialog_alert)
         .setContentTitle("PhoneGuard protection disabled")
         .setContentText(
