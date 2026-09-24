@@ -26,6 +26,7 @@ class ParentSettingsStore(context: Context) {
           KEY_TEMPORARY_MINUTES,
           device.temporaryAccessMinutesRemaining ?: 0,
         )
+        .putString(KEY_LAST_SEEN_AT, device.lastSeenAt)
         .putString(
           KEY_CONTROL_TOKEN_ENCRYPTED,
           tokenCipher.encrypt(controlToken),
@@ -67,6 +68,7 @@ class ParentSettingsStore(context: Context) {
         displayName = displayName,
         state = state,
         temporaryAccessMinutesRemaining = temporaryMinutes,
+        lastSeenAt = preferences.getString(KEY_LAST_SEEN_AT, null),
         protectionStatus =
           DeviceProtectionStatus(
             accessibilityEnabled =
@@ -113,6 +115,7 @@ class ParentSettingsStore(context: Context) {
     const val KEY_DISPLAY_NAME = "display_name"
     const val KEY_DEVICE_STATE = "device_state"
     const val KEY_TEMPORARY_MINUTES = "temporary_minutes"
+    const val KEY_LAST_SEEN_AT = "last_seen_at"
     const val KEY_CONTROL_TOKEN = "control_token"
     const val KEY_CONTROL_TOKEN_ENCRYPTED = "control_token_encrypted"
     const val KEY_ACCESSIBILITY_ENABLED = "accessibility_enabled"
