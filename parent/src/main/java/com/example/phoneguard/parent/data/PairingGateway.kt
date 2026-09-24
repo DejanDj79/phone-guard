@@ -71,20 +71,20 @@ class HttpPairingGateway : PairingGateway {
 
         when {
           statusCode == 404 || errorCode == "invalid_or_expired_code" ->
-            PairingResult.InvalidCode("Kod nije važeći ili je istekao.")
+            PairingResult.InvalidCode("Code is invalid or has expired.")
 
           statusCode == 429 ->
-            PairingResult.Error("Previše pokušaja. Sačekaj nekoliko minuta.")
+            PairingResult.Error("Too many attempts. Please wait a few minutes.")
 
           else ->
             PairingResult.Error(
-              errorCode.ifBlank { "Backend greška: HTTP " + statusCode },
+              errorCode.ifBlank { "Backend error: HTTP " + statusCode },
             )
         }
       }
     } catch (error: Exception) {
       PairingResult.Error(
-        error.message ?: "Mrežna greška.",
+        error.message ?: "Network error.",
       )
     } finally {
       connection.disconnect()
