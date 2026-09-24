@@ -288,7 +288,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val eventPackage = event.packageName?.toString().orEmpty()
     val className = event.className?.toString().orEmpty()
-
     val isPackageInstaller =
       eventPackage.contains("packageinstaller", ignoreCase = true)
     val isUninstallClass =
@@ -296,6 +295,43 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         className.contains("Uninstaller", ignoreCase = true)
 
     if (!isPackageInstaller && !isUninstallClass) {
+      return null
+    }
+
+    val phoneGuardLabel =
+      runCatching {
+        packageManager
+          .getApplicationLabel(applicationInfo)
+          .toString()
+      }.getOrDefault("PhoneGuard")
+
+    val visibleText =
+      buildString {
+        event.text.forEach { item ->
+          append(item)
+          append(' ')
+        }
+        event.contentDescription?.let {
+          append(it)
+          append(' ')
+        }
+        append(activeWindowText())
+      }
+
+    val normalizedText = visibleText.lowercase()
+    val mentionsPhoneGuard =
+      visibleText.contains(phoneGuardLabel, ignoreCase = true) ||
+        visibleText.contains(packageName, ignoreCase = true)
+    val hasUninstallText =
+      normalizedText.contains("uninstall") ||
+        normalizedText.contains("deinstall") ||
+        normalizedText.contains("deinstal") ||
+        normalizedText.contains("remove app") ||
+        normalizedText.contains("ukloni aplikaciju") ||
+        normalizedText.contains("obriši aplikaciju") ||
+        normalizedText.contains("obrisi aplikaciju")
+
+    if (!mentionsPhoneGuard || !hasUninstallText) {
       return null
     }
 
@@ -418,11 +454,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val normalizedText = visibleText.lowercase()
 
-    val uninstallScreen =
-      eventPackage.contains("packageinstaller", ignoreCase = true) ||
-        className.contains("Uninstaller", ignoreCase = true) ||
-        className.contains("Uninstall", ignoreCase = true)
-
     val hasUninstallAction =
       normalizedText.contains("uninstall") ||
         normalizedText.contains("deinstall") ||
@@ -441,7 +472,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       hasUninstallAction &&
         hasConfirmationAction
 
-    if (uninstallScreen || uninstallConfirmation) {
+    if (phoneGuardAppInfoActive && uninstallConfirmation) {
+      phoneGuardAppInfoActive = false
       return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     }
 
