@@ -1476,6 +1476,103 @@ fun ParentDashboardScreen(
       }
     }
 
+    if (selectedTab == 0) {
+      val latestAppUsage = appUsageDays.firstOrNull()
+
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            text =
+              if (
+                latestAppUsage != null &&
+                latestAppUsage.usageDate == device.dailyScreenTime.usageDate
+              ) {
+                "Today's app usage"
+              } else {
+                "Latest app usage"
+              },
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+
+          when {
+            appUsageLoading && latestAppUsage == null -> {
+              Text(
+                text = "Loading app usage…",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+
+            latestAppUsage == null && appUsageError == null -> {
+              Text(
+                text = "No app usage has been recorded yet.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+
+            latestAppUsage != null -> {
+              Text(
+                text =
+                  "Tracked app time: " +
+                    formatUsageSeconds(latestAppUsage.totalSeconds),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+              )
+
+              Text(
+                text = latestAppUsage.usageDate,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+
+              val topApps =
+                latestAppUsage.apps
+                  .filter { it.seconds > 0 }
+                  .take(APP_USAGE_PREVIEW_COUNT)
+
+              if (topApps.isEmpty()) {
+                Text(
+                  text = "No launcher app has accumulated usage yet.",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              } else {
+                topApps.forEach { app ->
+                  Text(
+                    text =
+                      app.label +
+                        " · " +
+                        formatUsageSeconds(app.seconds),
+                    style = MaterialTheme.typography.bodyMedium,
+                  )
+                }
+              }
+
+              Text(
+                text =
+                  "System screens are excluded. Allowed apps used while PhoneGuard is locked are included.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+          }
+
+          appUsageError?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
+        }
+      }
+    }
+
     if (selectedTab == 2) {
       ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -1732,99 +1829,6 @@ fun ParentDashboardScreen(
         }
       }
 
-      val latestAppUsage = appUsageDays.firstOrNull()
-      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-          modifier = Modifier.padding(20.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-          Text(
-            text =
-              if (
-                latestAppUsage != null &&
-                latestAppUsage.usageDate == dailyScreenTime.usageDate
-              ) {
-                "Today's app usage"
-              } else {
-                "Latest app usage"
-              },
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-          )
-
-          when {
-            appUsageLoading && latestAppUsage == null -> {
-              Text(
-                text = "Loading app usage…",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-            }
-
-            latestAppUsage == null && appUsageError == null -> {
-              Text(
-                text = "No app usage has been recorded yet.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-            }
-
-            latestAppUsage != null -> {
-              Text(
-                text =
-                  "Tracked app time: " +
-                    formatUsageSeconds(latestAppUsage.totalSeconds),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-              )
-
-              Text(
-                text = latestAppUsage.usageDate,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-
-              val topApps =
-                latestAppUsage.apps
-                  .filter { it.seconds > 0 }
-                  .take(APP_USAGE_PREVIEW_COUNT)
-
-              if (topApps.isEmpty()) {
-                Text(
-                  text = "No launcher app has accumulated usage yet.",
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-              } else {
-                topApps.forEach { app ->
-                  Text(
-                    text =
-                      app.label +
-                        " · " +
-                        formatUsageSeconds(app.seconds),
-                    style = MaterialTheme.typography.bodyMedium,
-                  )
-                }
-              }
-
-              Text(
-                text =
-                  "System screens are excluded. Allowed apps used while PhoneGuard is locked are included.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-            }
-          }
-
-          appUsageError?.let { message ->
-            Text(
-              text = message,
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-        }
-      }
     }
 
     if (selectedTab == 1) {
