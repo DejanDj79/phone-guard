@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
 import com.example.phoneguard.core.PairingIdentity
+import org.json.JSONObject
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
@@ -145,6 +146,59 @@ class ChildSettingsStore(context: Context) {
       .edit()
       .putString(KEY_DAILY_USAGE_DATE, date)
       .putLong(KEY_DAILY_USAGE_MILLIS, usedMillis)
+      .commit()
+  }
+
+  fun appUsageMillisForToday(
+    nowMillis: Long = System.currentTimeMillis(),
+  ): Map<String, Long> {
+    val today = currentLocalDateKey(nowMillis)
+    if (preferences.getString(KEY_APP_USAGE_DATE, null) != today) {
+      return emptyMap()
+    }
+
+    val encoded =
+      preferences.getString(KEY_APP_USAGE_MILLIS_JSON, null)
+        ?.takeIf { it.isNotBlank() }
+        ?: return emptyMap()
+
+    return runCatching {
+      val json = JSONObject(encoded)
+      buildMap {
+        val keys = json.keys()
+        while (keys.hasNext()) {
+          val packageName = keys.next().trim()
+          val millis = json.optLong(packageName, 0L).coerceAtLeast(0L)
+          if (packageName.isNotBlank() && millis > 0L) {
+            put(packageName, millis)
+          }
+        }
+      }
+    }.getOrDefault(emptyMap())
+  }
+
+  fun saveAppUsage(
+    date: String,
+    usageMillis: Map<String, Long>,
+  ): Boolean {
+    require(date.matches(LOCAL_DATE_PATTERN)) { "Invalid local date." }
+
+    val json = JSONObject()
+    usageMillis
+      .asSequence()
+      .filter { (packageName, millis) ->
+        packageName.isNotBlank() && millis > 0L
+      }
+      .sortedByDescending { it.value }
+      .take(MAX_TRACKED_APP_USAGE_PACKAGES)
+      .forEach { (packageName, millis) ->
+        json.put(packageName, millis.coerceAtLeast(0L))
+      }
+
+    return preferences
+      .edit()
+      .putString(KEY_APP_USAGE_DATE, date)
+      .putString(KEY_APP_USAGE_MILLIS_JSON, json.toString())
       .commit()
   }
 
@@ -445,6 +499,9 @@ class ChildSettingsStore(context: Context) {
     const val KEY_REMOTE_DAILY_LIMIT_VERSION = "remote_daily_limit_version"
     const val KEY_DAILY_USAGE_DATE = "daily_usage_date"
     const val KEY_DAILY_USAGE_MILLIS = "daily_usage_millis"
+    const val KEY_APP_USAGE_DATE = "app_usage_date"
+    const val KEY_APP_USAGE_MILLIS_JSON = "app_usage_millis_json"
+    const val MAX_TRACKED_APP_USAGE_PACKAGES = 100
     const val MAX_APPLIED_REMOTE_COMMAND_IDS = 100
     const val SALT_SIZE_BYTES = 16
     const val PAIRING_CODE_LENGTH = 6
