@@ -371,6 +371,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   }
 
   private fun detectUninstallActionClick(event: AccessibilityEvent): String? {
+    if (!phoneGuardAppInfoActive) return null
+
     val eventPackage = event.packageName?.toString().orEmpty()
 
     val clickedText =
