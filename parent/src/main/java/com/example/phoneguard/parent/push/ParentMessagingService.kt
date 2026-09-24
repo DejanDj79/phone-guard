@@ -111,6 +111,16 @@ class ParentMessagingService : FirebaseMessagingService() {
         body = "Battery optimization exemption was disabled on " + displayName + "."
       }
 
+      ALERT_APP_INFO_OPENED -> {
+        title = "PhoneGuard settings opened"
+        body = "PhoneGuard app info was opened on " + displayName + "."
+      }
+
+      ALERT_UNINSTALL_SCREEN_OPENED -> {
+        title = "PhoneGuard uninstall warning"
+        body = "The PhoneGuard uninstall screen was opened on " + displayName + "."
+      }
+
       ALERT_CHILD_OFFLINE -> {
         title = displayName + " is offline"
         body = "No heartbeat received for 5 minutes."
@@ -195,6 +205,8 @@ class ParentMessagingService : FirebaseMessagingService() {
     private const val ALERT_ACCESSIBILITY_DISABLED = "ACCESSIBILITY_DISABLED"
     private const val ALERT_PRECISE_TIMING_DISABLED = "PRECISE_TIMING_DISABLED"
     private const val ALERT_BATTERY_UNRESTRICTED_DISABLED = "BATTERY_UNRESTRICTED_DISABLED"
+    private const val ALERT_APP_INFO_OPENED = "APP_INFO_OPENED"
+    private const val ALERT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
     private const val ALERT_CHILD_OFFLINE = "CHILD_OFFLINE"
     private const val TIME_REQUEST_CHANNEL_ID = "phoneguard_time_requests"
     private const val PROTECTION_ALERTS_CHANNEL_ID = "phoneguard_protection_alerts"
