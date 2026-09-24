@@ -14,6 +14,7 @@ sealed interface DeviceStatusResult {
 
   data class Error(
     val message: String,
+    val pairingInvalid: Boolean = false,
   ) : DeviceStatusResult
 }
 
@@ -100,12 +101,14 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
             .getOrDefault("")
 
         DeviceStatusResult.Error(
-          when (errorCode) {
-            "device_auth_failed" ->
-              "Parent pairing is no longer valid."
-            else ->
-              errorCode.ifBlank { "Backend error: HTTP " + statusCode }
-          },
+          message =
+            when (errorCode) {
+              "device_auth_failed" ->
+                "Parent pairing is no longer valid."
+              else ->
+                errorCode.ifBlank { "Backend error: HTTP " + statusCode }
+            },
+          pairingInvalid = errorCode == "device_auth_failed",
         )
       }
     } catch (error: Exception) {
