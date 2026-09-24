@@ -748,6 +748,7 @@ class ChildBackendClient {
     accessibilityEnabled: Boolean,
     preciseTimingEnabled: Boolean,
     batteryUnrestricted: Boolean,
+    protectionEvent: String? = null,
     dailyUsageDate: String,
     dailyUsageSeconds: Int,
   ): ChildHeartbeatResult {
@@ -769,6 +770,11 @@ class ChildBackendClient {
           .put("accessibilityEnabled", accessibilityEnabled)
           .put("preciseTimingEnabled", preciseTimingEnabled)
           .put("batteryUnrestricted", batteryUnrestricted)
+          .also { json ->
+            if (!protectionEvent.isNullOrBlank()) {
+              json.put("protectionEvent", protectionEvent)
+            }
+          }
           .put("dailyUsageDate", dailyUsageDate)
           .put("dailyUsageSeconds", dailyUsageSeconds)
           .also { json ->
