@@ -139,6 +139,15 @@ export default {
     const batteryUnrestrictedJustDisabled =
       previousDevice.battery_unrestricted === true &&
       batteryUnrestricted === false;
+    const accessibilityJustRestored =
+      previousDevice.accessibility_enabled === false &&
+      accessibilityEnabled === true;
+    const preciseTimingJustRestored =
+      previousDevice.precise_timing_enabled === false &&
+      preciseTimingEnabled === true;
+    const batteryUnrestrictedJustRestored =
+      previousDevice.battery_unrestricted === false &&
+      batteryUnrestricted === true;
 
     const { data: device, error } = await ctx.supabaseAdmin
       .from("child_devices")
@@ -172,6 +181,36 @@ export default {
     }
     if (!device) {
       return json({ error: "device_auth_failed" }, 403);
+    }
+
+    const protectionHistoryEvents = [
+      accessibilityJustDisabled ? "ACCESSIBILITY_DISABLED" : "",
+      accessibilityJustRestored ? "ACCESSIBILITY_RESTORED" : "",
+      preciseTimingJustDisabled ? "PRECISE_TIMING_DISABLED" : "",
+      preciseTimingJustRestored ? "PRECISE_TIMING_RESTORED" : "",
+      batteryUnrestrictedJustDisabled ? "BATTERY_UNRESTRICTED_DISABLED" : "",
+      batteryUnrestrictedJustRestored ? "BATTERY_UNRESTRICTED_RESTORED" : "",
+      protectionEvent,
+    ].filter((eventType) => eventType.length > 0);
+
+    const uniqueHistoryEvents = [...new Set(protectionHistoryEvents)];
+    if (uniqueHistoryEvents.length > 0) {
+      const { error: historyError } = await ctx.supabaseAdmin
+        .from("protection_events")
+        .insert(
+          uniqueHistoryEvents.map((eventType) => ({
+            device_id: deviceId,
+            event_type: eventType,
+            created_at: now,
+          })),
+        );
+
+      if (historyError) {
+        console.error(
+          "Protection history insert failed for " + deviceId,
+          historyError,
+        );
+      }
     }
 
     const parentToken =
