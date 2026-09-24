@@ -601,8 +601,8 @@ fun ParentDashboardScreen(
     BonusTimeWheelDialog(
       initialMinutes = selectedBonusMinutes,
       onDismiss = { showBonusTimePicker = false },
-      onConfirm = { minutees ->
-        selectedBonusMinutes = minutees
+      onConfirm = { minutes ->
+        selectedBonusMinutes = minutes
         showBonusTimePicker = false
         sendCommand(RemoteCommand.bonusTime(minutes))
       },
@@ -634,7 +634,7 @@ private fun BonusTimeWheelDialog(
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         Text(
-          text = "Choose a duration from 1 to 60 minutees.",
+          text = "Choose a duration from 1 to 60 minutes.",
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -667,7 +667,7 @@ private fun BonusTimeWheelDialog(
         Text(
           text =
             selectedMinutes.toString() +
-              if (selectedMinutes == 1) " minute" else " minutea",
+              if (selectedMinutes == 1) " minute" else " minutes",
           modifier = Modifier.fillMaxWidth(),
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
@@ -860,7 +860,7 @@ private fun commandQueuedLabel(
       com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
         "Unlock command queued and will be applied when the Child reconnects."
       com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
-        "Bonus time je poslato i primeniće se kada se Child poveže."
+        "Bonus time queued and will be applied when the Child reconnects."
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
         "The schedule will be applied when the Child reconnects."
     }
@@ -871,7 +871,7 @@ private fun commandQueuedLabel(
       com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
         "Unlock command sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
-        "Bonus time je poslato. Čekam potvrdu Child uređaja."
+        "Bonus time sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
         "Schedule sent. Waiting for the Child device to confirm."
     }
@@ -887,7 +887,7 @@ private fun deviceStateLabel(device: ChildDevice): String =
           device.temporaryAccessMinutesRemaining +
           " min"
       } else {
-        "Bonus time je isteklo — ažuriram stanje"
+        "Bonus time expired — updating status"
       }
     DeviceAccessState.OFFLINE -> "○ Device state is unknown"
   }
