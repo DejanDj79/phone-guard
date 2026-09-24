@@ -5,6 +5,8 @@ plugins {
   alias(libs.plugins.google.services)
 }
 
+apply(from = rootProject.file("gradle/phoneguard-signing.gradle"))
+
 android {
     namespace = "com.example.phoneguard"
     compileSdk = 36
