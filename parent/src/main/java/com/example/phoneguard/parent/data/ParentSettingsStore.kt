@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.DeviceProtectionStatus
+import com.example.phoneguard.core.DailyScreenTimeStatus
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -171,6 +172,14 @@ class ParentSettingsStore(context: Context) {
                       preciseTimingEnabled = json.optNullableBoolean("preciseTimingEnabled"),
                       batteryUnrestricted = json.optNullableBoolean("batteryUnrestricted"),
                     ),
+                  dailyScreenTime =
+                    DailyScreenTimeStatus(
+                      limitMinutes = json.optNullableInt("dailyLimitMinutes"),
+                      usedSeconds = json.optInt("dailyUsedSeconds", 0).coerceAtLeast(0),
+                      remainingMinutes = json.optNullableInt("dailyRemainingMinutes"),
+                      usageDate = json.optNullableString("dailyUsageDate"),
+                      limitReached = json.optBoolean("dailyLimitReached", false),
+                    ),
                 ),
               controlToken = controlToken,
             )
@@ -210,6 +219,17 @@ class ParentSettingsStore(context: Context) {
       device.protectionStatus.batteryUnrestricted?.let {
         json.put("batteryUnrestricted", it)
       }
+      device.dailyScreenTime.limitMinutes?.let {
+        json.put("dailyLimitMinutes", it)
+      }
+      json.put("dailyUsedSeconds", device.dailyScreenTime.usedSeconds)
+      device.dailyScreenTime.remainingMinutes?.let {
+        json.put("dailyRemainingMinutes", it)
+      }
+      device.dailyScreenTime.usageDate?.let {
+        json.put("dailyUsageDate", it)
+      }
+      json.put("dailyLimitReached", device.dailyScreenTime.limitReached)
 
       array.put(json)
     }
@@ -323,6 +343,9 @@ private fun android.content.SharedPreferences.nullableBoolean(
 
 private fun JSONObject.optNullableBoolean(key: String): Boolean? =
   if (has(key) && !isNull(key)) getBoolean(key) else null
+
+private fun JSONObject.optNullableInt(key: String): Int? =
+  if (has(key) && !isNull(key)) getInt(key) else null
 
 private fun JSONObject.optNullableString(key: String): String? =
   if (has(key) && !isNull(key)) getString(key) else null
