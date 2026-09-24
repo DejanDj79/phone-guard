@@ -216,6 +216,55 @@ class ChildSettingsStore(context: Context) {
     return refreshed
   }
 
+  fun allowedPackages(): Set<String> =
+    preferences
+      .getString(KEY_ALLOWED_APPS, "")
+      .orEmpty()
+      .lineSequence()
+      .map { it.trim() }
+      .filter(String::isNotEmpty)
+      .filterNot(AllowedAppsPolicy::isNeverAllowed)
+      .toSet()
+
+  fun isPackageAllowed(packageName: String?): Boolean =
+    packageName != null &&
+      !AllowedAppsPolicy.isNeverAllowed(packageName) &&
+      packageName in allowedPackages()
+
+  fun remoteAllowedAppsVersion(): Long =
+    preferences.getLong(KEY_REMOTE_ALLOWED_APPS_VERSION, 0L)
+
+  fun saveRemoteAllowedApps(
+    packages: Set<String>,
+    version: Long,
+  ): Boolean {
+    require(version >= 0L) { "Allowed apps version must not be negative." }
+
+    val normalized =
+      packages
+        .map(String::trim)
+        .filter(String::isNotEmpty)
+        .filterNot(AllowedAppsPolicy::isNeverAllowed)
+        .distinct()
+        .sorted()
+
+    return preferences
+      .edit()
+      .putString(KEY_ALLOWED_APPS, normalized.joinToString("\n"))
+      .putLong(KEY_REMOTE_ALLOWED_APPS_VERSION, version)
+      .commit()
+  }
+
+  fun appInventorySignature(): String =
+    preferences.getString(KEY_APP_INVENTORY_SIGNATURE, "").orEmpty()
+
+  fun saveAppInventorySignature(signature: String) {
+    preferences
+      .edit()
+      .putString(KEY_APP_INVENTORY_SIGNATURE, signature)
+      .apply()
+  }
+
   fun getWeeklySchedule(): WeeklySchedule =
     WeeklySchedule.decode(preferences.getString(KEY_WEEKLY_SCHEDULE, null))
 
@@ -253,7 +302,8 @@ class ChildSettingsStore(context: Context) {
         if (
           key == KEY_MANUAL_LOCKED ||
           key == KEY_SCHEDULE_LOCKED ||
-          key == KEY_TEMPORARY_ALLOW_UNTIL
+          key == KEY_TEMPORARY_ALLOW_UNTIL ||
+          key == KEY_ALLOWED_APPS
         ) {
           onChanged()
         }
@@ -287,6 +337,9 @@ class ChildSettingsStore(context: Context) {
     const val KEY_SCHEDULE_LOCKED = "schedule_locked"
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
     const val KEY_REMOTE_SCHEDULE_VERSION = "remote_schedule_version"
+    const val KEY_ALLOWED_APPS = "allowed_apps"
+    const val KEY_REMOTE_ALLOWED_APPS_VERSION = "remote_allowed_apps_version"
+    const val KEY_APP_INVENTORY_SIGNATURE = "app_inventory_signature"
     const val KEY_DEVICE_ID = "device_id"
     const val KEY_PAIRING_CODE = "pairing_code"
     const val KEY_DEVICE_SECRET = "device_secret"
