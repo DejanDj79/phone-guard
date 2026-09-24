@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +56,7 @@ import com.example.phoneguard.remote.AppInventorySyncer
 import com.example.phoneguard.remote.ChildHeartbeatSender
 import com.example.phoneguard.remote.ChildPairingResetResult
 import com.example.phoneguard.remote.ChildRegistrationResult
+import com.example.phoneguard.remote.ChildTimeRequestResult
 import com.example.phoneguard.remote.FcmTokenProvider
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
@@ -184,6 +186,15 @@ fun MainScreen(
           } else {
             null
           },
+        onRequestMoreTime = { minutes ->
+          withContext(Dispatchers.IO) {
+            backendClient.requestMoreTime(
+              deviceId = pairingIdentity.deviceId,
+              deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+              requestedMinutes = minutes,
+            )
+          }
+        },
         onUnlock = { pin ->
           val accepted = settingsStore.verifyParentPin(pin)
           if (accepted) {
@@ -666,12 +677,17 @@ private fun ChildDashboard(
 private fun LockScreen(
   allowedPackages: Set<String>,
   unlockTimeLabel: String?,
+  onRequestMoreTime: suspend (Int) -> ChildTimeRequestResult,
   onUnlock: (String) -> Boolean,
   modifier: Modifier = Modifier,
 ) {
   var pin by remember { mutableStateOf("") }
   var showPinEntry by remember { mutableStateOf(false) }
   var errorMessage by remember { mutableStateOf<String?>(null) }
+  var showTimeRequest by remember { mutableStateOf(false) }
+  var timeRequestInProgress by remember { mutableStateOf(false) }
+  var timeRequestMessage by remember { mutableStateOf<String?>(null) }
+  val requestScope = rememberCoroutineScope()
 
   val context = LocalContext.current
   val packageManager = context.packageManager
@@ -874,6 +890,29 @@ private fun LockScreen(
 
       Spacer(modifier = Modifier.height(28.dp))
 
+      Button(
+        onClick = {
+          showTimeRequest = true
+          timeRequestMessage = null
+        },
+        enabled = !timeRequestInProgress,
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text(if (timeRequestInProgress) "SENDING REQUEST…" else "REQUEST MORE TIME")
+      }
+
+      timeRequestMessage?.let { message ->
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          textAlign = TextAlign.Center,
+        )
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
       if (!showPinEntry) {
         OutlinedButton(
           onClick = {
@@ -923,6 +962,95 @@ private fun LockScreen(
       }
     }
   }
+
+  if (showTimeRequest) {
+    RequestMoreTimeDialog(
+      onDismiss = { showTimeRequest = false },
+      onConfirm = { minutes ->
+        showTimeRequest = false
+        requestScope.launch {
+          timeRequestInProgress = true
+          timeRequestMessage = null
+
+          timeRequestMessage =
+            when (val result = onRequestMoreTime(minutes)) {
+              is ChildTimeRequestResult.Success ->
+                when {
+                  result.alreadyPending ->
+                    "A request is already waiting for Parent approval."
+                  result.pushSent ->
+                    "Request sent to Parent."
+                  else ->
+                    "Request sent. Parent will see it in PhoneGuard."
+                }
+
+              is ChildTimeRequestResult.Failure ->
+                result.message
+            }
+
+          timeRequestInProgress = false
+        }
+      },
+    )
+  }
+}
+
+@Composable
+private fun RequestMoreTimeDialog(
+  onDismiss: () -> Unit,
+  onConfirm: (Int) -> Unit,
+) {
+  var selectedMinutes by remember { mutableStateOf(15) }
+
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = {
+      Text(
+        text = "Request more time",
+        fontWeight = FontWeight.SemiBold,
+      )
+    },
+    text = {
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Text(
+          text = "How much extra time would you like to ask for?",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        listOf(5, 15, 30, 60).forEach { minutes ->
+          if (selectedMinutes == minutes) {
+            Button(
+              onClick = { selectedMinutes = minutes },
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text(minutes.toString() + " minutes")
+            }
+          } else {
+            OutlinedButton(
+              onClick = { selectedMinutes = minutes },
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text(minutes.toString() + " minutes")
+            }
+          }
+        }
+      }
+    },
+    confirmButton = {
+      Button(onClick = { onConfirm(selectedMinutes) }) {
+        Text("SEND REQUEST")
+      }
+    },
+    dismissButton = {
+      OutlinedButton(onClick = onDismiss) {
+        Text("CANCEL")
+      }
+    },
+  )
 }
 
 private fun ringerModeLabel(mode: Int): String =
@@ -979,6 +1107,14 @@ private fun LockScreenPreview() {
     LockScreen(
       allowedPackages = emptySet(),
       unlockTimeLabel = "07:00",
+      onRequestMoreTime = {
+        ChildTimeRequestResult.Success(
+          requestId = "preview-request",
+          requestedMinutes = it,
+          alreadyPending = false,
+          pushSent = true,
+        )
+      },
       onUnlock = { false },
     )
   }
