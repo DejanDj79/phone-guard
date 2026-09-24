@@ -121,6 +121,16 @@ class ParentMessagingService : FirebaseMessagingService() {
         body = "The PhoneGuard uninstall screen was opened on " + displayName + "."
       }
 
+      ALERT_FORCE_STOP_ATTEMPT -> {
+        title = "PhoneGuard force stop warning"
+        body = "Force stop was selected for PhoneGuard on " + displayName + "."
+      }
+
+      ALERT_CLEAR_DATA_ATTEMPT -> {
+        title = "PhoneGuard data warning"
+        body = "Clear app data was selected for PhoneGuard on " + displayName + "."
+      }
+
       ALERT_CHILD_OFFLINE -> {
         title = displayName + " is offline"
         body = "No heartbeat received for 5 minutes."
@@ -207,6 +217,8 @@ class ParentMessagingService : FirebaseMessagingService() {
     private const val ALERT_BATTERY_UNRESTRICTED_DISABLED = "BATTERY_UNRESTRICTED_DISABLED"
     private const val ALERT_APP_INFO_OPENED = "APP_INFO_OPENED"
     private const val ALERT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
+    private const val ALERT_FORCE_STOP_ATTEMPT = "FORCE_STOP_ATTEMPT"
+    private const val ALERT_CLEAR_DATA_ATTEMPT = "CLEAR_DATA_ATTEMPT"
     private const val ALERT_CHILD_OFFLINE = "CHILD_OFFLINE"
     private const val TIME_REQUEST_CHANNEL_ID = "phoneguard_time_requests"
     private const val PROTECTION_ALERTS_CHANNEL_ID = "phoneguard_protection_alerts"
