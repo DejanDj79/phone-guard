@@ -76,8 +76,10 @@ class ParentMessagingService : FirebaseMessagingService() {
   }
 
   private fun showProtectionAlertNotification(message: RemoteMessage) {
-    if (message.data["alert"] != ALERT_ACCESSIBILITY_DISABLED) return
-
+    val alert =
+      message.data["alert"]
+        ?.takeIf { it.isNotBlank() }
+        ?: return
     val displayName =
       message.data["display_name"]
         ?.takeIf { it.isNotBlank() }
@@ -87,8 +89,26 @@ class ParentMessagingService : FirebaseMessagingService() {
         ?.takeIf { it.isNotBlank() }
         ?: return
 
+    val title: String
+    val body: String
+
+    when (alert) {
+      ALERT_ACCESSIBILITY_DISABLED -> {
+        title = "PhoneGuard protection disabled"
+        body = "Accessibility protection was disabled on " + displayName + "."
+      }
+
+      ALERT_CHILD_OFFLINE -> {
+        title = "PhoneGuard connection lost"
+        body = displayName + " has not reported for 5 minutes."
+      }
+
+      else -> return
+    }
+
     ensureProtectionAlertsChannel()
 
+    val notificationKey = "protection:" + alert + ":" + deviceId
     val intent =
       Intent(this, MainActivity::class.java).apply {
         flags =
@@ -99,7 +119,7 @@ class ParentMessagingService : FirebaseMessagingService() {
     val pendingIntent =
       PendingIntent.getActivity(
         this,
-        ("protection:" + deviceId).hashCode(),
+        notificationKey.hashCode(),
         intent,
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
       )
@@ -107,17 +127,15 @@ class ParentMessagingService : FirebaseMessagingService() {
     val notification =
       NotificationCompat.Builder(this, PROTECTION_ALERTS_CHANNEL_ID)
         .setSmallIcon(android.R.drawable.ic_dialog_alert)
-        .setContentTitle("PhoneGuard protection disabled")
-        .setContentText(
-          "Accessibility protection was disabled on " + displayName + ".",
-        )
+        .setContentTitle(title)
+        .setContentText(body)
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setAutoCancel(true)
         .setContentIntent(pendingIntent)
         .build()
 
     val manager = getSystemService(NotificationManager::class.java)
-    manager.notify(("protection:" + deviceId).hashCode(), notification)
+    manager.notify(notificationKey.hashCode(), notification)
   }
 
   private fun ensureTimeRequestChannel() {
@@ -160,6 +178,7 @@ class ParentMessagingService : FirebaseMessagingService() {
     private const val TYPE_TIME_REQUEST = "TIME_REQUEST"
     private const val TYPE_PROTECTION_ALERT = "PROTECTION_ALERT"
     private const val ALERT_ACCESSIBILITY_DISABLED = "ACCESSIBILITY_DISABLED"
+    private const val ALERT_CHILD_OFFLINE = "CHILD_OFFLINE"
     private const val TIME_REQUEST_CHANNEL_ID = "phoneguard_time_requests"
     private const val PROTECTION_ALERTS_CHANNEL_ID = "phoneguard_protection_alerts"
   }
