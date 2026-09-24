@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import com.example.phoneguard.parent.ui.ParentDashboardScreen
+import com.example.phoneguard.parent.ui.ParentSecurityGate
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,7 +17,9 @@ class MainActivity : ComponentActivity() {
     setContent {
       MaterialTheme {
         Surface {
-          ParentDashboardScreen()
+          ParentSecurityGate {
+            ParentDashboardScreen()
+          }
         }
       }
     }
