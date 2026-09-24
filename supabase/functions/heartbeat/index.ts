@@ -4,6 +4,7 @@ import { sendFirebaseMessage } from "../_shared/firebase.ts";
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PROTECTION_HISTORY_RETAINED_PER_DEVICE = 100;
+const PROTECTION_ALERT_COOLDOWN_MS = 5 * 60_000;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -183,6 +184,68 @@ export default {
       return json({ error: "device_auth_failed" }, 403);
     }
 
+    const alertTransitions = [
+      {
+        shouldSend: accessibilityJustDisabled,
+        alert: "ACCESSIBILITY_DISABLED",
+      },
+      {
+        shouldSend: preciseTimingJustDisabled,
+        alert: "PRECISE_TIMING_DISABLED",
+      },
+      {
+        shouldSend: batteryUnrestrictedJustDisabled,
+        alert: "BATTERY_UNRESTRICTED_DISABLED",
+      },
+      {
+        shouldSend: protectionEvent === "APP_INFO_OPENED",
+        alert: "APP_INFO_OPENED",
+      },
+      {
+        shouldSend: protectionEvent === "UNINSTALL_SCREEN_OPENED",
+        alert: "UNINSTALL_SCREEN_OPENED",
+      },
+      {
+        shouldSend: protectionEvent === "FORCE_STOP_ATTEMPT",
+        alert: "FORCE_STOP_ATTEMPT",
+      },
+      {
+        shouldSend: protectionEvent === "CLEAR_DATA_ATTEMPT",
+        alert: "CLEAR_DATA_ATTEMPT",
+      },
+    ];
+
+    const requestedAlertTypes =
+      alertTransitions
+        .filter((transition) => transition.shouldSend)
+        .map((transition) => transition.alert);
+
+    const recentAlertTypes = new Set<string>();
+    if (requestedAlertTypes.length > 0) {
+      const cooldownCutoff =
+        new Date(Date.now() - PROTECTION_ALERT_COOLDOWN_MS).toISOString();
+      const { data: recentEvents, error: recentEventsError } =
+        await ctx.supabaseAdmin
+          .from("protection_events")
+          .select("event_type")
+          .eq("device_id", deviceId)
+          .in("event_type", requestedAlertTypes)
+          .gte("created_at", cooldownCutoff);
+
+      if (recentEventsError) {
+        console.error(
+          "Protection alert cooldown query failed for " + deviceId,
+          recentEventsError,
+        );
+      } else {
+        for (const event of recentEvents ?? []) {
+          if (typeof event.event_type === "string") {
+            recentAlertTypes.add(event.event_type);
+          }
+        }
+      }
+    }
+
     const protectionHistoryEvents = [
       accessibilityJustDisabled ? "ACCESSIBILITY_DISABLED" : "",
       accessibilityJustRestored ? "ACCESSIBILITY_RESTORED" : "",
@@ -254,40 +317,16 @@ export default {
         : "Child device";
 
     const protectionAlerts: string[] = [];
-    const alertTransitions = [
-      {
-        shouldSend: accessibilityJustDisabled,
-        alert: "ACCESSIBILITY_DISABLED",
-      },
-      {
-        shouldSend: preciseTimingJustDisabled,
-        alert: "PRECISE_TIMING_DISABLED",
-      },
-      {
-        shouldSend: batteryUnrestrictedJustDisabled,
-        alert: "BATTERY_UNRESTRICTED_DISABLED",
-      },
-      {
-        shouldSend: protectionEvent === "APP_INFO_OPENED",
-        alert: "APP_INFO_OPENED",
-      },
-      {
-        shouldSend: protectionEvent === "UNINSTALL_SCREEN_OPENED",
-        alert: "UNINSTALL_SCREEN_OPENED",
-      },
-      {
-        shouldSend: protectionEvent === "FORCE_STOP_ATTEMPT",
-        alert: "FORCE_STOP_ATTEMPT",
-      },
-      {
-        shouldSend: protectionEvent === "CLEAR_DATA_ATTEMPT",
-        alert: "CLEAR_DATA_ATTEMPT",
-      },
-    ];
+    const protectionAlertsSuppressed: string[] = [];
 
     if (parentToken) {
       for (const transition of alertTransitions) {
         if (!transition.shouldSend) continue;
+
+        if (recentAlertTypes.has(transition.alert)) {
+          protectionAlertsSuppressed.push(transition.alert);
+          continue;
+        }
 
         try {
           await sendFirebaseMessage({
@@ -321,6 +360,7 @@ export default {
       lastSeenAt: device.last_seen_at,
       protectionAlertSent: protectionAlerts.length > 0,
       protectionAlerts,
+      protectionAlertsSuppressed,
     });
   }),
 };
