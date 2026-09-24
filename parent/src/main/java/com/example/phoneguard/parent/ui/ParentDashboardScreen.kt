@@ -45,10 +45,13 @@ import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteWeeklySchedule
 import com.example.phoneguard.parent.data.AllowedAppsFetchResult
 import com.example.phoneguard.parent.data.AllowedAppsSaveResult
+import com.example.phoneguard.parent.data.AppUsageDay
+import com.example.phoneguard.parent.data.AppUsageResult
 import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.DeviceStatusResult
 import com.example.phoneguard.parent.data.HttpAllowedAppsGateway
+import com.example.phoneguard.parent.data.HttpAppUsageGateway
 import com.example.phoneguard.parent.data.HttpDeviceManagementGateway
 import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
@@ -91,6 +94,7 @@ fun ParentDashboardScreen(
   val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
   val scheduleGateway = remember { HttpScheduleGateway() }
   val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
+  val appUsageGateway = remember { HttpAppUsageGateway() }
   val deviceManagementGateway = remember { HttpDeviceManagementGateway() }
   val timeRequestGateway = remember { HttpTimeRequestGateway() }
   val dailyLimitGateway = remember { HttpDailyLimitGateway() }
@@ -153,6 +157,11 @@ fun ParentDashboardScreen(
   var protectionHistoryLoading by remember { mutableStateOf(false) }
   var protectionHistoryError by remember { mutableStateOf<String?>(null) }
   var showAllProtectionHistory by remember { mutableStateOf(false) }
+  var appUsageDays by remember {
+    mutableStateOf<List<AppUsageDay>>(emptyList())
+  }
+  var appUsageLoading by remember { mutableStateOf(false) }
+  var appUsageError by remember { mutableStateOf<String?>(null) }
 
   fun removeInvalidPairing(
     deviceId: String,
@@ -182,6 +191,9 @@ fun ParentDashboardScreen(
     protectionHistoryLoading = false
     protectionHistoryError = null
     showAllProtectionHistory = false
+    appUsageDays = emptyList()
+    appUsageLoading = false
+    appUsageError = null
     showDevices = false
     selectedTab = 0
 
@@ -293,6 +305,9 @@ fun ParentDashboardScreen(
           protectionHistoryLoading = false
           protectionHistoryError = null
           showAllProtectionHistory = false
+          appUsageDays = emptyList()
+          appUsageLoading = false
+          appUsageError = null
           showDevices = false
           selectedTab = 0
         }
@@ -569,6 +584,53 @@ fun ParentDashboardScreen(
 
         delay(15_000)
       }
+    }
+  }
+
+  LaunchedEffect(device.deviceId, selectedTab, "app-usage-poll") {
+    if (selectedTab != 0) return@LaunchedEffect
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      appUsageError =
+        "Control token is missing. Re-pairing is required."
+      return@LaunchedEffect
+    }
+
+    while (true) {
+      if (appUsageDays.isEmpty()) {
+        appUsageLoading = true
+      }
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            appUsageGateway.fetch(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+            )
+          }
+      ) {
+        is AppUsageResult.Success -> {
+          appUsageDays = result.days
+          appUsageError = null
+        }
+
+        is AppUsageResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+            return@LaunchedEffect
+          } else {
+            appUsageError = result.message
+          }
+        }
+      }
+
+      appUsageLoading = false
+      delay(30_000)
     }
   }
 
@@ -1669,6 +1731,100 @@ fun ParentDashboardScreen(
           }
         }
       }
+
+      val latestAppUsage = appUsageDays.firstOrNull()
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            text =
+              if (
+                latestAppUsage != null &&
+                latestAppUsage.usageDate == dailyScreenTime.usageDate
+              ) {
+                "Today's app usage"
+              } else {
+                "Latest app usage"
+              },
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+
+          when {
+            appUsageLoading && latestAppUsage == null -> {
+              Text(
+                text = "Loading app usage…",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+
+            latestAppUsage == null && appUsageError == null -> {
+              Text(
+                text = "No app usage has been recorded yet.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+
+            latestAppUsage != null -> {
+              Text(
+                text =
+                  "Tracked app time: " +
+                    formatUsageSeconds(latestAppUsage.totalSeconds),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+              )
+
+              Text(
+                text = latestAppUsage.usageDate,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+
+              val topApps =
+                latestAppUsage.apps
+                  .filter { it.seconds > 0 }
+                  .take(APP_USAGE_PREVIEW_COUNT)
+
+              if (topApps.isEmpty()) {
+                Text(
+                  text = "No launcher app has accumulated usage yet.",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              } else {
+                topApps.forEach { app ->
+                  Text(
+                    text =
+                      app.label +
+                        " · " +
+                        formatUsageSeconds(app.seconds),
+                    style = MaterialTheme.typography.bodyMedium,
+                  )
+                }
+              }
+
+              Text(
+                text =
+                  "System screens are excluded. Allowed apps used while PhoneGuard is locked are included.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+          }
+
+          appUsageError?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
+        }
+      }
     }
 
     if (selectedTab == 1) {
@@ -2081,6 +2237,7 @@ private fun formatUsageSeconds(seconds: Int): String {
 }
 
 private const val PROTECTION_HISTORY_PREVIEW_COUNT = 8
+private const val APP_USAGE_PREVIEW_COUNT = 5
 
 private fun commandMatchesDeviceState(
   command: RemoteCommand,
