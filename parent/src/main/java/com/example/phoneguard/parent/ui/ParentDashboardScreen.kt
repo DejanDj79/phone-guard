@@ -37,15 +37,19 @@ import android.widget.NumberPicker
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.phoneguard.core.AllowedAppsSnapshot
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.PairingRequest
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteWeeklySchedule
+import com.example.phoneguard.parent.data.AllowedAppsFetchResult
+import com.example.phoneguard.parent.data.AllowedAppsSaveResult
 import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.DeviceStatusResult
+import com.example.phoneguard.parent.data.HttpAllowedAppsGateway
 import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
@@ -74,6 +78,7 @@ fun ParentDashboardScreen(
   val commandGateway = remember { HttpCommandGateway() }
   val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
   val scheduleGateway = remember { HttpScheduleGateway() }
+  val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
   val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
@@ -94,6 +99,13 @@ fun ParentDashboardScreen(
   var scheduleSaving by remember { mutableStateOf(false) }
   var scheduleError by remember { mutableStateOf<String?>(null) }
   var scheduleNotice by remember { mutableStateOf<String?>(null) }
+  var allowedAppsEditorSnapshot by remember {
+    mutableStateOf<AllowedAppsSnapshot?>(null)
+  }
+  var allowedAppsLoading by remember { mutableStateOf(false) }
+  var allowedAppsSaving by remember { mutableStateOf(false) }
+  var allowedAppsError by remember { mutableStateOf<String?>(null) }
+  var allowedAppsNotice by remember { mutableStateOf<String?>(null) }
 
   if (pairedDevice == null) {
     PairDeviceScreen(
@@ -137,6 +149,64 @@ fun ParentDashboardScreen(
   }
 
   val device = pairedDevice!!
+
+  allowedAppsEditorSnapshot?.let { snapshot ->
+    AllowedAppsEditorScreen(
+      snapshot = snapshot,
+      saving = allowedAppsSaving,
+      saveError = allowedAppsError,
+      onSave = { allowedPackages ->
+        if (!allowedAppsSaving) {
+          val controlToken = settingsStore.controlToken()
+          if (controlToken.isNullOrBlank()) {
+            allowedAppsError =
+              "Control token is missing. Re-pairing is required."
+          } else {
+            scope.launch {
+              allowedAppsSaving = true
+              allowedAppsError = null
+
+              when (
+                val result =
+                  withContext(Dispatchers.IO) {
+                    allowedAppsGateway.save(
+                      deviceId = device.deviceId,
+                      controlToken = controlToken,
+                      allowedPackages = allowedPackages,
+                      expectedVersion = snapshot.version,
+                    )
+                  }
+              ) {
+                is AllowedAppsSaveResult.Success -> {
+                  allowedAppsEditorSnapshot = null
+                  allowedAppsNotice =
+                    if (device.isOnline) {
+                      "Allowed apps saved and sent to the Child device."
+                    } else {
+                      "Allowed apps saved and will be applied when the Child reconnects."
+                    }
+                }
+
+                is AllowedAppsSaveResult.Error -> {
+                  allowedAppsError = result.message
+                }
+              }
+
+              allowedAppsSaving = false
+            }
+          }
+        }
+      },
+      onCancel = {
+        if (!allowedAppsSaving) {
+          allowedAppsEditorSnapshot = null
+          allowedAppsError = null
+        }
+      },
+      modifier = modifier,
+    )
+    return
+  }
 
   scheduleEditorSchedule?.let { schedule ->
     ParentScheduleEditorScreen(
@@ -600,6 +670,86 @@ fun ParentDashboardScreen(
           Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      }
+    }
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        Text(
+          text = "Allowed apps",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+        )
+
+        Text(
+          text =
+            "Choose which apps can still be used while the Child phone is locked.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        OutlinedButton(
+          onClick = {
+            if (!allowedAppsLoading) {
+              val controlToken = settingsStore.controlToken()
+              if (controlToken.isNullOrBlank()) {
+                commandError =
+                  "Control token is missing. Re-pairing is required."
+              } else {
+                scope.launch {
+                  allowedAppsLoading = true
+                  allowedAppsError = null
+                  allowedAppsNotice = null
+                  commandError = null
+
+                  when (
+                    val result =
+                      withContext(Dispatchers.IO) {
+                        allowedAppsGateway.fetch(
+                          deviceId = device.deviceId,
+                          controlToken = controlToken,
+                        )
+                      }
+                  ) {
+                    is AllowedAppsFetchResult.Success -> {
+                      allowedAppsEditorSnapshot = result.snapshot
+                    }
+
+                    is AllowedAppsFetchResult.Error -> {
+                      commandError = result.message
+                    }
+                  }
+
+                  allowedAppsLoading = false
+                }
+              }
+            }
+          },
+          enabled =
+            !allowedAppsLoading &&
+              !allowedAppsSaving &&
+              !commandInProgress,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text(
+            if (allowedAppsLoading) {
+              "LOADING…"
+            } else {
+              "MANAGE ALLOWED APPS"
+            },
+          )
+        }
+
+        allowedAppsNotice?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
