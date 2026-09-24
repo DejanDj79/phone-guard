@@ -209,7 +209,7 @@ fun MainScreen(
         },
         onResetPairing = { pin ->
           if (!settingsStore.verifyParentPin(pin)) {
-            ChildPairingResetResult.Failure("Pogrešan roditeljski PIN.")
+            ChildPairingResetResult.Failure("Incorrect parent PIN.")
           } else {
             val refreshedIdentity = settingsStore.regeneratePairingCode()
             val result =
@@ -260,7 +260,7 @@ private fun ParentPinSetupScreen(
       Spacer(modifier = Modifier.height(12.dp))
 
       Text(
-        text = "Postavi roditeljski PIN",
+        text = "Set parent PIN",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.SemiBold,
       )
@@ -268,7 +268,7 @@ private fun ParentPinSetupScreen(
       Spacer(modifier = Modifier.height(8.dp))
 
       Text(
-        text = "PIN mora imati 4 do 6 cifara. Koristiće se za lokalno otključavanje dečjeg telefona.",
+        text = "PIN must contain 4 to 6 digits. It is used for local unlocking of the Child phone.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
@@ -281,7 +281,7 @@ private fun ParentPinSetupScreen(
           pin = it.onlyPinDigits()
           errorMessage = null
         },
-        label = "Roditeljski PIN",
+        label = "Parent PIN",
       )
 
       Spacer(modifier = Modifier.height(12.dp))
@@ -292,7 +292,7 @@ private fun ParentPinSetupScreen(
           confirmation = it.onlyPinDigits()
           errorMessage = null
         },
-        label = "Ponovi PIN",
+        label = "Confirm PIN",
       )
 
       errorMessage?.let {
@@ -310,8 +310,8 @@ private fun ParentPinSetupScreen(
         onClick = {
           errorMessage =
             when {
-              pin.length !in 4..6 -> "PIN mora imati 4 do 6 cifara."
-              pin != confirmation -> "PIN-ovi se ne poklapaju."
+              pin.length !in 4..6 -> "PIN must contain 4 to 6 digits."
+              pin != confirmation -> "PINs do not match."
               else -> {
                 onPinSet(pin)
                 null
@@ -320,7 +320,7 @@ private fun ParentPinSetupScreen(
         },
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text("SAČUVAJ PIN")
+        Text("SAVE PIN")
       }
     }
   }
@@ -385,7 +385,7 @@ private fun ChildDashboard(
     )
 
     Text(
-      text = "Zaštićeni uređaj",
+      text = "Protected device",
       style = MaterialTheme.typography.titleMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -396,7 +396,7 @@ private fun ChildDashboard(
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Text(
-          text = "Status zaštite",
+          text = "Protection status",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -408,9 +408,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (protectionReady) {
-              "● Zaštita je aktivna"
+              "● Protection is active"
             } else {
-              "○ Zaštita nije kompletna"
+              "○ Protection is incomplete"
             },
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
@@ -419,9 +419,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (accessibilityEnabled) {
-              "✓ Zaštita ekrana je uključena"
+              "✓ Screen protection is enabled"
             } else {
-              "✕ Zaštita ekrana nije uključena"
+              "✕ Screen protection is disabled"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
@@ -429,9 +429,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (exactAlarmAccess) {
-              "✓ Precizno vreme zaključavanja"
+              "✓ Exact lock timing is enabled"
             } else {
-              "△ Precizno vreme zaključavanja nije dozvoljeno"
+              "△ Exact lock timing is not allowed"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
@@ -439,15 +439,15 @@ private fun ChildDashboard(
         Text(
           text =
             if (batteryOptimizationIgnored) {
-              "✓ Rad u pozadini je dozvoljen"
+              "✓ Background activity is unrestricted"
             } else {
-              "△ Android može ograničiti rad u pozadini"
+              "△ Android may restrict background activity"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
 
         Text(
-          text = "PhoneGuard koristi Accessibility samo da bi ekran roditeljske zaštite ostao iznad drugih aplikacija dok je zaključavanje aktivno.",
+          text = "PhoneGuard uses Accessibility only to keep the parental lock screen above other apps while protection is active.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -457,7 +457,7 @@ private fun ChildDashboard(
             onClick = onEnableAccessibility,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("UKLJUČI ZAŠTITU EKRANA")
+            Text("ENABLE SCREEN PROTECTION")
           }
         }
 
@@ -466,7 +466,7 @@ private fun ChildDashboard(
             onClick = onOpenBatterySettings,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("PODEŠAVANJA BATERIJE")
+            Text("BATTERY SETTINGS")
           }
         }
 
@@ -475,7 +475,7 @@ private fun ChildDashboard(
             onClick = onRequestExactAlarmAccess,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("DOZVOLI PRECIZNO VREME")
+            Text("ALLOW EXACT TIMING")
           }
         }
       }
@@ -487,7 +487,7 @@ private fun ChildDashboard(
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Text(
-          text = "Povezivanje sa roditeljem",
+          text = "Parent connection",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -495,12 +495,12 @@ private fun ChildDashboard(
         Text(
           text =
             when {
-              registrationInProgress -> "Povezujem uređaj…"
-              paired -> "● Povezan sa Parent aplikacijom"
-              registrationSuccess != null -> "Spreman za uparivanje"
+              registrationInProgress -> "Connecting device…"
+              paired -> "● Connected to Parent app"
+              registrationSuccess != null -> "Ready to pair"
               registrationFailure != null ->
-                "Greška pri povezivanju: " + registrationFailure.message
-              else -> "Povezivanje još nije završeno"
+                "Connection error: " + registrationFailure.message
+              else -> "Connection is not complete yet"
             },
           style = MaterialTheme.typography.bodyMedium,
           color =
@@ -513,7 +513,7 @@ private fun ChildDashboard(
 
         if (paired) {
           Text(
-            text = "Ovim uređajem trenutno upravlja uparena Parent aplikacija.",
+            text = "This device is currently managed by the paired Parent app.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
@@ -527,11 +527,11 @@ private fun ChildDashboard(
               },
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text("POVEŽI NOVOG RODITELJA")
+              Text("PAIR NEW PARENT")
             }
           } else {
             Text(
-              text = "Ovo će poništiti pristup prethodno uparenoj Parent aplikaciji.",
+              text = "This will revoke access for the previously paired Parent app.",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.error,
             )
@@ -542,7 +542,7 @@ private fun ChildDashboard(
                 resetPin = it.onlyPinDigits()
                 resetError = null
               },
-              label = "Roditeljski PIN",
+              label = "Parent PIN",
             )
 
             resetError?.let { message ->
@@ -579,7 +579,7 @@ private fun ChildDashboard(
             ) {
               Text(
                 if (resetInProgress) {
-                  "MENJAM…"
+                  "UPDATING…"
                 } else {
                   "CONFIRM NEW PAIRING"
                 },
@@ -595,7 +595,7 @@ private fun ChildDashboard(
               enabled = !resetInProgress,
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text("OTKAŽI")
+              Text("CANCEL")
             }
           }
         } else {
@@ -606,14 +606,14 @@ private fun ChildDashboard(
           )
 
           Text(
-            text = "Unesi ovaj kod u PhoneGuard Parent aplikaciji.",
+            text = "Enter this code in the PhoneGuard Parent app.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
 
           if (registrationSuccess != null) {
             Text(
-              text = "Kod za uparivanje važi približno 15 minuta.",
+              text = "The pairing code is valid for about 15 minutes.",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -624,7 +624,7 @@ private fun ChildDashboard(
             enabled = !registrationInProgress,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("GENERIŠI NOVI KOD")
+            Text("GENERATE NEW CODE")
           }
         }
 
@@ -633,7 +633,7 @@ private fun ChildDashboard(
             onClick = onRetryRegistration,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("POKUŠAJ PONOVO")
+            Text("TRY AGAIN")
           }
         }
 
@@ -667,7 +667,7 @@ private fun LockScreen(
       Spacer(modifier = Modifier.height(28.dp))
 
       Text(
-        text = "Telefon je trenutno zaključan",
+        text = "Phone is currently locked",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Center,
@@ -677,7 +677,7 @@ private fun LockScreen(
 
       if (unlockTimeLabel != null) {
         Text(
-          text = "Ponovo dostupno u",
+          text = "Available again at",
           style = MaterialTheme.typography.bodyLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -689,7 +689,7 @@ private fun LockScreen(
         )
       } else {
         Text(
-          text = "Ručno zaključano",
+          text = "Locked manually",
           style = MaterialTheme.typography.titleMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -705,7 +705,7 @@ private fun LockScreen(
           },
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("Otključaj roditeljskim PIN-om")
+          Text("Unlock with parent PIN")
         }
       } else {
         PinField(
@@ -714,7 +714,7 @@ private fun LockScreen(
             pin = it.onlyPinDigits()
             errorMessage = null
           },
-          label = "Roditeljski PIN",
+          label = "Parent PIN",
         )
 
         errorMessage?.let {
@@ -734,14 +734,14 @@ private fun LockScreen(
               pin = ""
               errorMessage = null
             } else {
-              errorMessage = "Pogrešan PIN."
+              errorMessage = "Incorrect PIN."
               pin = ""
             }
           },
           enabled = pin.length in 4..6,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("OTKLJUČAJ")
+          Text("UNLOCK")
         }
       }
     }
