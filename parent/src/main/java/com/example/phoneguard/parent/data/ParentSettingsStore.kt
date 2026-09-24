@@ -147,8 +147,10 @@ class ParentSettingsStore(context: Context) {
             }
 
           val encryptedToken = json.getString("controlTokenEncrypted")
-          val controlToken = tokenCipher.decrypt(encryptedToken)
-          if (controlToken.isBlank()) continue
+          val controlToken =
+            tokenCipher.decrypt(encryptedToken)
+              ?.takeIf { it.isNotBlank() }
+              ?: continue
 
           add(
             PairedChildDevice(
