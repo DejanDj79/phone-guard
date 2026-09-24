@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.core.DeviceAccessState
 
 @Composable
 fun DevicesScreen(
@@ -68,7 +69,7 @@ fun DevicesScreen(
               text =
                 (if (device.isOnline) "● Online" else "○ Offline") +
                   " · " +
-                  deviceStateLabel(device).removePrefix("● ").removePrefix("○ "),
+                  devicesStateLabel(device),
               style = MaterialTheme.typography.bodyMedium,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -110,3 +111,17 @@ fun DevicesScreen(
     }
   }
 }
+
+
+private fun devicesStateLabel(device: ChildDevice): String =
+  when (device.state) {
+    DeviceAccessState.ALLOWED -> "Phone is available"
+    DeviceAccessState.LOCKED -> "Phone is locked"
+    DeviceAccessState.TEMPORARILY_ALLOWED ->
+      if ((device.temporaryAccessMinutesRemaining ?: 0) > 0) {
+        "Bonus time: " + device.temporaryAccessMinutesRemaining + " min"
+      } else {
+        "Bonus time expired"
+      }
+    DeviceAccessState.OFFLINE -> "Device state is unknown"
+  }
