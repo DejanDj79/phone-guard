@@ -216,6 +216,22 @@ class ChildSettingsStore(context: Context) {
     return refreshed
   }
 
+  fun timeRequestFeedback(): String? =
+    preferences.getString(KEY_TIME_REQUEST_FEEDBACK, null)
+      ?.takeIf { it.isNotBlank() }
+
+  fun setTimeRequestFeedback(message: String?) {
+    val editor = preferences.edit()
+
+    if (message.isNullOrBlank()) {
+      editor.remove(KEY_TIME_REQUEST_FEEDBACK)
+    } else {
+      editor.putString(KEY_TIME_REQUEST_FEEDBACK, message)
+    }
+
+    editor.apply()
+  }
+
   fun allowedPackages(): Set<String> =
     preferences
       .getString(KEY_ALLOWED_APPS, "")
@@ -303,7 +319,8 @@ class ChildSettingsStore(context: Context) {
           key == KEY_MANUAL_LOCKED ||
           key == KEY_SCHEDULE_LOCKED ||
           key == KEY_TEMPORARY_ALLOW_UNTIL ||
-          key == KEY_ALLOWED_APPS
+          key == KEY_ALLOWED_APPS ||
+          key == KEY_TIME_REQUEST_FEEDBACK
         ) {
           onChanged()
         }
@@ -346,6 +363,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_DEVICE_SECRET_ENCRYPTED = "device_secret_encrypted"
     const val KEY_TEMPORARY_ALLOW_UNTIL = "temporary_allow_until"
     const val KEY_APPLIED_REMOTE_COMMAND_IDS = "applied_remote_command_ids"
+    const val KEY_TIME_REQUEST_FEEDBACK = "time_request_feedback"
     const val MAX_APPLIED_REMOTE_COMMAND_IDS = 100
     const val SALT_SIZE_BYTES = 16
     const val PAIRING_CODE_LENGTH = 6
