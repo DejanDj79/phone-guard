@@ -67,6 +67,7 @@ import com.example.phoneguard.parent.data.PendingTimeRequest
 import com.example.phoneguard.parent.data.TimeRequestFetchResult
 import com.example.phoneguard.parent.data.TimeRequestResponseResult
 import com.example.phoneguard.parent.data.UnpairDeviceResult
+import com.example.phoneguard.parent.push.ParentPushRegistrar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -204,6 +205,8 @@ fun ParentDashboardScreen(
               settingsStore.selectDevice(result.device.deviceId)
               pairedDevices = settingsStore.loadPairedDevices()
               pairedDevice = result.device
+              ParentPushRegistrar(context.applicationContext)
+                .registerCurrentToken()
               showPairDevice = false
               result
             }
