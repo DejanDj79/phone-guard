@@ -100,7 +100,7 @@ fun ParentDashboardScreen(
 
         if (requestResult.isFailure) {
           PairingResult.InvalidCode(
-            "Kod mora imati tačno 6 slova ili cifara.",
+            "Code must contain exactly 6 letters or digits.",
           )
         } else {
           val result =
@@ -113,7 +113,7 @@ fun ParentDashboardScreen(
 
             if (token.isNullOrBlank()) {
               PairingResult.Error(
-                "Backend nije vratio control token.",
+                "Backend did not return a control token.",
               )
             } else {
               settingsStore.savePairing(
@@ -144,7 +144,7 @@ fun ParentDashboardScreen(
           val controlToken = settingsStore.controlToken()
           if (controlToken.isNullOrBlank()) {
             scheduleError =
-              "Nedostaje control token. Potrebno je ponovno uparivanje."
+              "Control token is missing. Re-pairing is required."
           } else {
             scope.launch {
               scheduleSaving = true
@@ -164,9 +164,9 @@ fun ParentDashboardScreen(
                   scheduleEditorSchedule = null
                   scheduleNotice =
                     if (device.isOnline) {
-                      "Raspored je sačuvan i poslat Child uređaju."
+                      "Schedule saved and sent to the Child device."
                     } else {
-                      "Raspored je sačuvan i primeniće se kada se Child ponovo poveže."
+                      "Schedule saved and will be applied when the Child reconnects."
                     }
                 }
 
@@ -194,7 +194,7 @@ fun ParentDashboardScreen(
   LaunchedEffect(device.deviceId) {
     val controlToken = settingsStore.controlToken()
     if (controlToken.isNullOrBlank()) {
-      commandError = "Nedostaje control token. Potrebno je ponovno uparivanje."
+      commandError = "Control token is missing. Re-pairing is required."
     } else {
       while (true) {
         when (
@@ -236,7 +236,7 @@ fun ParentDashboardScreen(
 
     val controlToken = settingsStore.controlToken()
     if (controlToken.isNullOrBlank()) {
-      commandError = "Nedostaje control token. Potrebno je ponovno uparivanje."
+      commandError = "Control token is missing. Re-pairing is required."
       return
     }
 
@@ -306,7 +306,7 @@ fun ParentDashboardScreen(
               "FAILED" -> {
                 commandNotice = null
                 pendingCommandFeedback = null
-                commandError = "Komanda nije mogla da se primeni. Pokušaj ponovo."
+                commandError = "The command could not be applied. Please try again."
               }
 
               else -> {
@@ -346,7 +346,7 @@ fun ParentDashboardScreen(
     )
 
     Text(
-      text = "Roditeljska kontrola",
+      text = "Parental control",
       style = MaterialTheme.typography.titleMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -357,7 +357,7 @@ fun ParentDashboardScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         Text(
-          text = "Upareni uređaj",
+          text = "Paired device",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -378,7 +378,7 @@ fun ParentDashboardScreen(
             if (device.isOnline) {
               "● Online"
             } else {
-              "○ Uređaj je offline"
+              "○ Device is offline"
             },
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -391,17 +391,17 @@ fun ParentDashboardScreen(
           text =
             when {
               device.isOnline && protectionComplete == true ->
-                "✓ Zaštita uređaja je aktivna"
+                "✓ Device protection is active"
               device.isOnline && protectionComplete == false ->
-                "⚠ Zaštita uređaja nije kompletna"
+                "⚠ Device protection is incomplete"
               device.isOnline ->
-                "Proveravam zaštitu uređaja…"
+                "Checking device protection…"
               protectionComplete == false ->
-                "⚠ Poslednje poznato stanje: zaštita nije kompletna"
+                "⚠ Last known state: protection is incomplete"
               protectionComplete == true ->
-                "Poslednje poznato stanje: zaštita je bila aktivna"
+                "Last known state: protection was active"
               else ->
-                "Status zaštite nije poznat"
+                "Protection status is unknown"
             },
           style = MaterialTheme.typography.bodyMedium,
           color =
@@ -416,9 +416,9 @@ fun ParentDashboardScreen(
           Text(
             text =
               if (device.isOnline) {
-                "Accessibility zaštita je isključena."
+                "Accessibility protection is disabled."
               } else {
-                "Poslednje poznato: Accessibility zaštita je bila isključena."
+                "Last known state: Accessibility protection was disabled."
               },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
@@ -429,9 +429,9 @@ fun ParentDashboardScreen(
           Text(
             text =
               if (device.isOnline) {
-                "Precizno vreme zaključavanja nije dozvoljeno."
+                "Exact lock timing is not allowed."
               } else {
-                "Poslednje poznato: precizno vreme zaključavanja nije bilo dozvoljeno."
+                "Last known state: exact lock timing was not allowed."
               },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
@@ -440,7 +440,7 @@ fun ParentDashboardScreen(
 
         if (protection.batteryUnrestricted == false) {
           Text(
-            text = "Android može ograničiti rad PhoneGuard-a u pozadini.",
+            text = "Android may restrict PhoneGuard background activity.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
@@ -454,17 +454,19 @@ fun ParentDashboardScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         Text(
-          text = "Brze komande",
+          text = "Quick actions",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
         )
 
+        val isLocked = device.state == DeviceAccessState.LOCKED
+
         Button(
           onClick = { sendCommand(RemoteCommand.lock()) },
-          enabled = !commandInProgress,
+          enabled = !commandInProgress && !isLocked,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("ZAKLJUČAJ SADA")
+          Text(if (isLocked) "LOCKED" else "LOCK NOW")
         }
 
         OutlinedButton(
@@ -472,11 +474,11 @@ fun ParentDashboardScreen(
           enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("OTKLJUČAJ")
+          Text("UNLOCK")
         }
 
         Text(
-          text = "Dodatno vreme",
+          text = "Bonus time",
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -486,12 +488,12 @@ fun ParentDashboardScreen(
           enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("DODAJ VREME")
+          Text("ADD TIME")
         }
 
         if (!device.isOnline && commandProgressMessage == null && commandNotice == null) {
           Text(
-            text = "Uređaj je offline. Poslate komande će se primeniti kada se ponovo poveže.",
+            text = "Device is offline. Sent commands will be applied when it reconnects.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
@@ -521,13 +523,13 @@ fun ParentDashboardScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Text(
-          text = "Raspored zaključavanja",
+          text = "Lock schedule",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
         )
 
         Text(
-          text = "Podesi dane i vreme kada će se Child telefon automatski zaključavati.",
+          text = "Set the days and times when the Child phone will lock automatically.",
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -538,7 +540,7 @@ fun ParentDashboardScreen(
               val controlToken = settingsStore.controlToken()
               if (controlToken.isNullOrBlank()) {
                 commandError =
-                  "Nedostaje control token. Potrebno je ponovno uparivanje."
+                  "Control token is missing. Re-pairing is required."
               } else {
                 scope.launch {
                   scheduleLoading = true
@@ -572,7 +574,7 @@ fun ParentDashboardScreen(
           enabled = !scheduleLoading && !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text(if (scheduleLoading) "UČITAVAM…" else "PODESI RASPORED")
+          Text(if (scheduleLoading) "LOADING…" else "EDIT SCHEDULE")
         }
       }
     }
@@ -599,8 +601,8 @@ fun ParentDashboardScreen(
     BonusTimeWheelDialog(
       initialMinutes = selectedBonusMinutes,
       onDismiss = { showBonusTimePicker = false },
-      onConfirm = { minutes ->
-        selectedBonusMinutes = minutes
+      onConfirm = { minutees ->
+        selectedBonusMinutes = minutees
         showBonusTimePicker = false
         sendCommand(RemoteCommand.bonusTime(minutes))
       },
@@ -622,7 +624,7 @@ private fun BonusTimeWheelDialog(
     onDismissRequest = onDismiss,
     title = {
       Text(
-        text = "Dodatno vreme",
+        text = "Bonus time",
         fontWeight = FontWeight.SemiBold,
       )
     },
@@ -632,7 +634,7 @@ private fun BonusTimeWheelDialog(
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         Text(
-          text = "Izaberi trajanje od 1 do 60 minuta.",
+          text = "Choose a duration from 1 to 60 minutees.",
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -665,7 +667,7 @@ private fun BonusTimeWheelDialog(
         Text(
           text =
             selectedMinutes.toString() +
-              if (selectedMinutes == 1) " minut" else " minuta",
+              if (selectedMinutes == 1) " minute" else " minutea",
           modifier = Modifier.fillMaxWidth(),
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.SemiBold,
@@ -677,12 +679,12 @@ private fun BonusTimeWheelDialog(
       Button(
         onClick = { onConfirm(selectedMinutes) },
       ) {
-        Text("DODAJ")
+        Text("ADD")
       }
     },
     dismissButton = {
       OutlinedButton(onClick = onDismiss) {
-        Text("OTKAŽI")
+        Text("CANCEL")
       }
     },
   )
@@ -715,7 +717,7 @@ private fun PairDeviceScreen(
     Spacer(modifier = Modifier.height(12.dp))
 
     Text(
-      text = "Upari dečji telefon",
+      text = "Pair a Child phone",
       style = MaterialTheme.typography.headlineSmall,
       fontWeight = FontWeight.SemiBold,
     )
@@ -723,7 +725,7 @@ private fun PairDeviceScreen(
     Spacer(modifier = Modifier.height(8.dp))
 
     Text(
-      text = "Na Child telefonu otvori PhoneGuard i unesi njegov šestoznakovni pairing kod.",
+      text = "Open PhoneGuard on the Child phone and enter its 6-character pairing code.",
       style = MaterialTheme.typography.bodyMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -740,7 +742,7 @@ private fun PairDeviceScreen(
             .take(6)
         errorMessage = null
       },
-      label = { Text("Kod za uparivanje") },
+      label = { Text("Pairing code") },
       singleLine = true,
       enabled = !pairingInProgress,
       keyboardOptions =
@@ -784,9 +786,9 @@ private fun PairDeviceScreen(
     ) {
       Text(
         if (pairingInProgress) {
-          "UPARUJEM…"
+          "PAIRING…"
         } else {
-          "UPARI UREĐAJ"
+          "PAIR DEVICE"
         },
       )
     }
@@ -794,7 +796,7 @@ private fun PairDeviceScreen(
     Spacer(modifier = Modifier.height(16.dp))
 
     Text(
-      text = "Kod se proverava na PhoneGuard backendu i može se iskoristiti samo dok je aktivan.",
+      text = "The code is verified by the PhoneGuard backend and can only be used while it is active.",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -821,30 +823,30 @@ private fun commandSendingLabel(
   deviceOnline: Boolean,
 ): String =
   if (!deviceOnline) {
-    "Uređaj je offline — komanda će sačekati ponovno povezivanje."
+    "Device is offline — the command will wait for reconnection."
   } else {
     when (command.type) {
       com.example.phoneguard.core.RemoteCommandType.LOCK ->
-        "Šaljem zaključavanje…"
+        "Sending lock command…"
       com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
-        "Šaljem otključavanje…"
+        "Sending unlock command…"
       com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
-        "Dodajem " + command.bonusMinutes + " min…"
+        "Adding " + command.bonusMinutes + " min…"
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
-        "Sinhronizujem raspored…"
+        "Syncing schedule…"
     }
   }
 
 private fun commandAppliedLabel(command: RemoteCommand): String =
   when (command.type) {
     com.example.phoneguard.core.RemoteCommandType.LOCK ->
-      "Telefon je zaključan ✓"
+      "Phone locked ✓"
     com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
-      "Telefon je otključan ✓"
+      "Phone unlocked ✓"
     com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
-      "Dodato " + command.bonusMinutes + " min ✓"
+      "Added " + command.bonusMinutes + " min ✓"
     com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
-      "Raspored je primenjen ✓"
+      "Schedule applied ✓"
   }
 
 private fun commandQueuedLabel(
@@ -854,40 +856,40 @@ private fun commandQueuedLabel(
   if (!deviceOnline) {
     when (command.type) {
       com.example.phoneguard.core.RemoteCommandType.LOCK ->
-        "Zaključavanje je sačuvano i primeniće se kada se Child poveže."
+        "Lock command queued and will be applied when the Child reconnects."
       com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
-        "Otključavanje je sačuvano i primeniće se kada se Child poveže."
+        "Unlock command queued and will be applied when the Child reconnects."
       com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
-        "Dodatno vreme je poslato i primeniće se kada se Child poveže."
+        "Bonus time je poslato i primeniće se kada se Child poveže."
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
-        "Raspored će se primeniti kada se Child poveže."
+        "The schedule will be applied when the Child reconnects."
     }
   } else {
     when (command.type) {
       com.example.phoneguard.core.RemoteCommandType.LOCK ->
-        "Zaključavanje je poslato. Čekam potvrdu Child uređaja."
+        "Lock command sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
-        "Otključavanje je poslato. Čekam potvrdu Child uređaja."
+        "Unlock command sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
-        "Dodatno vreme je poslato. Čekam potvrdu Child uređaja."
+        "Bonus time je poslato. Čekam potvrdu Child uređaja."
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
-        "Raspored je poslat. Čekam potvrdu Child uređaja."
+        "Schedule sent. Waiting for the Child device to confirm."
     }
   }
 
 private fun deviceStateLabel(device: ChildDevice): String =
   when (device.state) {
-    DeviceAccessState.ALLOWED -> "● Telefon je dostupan"
-    DeviceAccessState.LOCKED -> "● Telefon je zaključan"
+    DeviceAccessState.ALLOWED -> "● Phone is available"
+    DeviceAccessState.LOCKED -> "● Phone is locked"
     DeviceAccessState.TEMPORARILY_ALLOWED ->
       if ((device.temporaryAccessMinutesRemaining ?: 0) > 0) {
-        "● Dodatno vreme: " +
+        "● Bonus time: " +
           device.temporaryAccessMinutesRemaining +
           " min"
       } else {
-        "Dodatno vreme je isteklo — ažuriram stanje"
+        "Bonus time je isteklo — ažuriram stanje"
       }
-    DeviceAccessState.OFFLINE -> "○ Stanje uređaja nije poznato"
+    DeviceAccessState.OFFLINE -> "○ Device state is unknown"
   }
 
 @Preview(showBackground = true)
