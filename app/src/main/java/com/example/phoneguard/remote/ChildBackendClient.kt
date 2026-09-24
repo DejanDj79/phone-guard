@@ -85,6 +85,12 @@ sealed interface ChildDailyLimitResult {
   ) : ChildDailyLimitResult
 }
 
+data class ChildAppUsageEntry(
+  val packageName: String,
+  val label: String,
+  val seconds: Int,
+)
+
 sealed interface ChildHeartbeatResult {
   data object Success : ChildHeartbeatResult
 
@@ -751,6 +757,9 @@ class ChildBackendClient {
     protectionEvent: String? = null,
     dailyUsageDate: String,
     dailyUsageSeconds: Int,
+    appUsageDate: String,
+    appUsageTotalSeconds: Int,
+    appUsageEntries: List<ChildAppUsageEntry>,
   ): ChildHeartbeatResult {
     val connection =
       (URL(HEARTBEAT_URL).openConnection() as HttpURLConnection).apply {
@@ -762,6 +771,16 @@ class ChildBackendClient {
       }
 
     return try {
+      val appUsageJson = JSONArray()
+      appUsageEntries.forEach { entry ->
+        appUsageJson.put(
+          JSONObject()
+            .put("packageName", entry.packageName)
+            .put("label", entry.label)
+            .put("seconds", entry.seconds),
+        )
+      }
+
       val body =
         JSONObject()
           .put("deviceId", deviceId)
@@ -777,6 +796,9 @@ class ChildBackendClient {
           }
           .put("dailyUsageDate", dailyUsageDate)
           .put("dailyUsageSeconds", dailyUsageSeconds)
+          .put("appUsageDate", appUsageDate)
+          .put("appUsageTotalSeconds", appUsageTotalSeconds)
+          .put("appUsage", appUsageJson)
           .also { json ->
             if (temporaryAllowUntilMillis != null) {
               json.put("temporaryAllowUntilMillis", temporaryAllowUntilMillis)
