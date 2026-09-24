@@ -19,6 +19,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -137,7 +138,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           .toString()
       }.getOrDefault("PhoneGuard")
 
-    val eventText =
+    val visibleText =
       buildString {
         event.text.forEach { item ->
           append(item)
@@ -147,36 +148,79 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           append(it)
           append(' ')
         }
+        append(activeWindowText())
       }
 
     val mentionsPhoneGuard =
-      eventText.contains(phoneGuardLabel, ignoreCase = true) ||
-        eventText.contains(packageName, ignoreCase = true)
+      visibleText.contains(phoneGuardLabel, ignoreCase = true) ||
+        visibleText.contains(packageName, ignoreCase = true)
 
     if (!mentionsPhoneGuard) return null
 
-    val appInfoScreen =
-      eventPackage == "com.android.settings" &&
-        (
-          className.contains("InstalledAppDetails", ignoreCase = true) ||
-            className.contains("AppInfoDashboard", ignoreCase = true)
-        )
-
-    if (appInfoScreen) {
-      return PROTECTION_EVENT_APP_INFO_OPENED
-    }
+    val normalizedText = visibleText.lowercase()
 
     val uninstallScreen =
-      className.contains("UninstallerActivity", ignoreCase = true) ||
+      eventPackage.contains("packageinstaller", ignoreCase = true) ||
+        className.contains("Uninstaller", ignoreCase = true) ||
+        className.contains("Uninstall", ignoreCase = true)
+
+    if (uninstallScreen) {
+      return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
+    }
+
+    val appInfoByClass =
+      className.contains("InstalledAppDetails", ignoreCase = true) ||
+        className.contains("AppInfoDashboard", ignoreCase = true)
+
+    val appInfoByContent =
+      eventPackage == "com.android.settings" &&
         (
-          eventPackage.contains("packageinstaller", ignoreCase = true) &&
-            className.contains("uninstall", ignoreCase = true)
+          normalizedText.contains("force stop") ||
+            (
+              normalizedText.contains("uninstall") &&
+                (
+                  normalizedText.contains("permissions") ||
+                    normalizedText.contains("storage") ||
+                    normalizedText.contains("battery")
+                )
+            )
         )
 
-    return if (uninstallScreen) {
-      PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
+    return if (eventPackage == "com.android.settings" && (appInfoByClass || appInfoByContent)) {
+      PROTECTION_EVENT_APP_INFO_OPENED
     } else {
       null
+    }
+  }
+
+  private fun activeWindowText(): String {
+    val root = rootInActiveWindow ?: return ""
+    val queue = ArrayDeque<AccessibilityNodeInfo>()
+    queue.add(root)
+    var visited = 0
+
+    return buildString {
+      while (queue.isNotEmpty() && visited < MAX_ACCESSIBILITY_NODES_TO_SCAN) {
+        val node = queue.removeFirst()
+        visited += 1
+
+        node.text?.toString()?.takeIf(String::isNotBlank)?.let {
+          append(it)
+          append(' ')
+        }
+        node.contentDescription?.toString()?.takeIf(String::isNotBlank)?.let {
+          append(it)
+          append(' ')
+        }
+        node.viewIdResourceName?.takeIf(String::isNotBlank)?.let {
+          append(it)
+          append(' ')
+        }
+
+        for (index in 0 until node.childCount) {
+          node.getChild(index)?.let(queue::addLast)
+        }
+      }
     }
   }
 
@@ -758,6 +802,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     const val TAG = "PhoneGuardAccessibility"
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
+    const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
     const val PROTECTION_EVENT_APP_INFO_OPENED = "APP_INFO_OPENED"
     const val PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
   }
