@@ -94,6 +94,7 @@ fun ParentDashboardScreen(
   var showPairDevice by remember {
     mutableStateOf(pairedDevice == null)
   }
+  var showDevices by remember { mutableStateOf(false) }
   var commandInProgress by remember { mutableStateOf(false) }
   var commandProgressMessage by remember { mutableStateOf<String?>(null) }
   var commandNotice by remember { mutableStateOf<String?>(null) }
@@ -171,6 +172,48 @@ fun ParentDashboardScreen(
   }
 
   val device = pairedDevice!!
+
+  if (showDevices) {
+    DevicesScreen(
+      devices = pairedDevices,
+      selectedDeviceId = device.deviceId,
+      busy =
+        commandInProgress ||
+          refreshInProgress ||
+          scheduleLoading ||
+          scheduleSaving ||
+          allowedAppsLoading ||
+          allowedAppsSaving ||
+          deviceRenaming ||
+          deviceUnpairing,
+      onSelectDevice = { selected ->
+        if (settingsStore.selectDevice(selected.deviceId)) {
+          pairedDevice = settingsStore.loadPairedDevice()
+          commandNotice = null
+          commandProgressMessage = null
+          commandError = null
+          pendingCommandFeedback = null
+          scheduleEditorSchedule = null
+          scheduleError = null
+          scheduleNotice = null
+          allowedAppsEditorSnapshot = null
+          allowedAppsError = null
+          allowedAppsNotice = null
+          showBonusTimePicker = false
+          showDeviceManagement = false
+          deviceManagementError = null
+          showDevices = false
+        }
+      },
+      onAddDevice = {
+        showDevices = false
+        showPairDevice = true
+      },
+      onBack = { showDevices = false },
+      modifier = modifier,
+    )
+    return
+  }
 
   if (showDeviceManagement) {
     DeviceManagementScreen(
@@ -558,97 +601,6 @@ fun ParentDashboardScreen(
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
       Column(
         modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-      ) {
-        Text(
-          text = "Devices",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-        )
-
-        pairedDevices.forEach { paired ->
-          ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-              modifier = Modifier.padding(14.dp),
-              verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-              Text(
-                text =
-                  if (paired.deviceId == device.deviceId) {
-                    "✓ " + paired.displayName
-                  } else {
-                    paired.displayName
-                  },
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-              )
-
-              Text(
-                text =
-                  (if (paired.isOnline) "● Online" else "○ Offline") +
-                    " · " +
-                    deviceStateLabel(paired).removePrefix("● ").removePrefix("○ "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-
-              if (paired.deviceId != device.deviceId) {
-                OutlinedButton(
-                  onClick = {
-                    if (settingsStore.selectDevice(paired.deviceId)) {
-                      pairedDevice = settingsStore.loadPairedDevice()
-                      commandNotice = null
-                      commandProgressMessage = null
-                      commandError = null
-                      pendingCommandFeedback = null
-                      scheduleEditorSchedule = null
-                      scheduleError = null
-                      scheduleNotice = null
-                      allowedAppsEditorSnapshot = null
-                      allowedAppsError = null
-                      allowedAppsNotice = null
-                      showBonusTimePicker = false
-                      showDeviceManagement = false
-                      deviceManagementError = null
-                    }
-                  },
-                  enabled =
-                    !commandInProgress &&
-                      !refreshInProgress &&
-                      !scheduleLoading &&
-                      !scheduleSaving &&
-                      !allowedAppsLoading &&
-                      !allowedAppsSaving &&
-                      !deviceRenaming &&
-                      !deviceUnpairing,
-                  modifier = Modifier.fillMaxWidth(),
-                ) {
-                  Text("SELECT DEVICE")
-                }
-              } else {
-                Text(
-                  text = "Currently selected",
-                  style = MaterialTheme.typography.labelMedium,
-                  color = MaterialTheme.colorScheme.primary,
-                )
-              }
-            }
-          }
-        }
-
-        Button(
-          onClick = { showPairDevice = true },
-          enabled = !commandInProgress && !deviceRenaming && !deviceUnpairing,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("+ ADD DEVICE")
-        }
-      }
-    }
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         Text(
@@ -684,6 +636,18 @@ fun ParentDashboardScreen(
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        OutlinedButton(
+          onClick = { showDevices = true },
+          enabled =
+            !refreshInProgress &&
+              !commandInProgress &&
+              !deviceRenaming &&
+              !deviceUnpairing,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("DEVICES (" + pairedDevices.size + ")")
+        }
 
         OutlinedButton(
           onClick = {
