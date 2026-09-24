@@ -114,7 +114,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   override fun onUnbind(intent: Intent?): Boolean {
     if (::heartbeatSender.isInitialized) {
       Thread {
-        heartbeatSender.send(accessibilityEnabledOverride = false)
+        heartbeatSender.send()
       }.start()
     }
     return super.onUnbind(intent)
