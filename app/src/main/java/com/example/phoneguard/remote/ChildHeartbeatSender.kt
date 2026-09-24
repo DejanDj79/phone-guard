@@ -33,6 +33,13 @@ class ChildHeartbeatSender(context: Context) {
     val batteryUnrestricted =
       BackgroundProtectionStatus.isBatteryOptimizationIgnored(appContext)
 
+    Log.i(
+      TAG,
+      "Protection status: accessibility=" + accessibilityEnabled +
+        ", preciseTiming=" + preciseTimingEnabled +
+        ", batteryUnrestricted=" + batteryUnrestricted,
+    )
+
     when (
       val result =
         ChildBackendClient().heartbeat(
