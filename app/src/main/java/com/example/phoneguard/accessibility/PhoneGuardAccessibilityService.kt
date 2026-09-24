@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -338,6 +340,70 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       )
     }
 
+    val cameraManager = getSystemService(CameraManager::class.java)
+    val torchCameraId =
+      runCatching {
+        cameraManager.cameraIdList.firstOrNull { cameraId ->
+          cameraManager
+            .getCameraCharacteristics(cameraId)
+            .get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        }
+      }.getOrNull()
+
+    var flashlightEnabled = false
+
+    val flashlightStatus =
+      TextView(this).apply {
+        text =
+          if (torchCameraId == null) {
+            "Flashlight is unavailable on this device."
+          } else {
+            "Flashlight is off"
+          }
+        textSize = 14f
+        gravity = Gravity.CENTER
+        setTextColor(Color.LTGRAY)
+        setPadding(0, dp(12), 0, dp(8))
+      }
+
+    val flashlightButton =
+      Button(this).apply {
+        text = "FLASHLIGHT ON"
+        isEnabled = torchCameraId != null
+        layoutParams =
+          LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+          )
+        setOnClickListener {
+          val cameraId = torchCameraId ?: return@setOnClickListener
+          val nextEnabled = !flashlightEnabled
+
+          runCatching {
+            cameraManager.setTorchMode(cameraId, nextEnabled)
+          }.onSuccess {
+            flashlightEnabled = nextEnabled
+            text =
+              if (flashlightEnabled) {
+                "FLASHLIGHT OFF"
+              } else {
+                "FLASHLIGHT ON"
+              }
+            flashlightStatus.text =
+              if (flashlightEnabled) {
+                "Flashlight is on"
+              } else {
+                "Flashlight is off"
+              }
+            flashlightStatus.setTextColor(Color.LTGRAY)
+          }.onFailure { error ->
+            Log.w(TAG, "Flashlight change failed", error)
+            flashlightStatus.text = "Flashlight is currently unavailable."
+            flashlightStatus.setTextColor(Color.rgb(255, 170, 100))
+          }
+        }
+      }
+
     val disclosure =
       TextView(this).apply {
         text = "Unlocking requires the parent PIN."
@@ -405,6 +471,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     content.addView(soundTitle)
     content.addView(soundStatus)
     content.addView(soundControls)
+    content.addView(flashlightStatus)
+    content.addView(flashlightButton)
     content.addView(disclosure)
     content.addView(pinInput)
     content.addView(error)
