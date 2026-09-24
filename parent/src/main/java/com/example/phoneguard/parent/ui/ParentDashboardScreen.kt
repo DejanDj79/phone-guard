@@ -228,8 +228,8 @@ fun ParentDashboardScreen(
                   }
               ) {
                 UnpairDeviceResult.Success -> {
-                  settingsStore.clearPairing()
-                  pairedDevice = null
+                  settingsStore.removePairing(device.deviceId)
+                  pairedDevice = settingsStore.loadPairedDevice()
                   showDeviceManagement = false
                   commandNotice = null
                   pendingCommandFeedback = null
