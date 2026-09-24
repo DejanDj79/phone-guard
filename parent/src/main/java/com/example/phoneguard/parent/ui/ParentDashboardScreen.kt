@@ -125,6 +125,39 @@ fun ParentDashboardScreen(
   var deviceUnpairing by remember { mutableStateOf(false) }
   var deviceManagementError by remember { mutableStateOf<String?>(null) }
 
+  fun removeInvalidPairing(
+    deviceId: String,
+    displayName: String,
+  ) {
+    settingsStore.removePairing(deviceId)
+    pairedDevices = settingsStore.loadPairedDevices()
+    pairedDevice = settingsStore.loadPairedDevice()
+    commandProgressMessage = null
+    pendingCommandFeedback = null
+    scheduleEditorSchedule = null
+    scheduleError = null
+    scheduleNotice = null
+    allowedAppsEditorSnapshot = null
+    allowedAppsError = null
+    allowedAppsNotice = null
+    showBonusTimePicker = false
+    showDeviceManagement = false
+    deviceManagementError = null
+    showDevices = false
+    selectedTab = 0
+
+    if (pairedDevice == null) {
+      commandNotice = null
+      commandError = null
+      showPairDevice = true
+    } else {
+      commandNotice =
+        displayName + " was removed because its Parent pairing is no longer valid."
+      commandError = null
+      showPairDevice = false
+    }
+  }
+
   if (showPairDevice || pairedDevice == null) {
     PairDeviceScreen(
       modifier = modifier,
@@ -154,6 +187,7 @@ fun ParentDashboardScreen(
                 device = result.device,
                 controlToken = token,
               )
+              settingsStore.selectDevice(result.device.deviceId)
               pairedDevices = settingsStore.loadPairedDevices()
               pairedDevice = result.device
               showPairDevice = false
@@ -467,7 +501,15 @@ fun ParentDashboardScreen(
           }
 
           is DeviceStatusResult.Error -> {
-            commandError = statusResult.message
+            if (statusResult.pairingInvalid) {
+              removeInvalidPairing(
+                deviceId = device.deviceId,
+                displayName = device.displayName,
+              )
+              return@LaunchedEffect
+            } else {
+              commandError = statusResult.message
+            }
           }
         }
 
@@ -743,7 +785,14 @@ fun ParentDashboardScreen(
                       }
   
                       is DeviceStatusResult.Error -> {
-                        commandError = statusResult.message
+                        if (statusResult.pairingInvalid) {
+                          removeInvalidPairing(
+                            deviceId = device.deviceId,
+                            displayName = device.displayName,
+                          )
+                        } else {
+                          commandError = statusResult.message
+                        }
                       }
                     }
   
