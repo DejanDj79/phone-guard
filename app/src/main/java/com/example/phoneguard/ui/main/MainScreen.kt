@@ -46,6 +46,7 @@ import com.example.phoneguard.core.PairingIdentity
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.protection.BackgroundProtectionStatus
 import com.example.phoneguard.remote.ChildBackendClient
+import com.example.phoneguard.remote.AppInventorySyncer
 import com.example.phoneguard.remote.ChildHeartbeatSender
 import com.example.phoneguard.remote.ChildPairingResetResult
 import com.example.phoneguard.remote.ChildRegistrationResult
@@ -97,6 +98,7 @@ fun MainScreen(
             BackgroundProtectionStatus.isBatteryOptimizationIgnored(context)
 
           Thread {
+            AppInventorySyncer(context.applicationContext).sync()
             ChildHeartbeatSender(context.applicationContext).send()
           }.start()
         }
