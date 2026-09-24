@@ -2,6 +2,7 @@ package com.example.phoneguard.parent.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,6 +47,7 @@ import com.example.phoneguard.core.RemoteWeeklySchedule
 import com.example.phoneguard.parent.data.AllowedAppsFetchResult
 import com.example.phoneguard.parent.data.AllowedAppsSaveResult
 import com.example.phoneguard.parent.data.AppUsageDay
+import com.example.phoneguard.parent.data.AppUsageEntry
 import com.example.phoneguard.parent.data.AppUsageResult
 import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
@@ -78,6 +80,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @Composable
 fun ParentDashboardScreen(
@@ -165,6 +170,7 @@ fun ParentDashboardScreen(
   }
   var appUsageLoading by remember { mutableStateOf(false) }
   var appUsageError by remember { mutableStateOf<String?>(null) }
+  var appUsageView by remember { mutableStateOf(APP_USAGE_VIEW_TODAY) }
 
   fun removeInvalidPairing(
     deviceId: String,
@@ -199,6 +205,7 @@ fun ParentDashboardScreen(
     appUsageDays = emptyList()
     appUsageLoading = false
     appUsageError = null
+    appUsageView = APP_USAGE_VIEW_TODAY
     showDevices = false
     selectedTab = 0
 
@@ -315,6 +322,7 @@ fun ParentDashboardScreen(
           appUsageDays = emptyList()
           appUsageLoading = false
           appUsageError = null
+          appUsageView = APP_USAGE_VIEW_TODAY
           showDevices = false
           selectedTab = 0
         }
@@ -1548,29 +1556,91 @@ fun ParentDashboardScreen(
     }
 
     if (selectedTab == 0) {
-      val latestAppUsage = appUsageDays.firstOrNull()
+      val referenceDate =
+        device.dailyScreenTime.usageDate
+          ?: appUsageDays.firstOrNull()?.usageDate
+      val todayUsage =
+        referenceDate?.let { date ->
+          appUsageDays.firstOrNull { it.usageDate == date }
+        } ?: appUsageDays.firstOrNull()
+      val yesterdayDate = shiftUsageDate(referenceDate, -1)
+      val yesterdayUsage =
+        yesterdayDate?.let { date ->
+          appUsageDays.firstOrNull { it.usageDate == date }
+        }
 
       ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
           modifier = Modifier.padding(20.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
           Text(
-            text =
-              if (
-                latestAppUsage != null &&
-                latestAppUsage.usageDate == device.dailyScreenTime.usageDate
-              ) {
-                "Today's app usage"
-              } else {
-                "Latest app usage"
-              },
+            text = "App usage",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
           )
 
+          Text(
+            text = "Screen time by app for " + device.displayName + ".",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+          ) {
+            if (appUsageView == APP_USAGE_VIEW_TODAY) {
+              Button(
+                onClick = { appUsageView = APP_USAGE_VIEW_TODAY },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text("TODAY")
+              }
+            } else {
+              OutlinedButton(
+                onClick = { appUsageView = APP_USAGE_VIEW_TODAY },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text("TODAY")
+              }
+            }
+
+            if (appUsageView == APP_USAGE_VIEW_YESTERDAY) {
+              Button(
+                onClick = { appUsageView = APP_USAGE_VIEW_YESTERDAY },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text("YESTERDAY")
+              }
+            } else {
+              OutlinedButton(
+                onClick = { appUsageView = APP_USAGE_VIEW_YESTERDAY },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text("YESTERDAY")
+              }
+            }
+
+            if (appUsageView == APP_USAGE_VIEW_WEEK) {
+              Button(
+                onClick = { appUsageView = APP_USAGE_VIEW_WEEK },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text("7 DAYS")
+              }
+            } else {
+              OutlinedButton(
+                onClick = { appUsageView = APP_USAGE_VIEW_WEEK },
+                modifier = Modifier.weight(1f),
+              ) {
+                Text("7 DAYS")
+              }
+            }
+          }
+
           when {
-            appUsageLoading && latestAppUsage == null -> {
+            appUsageLoading && appUsageDays.isEmpty() -> {
               Text(
                 text = "Loading app usage…",
                 style = MaterialTheme.typography.bodyMedium,
@@ -1578,60 +1648,34 @@ fun ParentDashboardScreen(
               )
             }
 
-            latestAppUsage == null && appUsageError == null -> {
-              Text(
-                text = "No app usage has been recorded yet.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            appUsageView == APP_USAGE_VIEW_TODAY -> {
+              AppUsageDayContent(
+                day = todayUsage,
+                emptyMessage = "No app usage has been recorded today.",
               )
             }
 
-            latestAppUsage != null -> {
-              Text(
-                text =
-                  "Tracked app time: " +
-                    formatUsageSeconds(latestAppUsage.totalSeconds),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
+            appUsageView == APP_USAGE_VIEW_YESTERDAY -> {
+              AppUsageDayContent(
+                day = yesterdayUsage,
+                emptyMessage = "No app usage was recorded yesterday.",
               )
+            }
 
-              Text(
-                text = latestAppUsage.usageDate,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-
-              val topApps =
-                latestAppUsage.apps
-                  .filter { it.seconds > 0 }
-                  .take(APP_USAGE_PREVIEW_COUNT)
-
-              if (topApps.isEmpty()) {
-                Text(
-                  text = "No launcher app has accumulated usage yet.",
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-              } else {
-                topApps.forEach { app ->
-                  Text(
-                    text =
-                      app.label +
-                        " · " +
-                        formatUsageSeconds(app.seconds),
-                    style = MaterialTheme.typography.bodyMedium,
-                  )
-                }
-              }
-
-              Text(
-                text =
-                  "System screens are excluded. Allowed apps used while PhoneGuard is locked are included.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            else -> {
+              AppUsageWeekContent(
+                days = appUsageDays,
+                referenceDate = referenceDate,
               )
             }
           }
+
+          Text(
+            text =
+              "System screens and the launcher are excluded. Allowed apps used while PhoneGuard is locked are included.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
 
           appUsageError?.let { message ->
             Text(
@@ -2333,6 +2377,255 @@ private fun ProtectionStatusLine(
   )
 }
 
+@Composable
+private fun AppUsageDayContent(
+  day: AppUsageDay?,
+  emptyMessage: String,
+) {
+  if (day == null) {
+    Text(
+      text = emptyMessage,
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    return
+  }
+
+  Text(
+    text = "Tracked app time: " + formatUsageSeconds(day.totalSeconds),
+    style = MaterialTheme.typography.bodyLarge,
+    fontWeight = FontWeight.SemiBold,
+  )
+
+  Text(
+    text = formatUsageDate(day.usageDate),
+    style = MaterialTheme.typography.bodySmall,
+    color = MaterialTheme.colorScheme.onSurfaceVariant,
+  )
+
+  val topApps =
+    day.apps
+      .filter { it.seconds > 0 }
+      .take(APP_USAGE_PREVIEW_COUNT)
+
+  if (topApps.isEmpty()) {
+    Text(
+      text = "No launcher app has accumulated usage for this day.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  } else {
+    Text(
+      text = "Top apps",
+      style = MaterialTheme.typography.labelLarge,
+      fontWeight = FontWeight.SemiBold,
+    )
+
+    topApps.forEachIndexed { index, app ->
+      Text(
+        text =
+          (index + 1).toString() +
+            ". " +
+            app.label +
+            " · " +
+            formatUsageSeconds(app.seconds),
+        style = MaterialTheme.typography.bodyMedium,
+      )
+    }
+  }
+}
+
+@Composable
+private fun AppUsageWeekContent(
+  days: List<AppUsageDay>,
+  referenceDate: String?,
+) {
+  val dateKeys = usageWeekDateKeys(referenceDate ?: days.firstOrNull()?.usageDate)
+  if (dateKeys.isEmpty()) {
+    Text(
+      text = "No app usage has been recorded yet.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    return
+  }
+
+  val byDate = days.associateBy { it.usageDate }
+  val dailySeconds =
+    dateKeys.map { dateKey ->
+      dateKey to (byDate[dateKey]?.totalSeconds ?: 0)
+    }
+  val totalSeconds = dailySeconds.sumOf { it.second }
+  val averageSeconds = totalSeconds / 7
+  val maxSeconds =
+    dailySeconds.maxOfOrNull { it.second }
+      ?.coerceAtLeast(1)
+      ?: 1
+
+  Text(
+    text = "7-day total: " + formatUsageSeconds(totalSeconds),
+    style = MaterialTheme.typography.bodyLarge,
+    fontWeight = FontWeight.SemiBold,
+  )
+
+  Text(
+    text = "Daily average: " + formatUsageSeconds(averageSeconds),
+    style = MaterialTheme.typography.bodyMedium,
+    color = MaterialTheme.colorScheme.onSurfaceVariant,
+  )
+
+  Text(
+    text = "Daily usage",
+    style = MaterialTheme.typography.labelLarge,
+    fontWeight = FontWeight.SemiBold,
+  )
+
+  dailySeconds.forEach { (dateKey, seconds) ->
+    Text(
+      text =
+        formatUsageDayLabel(dateKey) +
+          "  " +
+          usageBar(seconds, maxSeconds) +
+          "  " +
+          formatUsageSeconds(seconds),
+      style = MaterialTheme.typography.bodyMedium,
+    )
+  }
+
+  val weekDays =
+    dateKeys.mapNotNull(byDate::get)
+  val topApps =
+    aggregateAppUsage(weekDays)
+      .take(APP_USAGE_PREVIEW_COUNT)
+
+  Text(
+    text = "Top apps · 7 days",
+    style = MaterialTheme.typography.labelLarge,
+    fontWeight = FontWeight.SemiBold,
+  )
+
+  if (topApps.isEmpty()) {
+    Text(
+      text = "No app usage recorded in this 7-day period.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  } else {
+    topApps.forEachIndexed { index, app ->
+      Text(
+        text =
+          (index + 1).toString() +
+            ". " +
+            app.label +
+            " · " +
+            formatUsageSeconds(app.seconds),
+        style = MaterialTheme.typography.bodyMedium,
+      )
+    }
+  }
+}
+
+private fun aggregateAppUsage(days: List<AppUsageDay>): List<AppUsageEntry> {
+  val totals = linkedMapOf<String, Pair<String, Int>>()
+
+  days.forEach { day ->
+    day.apps.forEach { app ->
+      val previous = totals[app.packageName]
+      totals[app.packageName] =
+        app.label to ((previous?.second ?: 0) + app.seconds)
+    }
+  }
+
+  return totals
+    .map { (packageName, value) ->
+      AppUsageEntry(
+        packageName = packageName,
+        label = value.first,
+        seconds = value.second,
+      )
+    }
+    .sortedByDescending { it.seconds }
+}
+
+private fun usageWeekDateKeys(referenceDate: String?): List<String> {
+  if (referenceDate.isNullOrBlank()) return emptyList()
+
+  return (6 downTo 0)
+    .mapNotNull { daysBack ->
+      shiftUsageDate(referenceDate, -daysBack)
+    }
+}
+
+private fun shiftUsageDate(
+  dateKey: String?,
+  days: Int,
+): String? {
+  if (dateKey.isNullOrBlank()) return null
+
+  val formatter =
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+      isLenient = false
+    }
+  val parsed =
+    runCatching { formatter.parse(dateKey) }
+      .getOrNull()
+      ?: return null
+
+  val calendar =
+    Calendar.getInstance().apply {
+      time = parsed
+      add(Calendar.DAY_OF_YEAR, days)
+    }
+
+  return formatter.format(calendar.time)
+}
+
+private fun formatUsageDate(dateKey: String): String {
+  val input =
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+      isLenient = false
+    }
+  val parsed =
+    runCatching { input.parse(dateKey) }
+      .getOrNull()
+      ?: return dateKey
+
+  return SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(parsed)
+}
+
+private fun formatUsageDayLabel(dateKey: String): String {
+  val input =
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+      isLenient = false
+    }
+  val parsed =
+    runCatching { input.parse(dateKey) }
+      .getOrNull()
+      ?: return dateKey
+
+  return SimpleDateFormat("EEE", Locale.getDefault())
+    .format(parsed)
+    .take(3)
+}
+
+private fun usageBar(
+  seconds: Int,
+  maxSeconds: Int,
+): String {
+  val safeMax = maxSeconds.coerceAtLeast(1)
+  val safeSeconds = seconds.coerceAtLeast(0)
+  val filled =
+    if (safeSeconds == 0) {
+      0
+    } else {
+      ((safeSeconds.toDouble() / safeMax.toDouble()) * USAGE_BAR_WIDTH)
+        .toInt()
+        .coerceIn(1, USAGE_BAR_WIDTH)
+    }
+
+  return "█".repeat(filled) + "░".repeat(USAGE_BAR_WIDTH - filled)
+}
+
 private fun formatDurationMinutes(minutes: Int): String {
   val safeMinutes = minutes.coerceAtLeast(0)
   val hours = safeMinutes / 60
@@ -2359,6 +2652,10 @@ private fun formatUsageSeconds(seconds: Int): String {
 
 private const val PROTECTION_HISTORY_PREVIEW_COUNT = 8
 private const val APP_USAGE_PREVIEW_COUNT = 5
+private const val APP_USAGE_VIEW_TODAY = 0
+private const val APP_USAGE_VIEW_YESTERDAY = 1
+private const val APP_USAGE_VIEW_WEEK = 2
+private const val USAGE_BAR_WIDTH = 10
 
 private fun commandMatchesDeviceState(
   command: RemoteCommand,
