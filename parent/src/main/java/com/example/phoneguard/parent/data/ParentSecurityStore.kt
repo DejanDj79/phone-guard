@@ -28,6 +28,35 @@ class ParentSecurityStore(context: Context) {
       .apply()
   }
 
+  fun biometricEnabled(): Boolean =
+    preferences.getBoolean(KEY_BIOMETRIC_ENABLED, true)
+
+  fun setBiometricEnabled(enabled: Boolean) {
+    preferences.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
+  }
+
+  fun relockAfterBackgroundMillis(): Long {
+    val stored =
+      preferences.getLong(
+        KEY_RELOCK_AFTER_BACKGROUND_MS,
+        DEFAULT_RELOCK_AFTER_BACKGROUND_MS,
+      )
+
+    return stored.takeIf { it in ALLOWED_RELOCK_DELAYS_MS }
+      ?: DEFAULT_RELOCK_AFTER_BACKGROUND_MS
+  }
+
+  fun setRelockAfterBackgroundMillis(delayMillis: Long) {
+    require(delayMillis in ALLOWED_RELOCK_DELAYS_MS) {
+      "Unsupported Parent relock delay."
+    }
+
+    preferences
+      .edit()
+      .putLong(KEY_RELOCK_AFTER_BACKGROUND_MS, delayMillis)
+      .apply()
+  }
+
   fun verifyPin(pin: String): Boolean {
     val saltEncoded = preferences.getString(KEY_PIN_SALT, null) ?: return false
     val hashEncoded = preferences.getString(KEY_PIN_HASH, null) ?: return false
@@ -53,7 +82,11 @@ class ParentSecurityStore(context: Context) {
     const val PREFERENCES_NAME = "phone_guard_parent_security"
     const val KEY_PIN_SALT = "pin_salt"
     const val KEY_PIN_HASH = "pin_hash"
+    const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+    const val KEY_RELOCK_AFTER_BACKGROUND_MS = "relock_after_background_ms"
     const val SALT_SIZE_BYTES = 16
+    const val DEFAULT_RELOCK_AFTER_BACKGROUND_MS = 30_000L
+    val ALLOWED_RELOCK_DELAYS_MS = setOf(0L, 30_000L, 60_000L, 300_000L)
     val PIN_PATTERN = Regex("^\\d{4,6}$")
   }
 }
