@@ -770,7 +770,8 @@ private fun ChildDashboard(
 
         val protectionReady =
           accessibilityEnabled &&
-            exactAlarmAccess
+            exactAlarmAccess &&
+            batteryOptimizationIgnored
 
         Text(
           text =
@@ -845,8 +846,6 @@ private fun ChildDashboard(
             Text("ALLOW EXACT TIMING")
           }
         }
-
-      }
 
         OutlinedButton(
           onClick = onRunSetupCheck,
