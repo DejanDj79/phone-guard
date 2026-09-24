@@ -99,8 +99,8 @@ class ParentMessagingService : FirebaseMessagingService() {
       }
 
       ALERT_CHILD_OFFLINE -> {
-        title = "PhoneGuard connection lost"
-        body = displayName + " has not reported for 5 minutes."
+        title = displayName + " is offline"
+        body = "No heartbeat received for 5 minutes."
       }
 
       else -> return
@@ -129,6 +129,7 @@ class ParentMessagingService : FirebaseMessagingService() {
         .setSmallIcon(android.R.drawable.ic_dialog_alert)
         .setContentTitle(title)
         .setContentText(body)
+        .setStyle(NotificationCompat.BigTextStyle().bigText(body))
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setAutoCancel(true)
         .setContentIntent(pendingIntent)
