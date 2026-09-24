@@ -140,15 +140,18 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         }
         foregroundPackage = eventPackage
 
+        val className = event.className?.toString().orEmpty()
         val isPackageInstaller =
           eventPackage.contains("packageinstaller", ignoreCase = true)
+        val isFollowUpUninstallSurface =
+          eventPackage == "com.android.systemui" || isPackageInstaller
+        val isAppInfoScreen =
+          isAppInfoClass(
+            eventPackage = eventPackage,
+            className = className,
+          )
 
-        if (
-          eventPackage != "com.miui.securitycenter" &&
-          eventPackage != "com.android.settings" &&
-          eventPackage != "com.android.systemui" &&
-          !isPackageInstaller
-        ) {
+        if (!isAppInfoScreen && !isFollowUpUninstallSurface) {
           phoneGuardAppInfoActive = false
         }
       }
@@ -479,6 +482,22 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     }
 
+    return if (
+      isAppInfoClass(
+        eventPackage = eventPackage,
+        className = className,
+      )
+    ) {
+      PROTECTION_EVENT_APP_INFO_OPENED
+    } else {
+      null
+    }
+  }
+
+  private fun isAppInfoClass(
+    eventPackage: String,
+    className: String,
+  ): Boolean {
     val isAndroidSettingsAppInfo =
       eventPackage == "com.android.settings" &&
         (
@@ -490,11 +509,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       eventPackage == "com.miui.securitycenter" &&
         className.contains("ApplicationsDetailsActivity", ignoreCase = true)
 
-    return if (isAndroidSettingsAppInfo || isMiuiAppInfo) {
-      PROTECTION_EVENT_APP_INFO_OPENED
-    } else {
-      null
-    }
+    return isAndroidSettingsAppInfo || isMiuiAppInfo
   }
 
   private fun activeWindowText(): String {
