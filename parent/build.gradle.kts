@@ -7,6 +7,8 @@ if (file("google-services.json").exists()) {
   apply(plugin = "com.google.gms.google-services")
 }
 
+apply(from = rootProject.file("gradle/phoneguard-signing.gradle"))
+
 android {
   namespace = "com.example.phoneguard.parent"
   compileSdk = 36
