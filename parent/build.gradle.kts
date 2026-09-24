@@ -3,9 +3,11 @@ plugins {
   alias(libs.plugins.compose.compiler)
 }
 
-if (file("google-services.json").exists()) {
-  apply(plugin = "com.google.gms.google-services")
+check(file("google-services.json").exists()) {
+  "Missing parent/google-services.json. Download the Parent Android app config from Firebase and place it in the parent module."
 }
+
+apply(plugin = "com.google.gms.google-services")
 
 apply(from = rootProject.file("gradle/phoneguard-signing.gradle"))
 
