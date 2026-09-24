@@ -649,6 +649,90 @@ fun ParentDashboardScreen(
     }
   }
 
+  fun saveDailyLimit(minutes: Int?) {
+    if (dailyLimitSaving) return
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      dailyLimitError = "Control token is missing. Re-pairing is required."
+      return
+    }
+
+    scope.launch {
+      dailyLimitSaving = true
+      dailyLimitError = null
+      dailyLimitNotice = null
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            dailyLimitGateway.save(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+              minutes = minutes,
+            )
+          }
+      ) {
+        is DailyLimitSaveResult.Success -> {
+          val currentDevice = pairedDevice ?: device
+          val usedSeconds = currentDevice.dailyScreenTime.usedSeconds
+          val remainingMinutes =
+            result.minutes?.let { limit ->
+              maxOf(
+                0,
+                kotlin.math.ceil(
+                  (limit * 60 - usedSeconds).coerceAtLeast(0) / 60.0,
+                ).toInt(),
+              )
+            }
+          val updatedDevice =
+            currentDevice.copy(
+              dailyScreenTime =
+                currentDevice.dailyScreenTime.copy(
+                  limitMinutes = result.minutes,
+                  remainingMinutes = remainingMinutes,
+                  limitReached =
+                    result.minutes != null &&
+                      usedSeconds >= result.minutes * 60,
+                ),
+            )
+
+          pairedDevice = updatedDevice
+          settingsStore.savePairing(
+            device = updatedDevice,
+            controlToken = controlToken,
+          )
+          pairedDevices = settingsStore.loadPairedDevices()
+          if (result.minutes != null) {
+            selectedDailyLimitMinutes = result.minutes
+          }
+          showDailyLimitPicker = false
+          dailyLimitNotice =
+            if (result.minutes == null) {
+              "Daily screen time limit disabled."
+            } else if (device.isOnline) {
+              "Daily limit set to " + formatDurationMinutes(result.minutes) + "."
+            } else {
+              "Daily limit saved and will apply when the Child reconnects."
+            }
+        }
+
+        is DailyLimitSaveResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+          } else {
+            dailyLimitError = result.message
+          }
+        }
+      }
+
+      dailyLimitSaving = false
+    }
+  }
+
   fun sendCommand(command: RemoteCommand) {
     if (commandInProgress) return
 
