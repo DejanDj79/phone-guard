@@ -46,6 +46,8 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.core.PairingIdentity
@@ -101,31 +103,42 @@ fun MainScreen(
 
   DisposableEffect(lifecycleOwner, context) {
     var firstResume = true
+    val mainHandler = Handler(Looper.getMainLooper())
+
+    val refreshProtectionStatus =
+      Runnable {
+        accessibilityEnabled = PhoneGuardAccessibilityStatus.isEnabled(context)
+        exactAlarmAccess = alarmScheduler.hasExactAlarmAccess()
+        batteryOptimizationIgnored =
+          BackgroundProtectionStatus.isBatteryOptimizationIgnored(context)
+
+        Thread {
+          AppInventorySyncer(context.applicationContext).sync()
+          ChildHeartbeatSender(context.applicationContext).send()
+        }.start()
+      }
 
     val observer =
       LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_RESUME) {
-          accessibilityEnabled = PhoneGuardAccessibilityStatus.isEnabled(context)
-          exactAlarmAccess = alarmScheduler.hasExactAlarmAccess()
-          batteryOptimizationIgnored =
-            BackgroundProtectionStatus.isBatteryOptimizationIgnored(context)
-
           if (firstResume) {
             firstResume = false
           } else {
             registrationRetryKey += 1
           }
 
-          Thread {
-            AppInventorySyncer(context.applicationContext).sync()
-            ChildHeartbeatSender(context.applicationContext).send()
-          }.start()
+          mainHandler.removeCallbacks(refreshProtectionStatus)
+          mainHandler.postDelayed(
+            refreshProtectionStatus,
+            PROTECTION_STATUS_REFRESH_DELAY_MS,
+          )
         }
       }
 
     lifecycleOwner.lifecycle.addObserver(observer)
 
     onDispose {
+      mainHandler.removeCallbacks(refreshProtectionStatus)
       lifecycleOwner.lifecycle.removeObserver(observer)
     }
   }
@@ -1158,3 +1171,5 @@ private fun LockScreenPreview() {
     )
   }
 }
+
+private const val PROTECTION_STATUS_REFRESH_DELAY_MS = 1_000L
