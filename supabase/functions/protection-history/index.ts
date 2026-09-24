@@ -33,6 +33,8 @@ export default {
       typeof payload.deviceId === "string" ? payload.deviceId.trim() : "";
     const controlToken =
       typeof payload.controlToken === "string" ? payload.controlToken : "";
+    const action =
+      typeof payload.action === "string" ? payload.action.trim() : "fetch";
 
     if (!UUID_PATTERN.test(deviceId)) {
       return json({ error: "invalid_device_id" }, 400);
@@ -55,6 +57,24 @@ export default {
     }
     if (!device) {
       return json({ error: "device_auth_failed" }, 403);
+    }
+
+    if (action === "clear") {
+      const { error: clearError } =
+        await ctx.supabaseAdmin
+          .from("protection_events")
+          .delete()
+          .eq("device_id", deviceId);
+
+      if (clearError) {
+        return json({ error: "database_error" }, 500);
+      }
+
+      return json({ ok: true, cleared: true });
+    }
+
+    if (action !== "fetch") {
+      return json({ error: "invalid_action" }, 400);
     }
 
     const { data: events, error } =
