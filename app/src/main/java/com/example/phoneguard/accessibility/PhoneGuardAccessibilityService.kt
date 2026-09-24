@@ -61,7 +61,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private var foregroundPackage: String? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
   private val lastProtectionEventAt = mutableMapOf<String, Long>()
-  private var lastPhoneGuardAppInfoSeenAt = 0L
+  private var phoneGuardAppInfoActive = false
 
   private val networkCallback =
     object : ConnectivityManager.NetworkCallback() {
@@ -144,6 +144,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       val eventPackage = event.packageName?.toString()?.trim()
       if (!eventPackage.isNullOrBlank()) {
         foregroundPackage = eventPackage
+
+        if (
+          eventPackage != "com.miui.securitycenter" &&
+          eventPackage != "com.android.settings" &&
+          eventPackage != "com.android.systemui"
+        ) {
+          phoneGuardAppInfoActive = false
+        }
       }
     }
 
@@ -161,7 +169,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
       protectionEvent?.let { detectedEvent ->
         if (detectedEvent == PROTECTION_EVENT_APP_INFO_OPENED) {
-          lastPhoneGuardAppInfoSeenAt = System.currentTimeMillis()
+          phoneGuardAppInfoActive = true
         }
         reportProtectionEvent(detectedEvent)
       }
@@ -182,8 +190,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       return null
     }
 
-    val now = System.currentTimeMillis()
-    if (now - lastPhoneGuardAppInfoSeenAt > APP_INFO_CONTEXT_WINDOW_MS) {
+    if (!phoneGuardAppInfoActive) {
       return null
     }
 
@@ -197,6 +204,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         activeText.contains("ok")
 
     return if (isUninstallConfirmation) {
+      Log.i(TAG, "PhoneGuard uninstall confirmation detected from SystemUI")
+      phoneGuardAppInfoActive = false
       PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     } else {
       null
@@ -972,7 +981,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     const val TAG = "PhoneGuardAccessibility"
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
-    const val APP_INFO_CONTEXT_WINDOW_MS = 60_000L
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
     const val MAX_DIAGNOSTIC_TEXT_LENGTH = 800
     const val PROTECTION_EVENT_APP_INFO_OPENED = "APP_INFO_OPENED"
