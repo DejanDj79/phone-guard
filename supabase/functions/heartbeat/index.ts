@@ -1,4 +1,5 @@
 import { withSupabase } from "npm:@supabase/server@1.7.1";
+import { sendFirebaseMessage } from "../_shared/firebase.ts";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -96,6 +97,27 @@ export default {
     const deviceSecretHash = await sha256Hex(deviceSecret);
     const now = new Date().toISOString();
 
+    const { data: previousDevice, error: previousDeviceError } =
+      await ctx.supabaseAdmin
+        .from("child_devices")
+        .select(
+          "device_id, display_name, accessibility_enabled, parent_fcm_token",
+        )
+        .eq("device_id", deviceId)
+        .eq("device_secret_hash", deviceSecretHash)
+        .maybeSingle();
+
+    if (previousDeviceError) {
+      return json({ error: "database_error" }, 500);
+    }
+    if (!previousDevice) {
+      return json({ error: "device_auth_failed" }, 403);
+    }
+
+    const accessibilityJustDisabled =
+      previousDevice.accessibility_enabled === true &&
+      accessibilityEnabled === false;
+
     const { data: device, error } = await ctx.supabaseAdmin
       .from("child_devices")
       .update({
@@ -129,9 +151,37 @@ export default {
       return json({ error: "device_auth_failed" }, 403);
     }
 
+    let protectionAlertSent = false;
+    if (
+      accessibilityJustDisabled &&
+      typeof previousDevice.parent_fcm_token === "string" &&
+      previousDevice.parent_fcm_token
+    ) {
+      try {
+        await sendFirebaseMessage({
+          token: previousDevice.parent_fcm_token,
+          data: {
+            type: "PROTECTION_ALERT",
+            alert: "ACCESSIBILITY_DISABLED",
+            device_id: deviceId,
+            display_name:
+              typeof previousDevice.display_name === "string"
+                ? previousDevice.display_name
+                : "Child device",
+          },
+          collapseKey: "phoneguard-protection-" + deviceId,
+          ttl: "3600s",
+        });
+        protectionAlertSent = true;
+      } catch (error) {
+        console.error("Parent protection alert push failed", error);
+      }
+    }
+
     return json({
       ok: true,
       lastSeenAt: device.last_seen_at,
+      protectionAlertSent,
     });
   }),
 };
