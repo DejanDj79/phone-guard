@@ -65,6 +65,16 @@ export default {
       typeof payload.dailyUsageSeconds === "number"
         ? Math.trunc(payload.dailyUsageSeconds)
         : null;
+    const appUsageDate =
+      typeof payload.appUsageDate === "string"
+        ? payload.appUsageDate.trim()
+        : null;
+    const appUsageTotalSeconds =
+      typeof payload.appUsageTotalSeconds === "number"
+        ? Math.trunc(payload.appUsageTotalSeconds)
+        : null;
+    const rawAppUsage =
+      Array.isArray(payload.appUsage) ? payload.appUsage : null;
 
     if (!UUID_PATTERN.test(deviceId)) {
       return json({ error: "invalid_device_id" }, 400);
@@ -110,6 +120,69 @@ export default {
       )
     ) {
       return json({ error: "daily_usage_invalid" }, 400);
+    }
+
+    const hasAppUsagePayload =
+      appUsageDate !== null ||
+      appUsageTotalSeconds !== null ||
+      rawAppUsage !== null;
+    const normalizedAppUsage: Array<{
+      packageName: string;
+      label: string;
+      seconds: number;
+    }> = [];
+
+    if (hasAppUsagePayload) {
+      if (
+        appUsageDate === null ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(appUsageDate) ||
+        appUsageTotalSeconds === null ||
+        appUsageTotalSeconds < 0 ||
+        appUsageTotalSeconds > 172800 ||
+        rawAppUsage === null ||
+        rawAppUsage.length > 30
+      ) {
+        return json({ error: "app_usage_invalid" }, 400);
+      }
+
+      for (const rawEntry of rawAppUsage) {
+        if (
+          typeof rawEntry !== "object" ||
+          rawEntry === null ||
+          Array.isArray(rawEntry)
+        ) {
+          return json({ error: "app_usage_invalid" }, 400);
+        }
+
+        const entry = rawEntry as Record<string, unknown>;
+        const packageName =
+          typeof entry.packageName === "string"
+            ? entry.packageName.trim()
+            : "";
+        const label =
+          typeof entry.label === "string" ? entry.label.trim() : "";
+        const seconds =
+          typeof entry.seconds === "number"
+            ? Math.trunc(entry.seconds)
+            : -1;
+
+        if (
+          !packageName ||
+          packageName.length > 255 ||
+          !label ||
+          label.length > 120 ||
+          seconds < 0 ||
+          seconds > 172800
+        ) {
+          return json({ error: "app_usage_invalid" }, 400);
+        }
+
+        normalizedAppUsage.push({
+          packageName,
+          label,
+          seconds,
+        });
+      }
     }
 
     const deviceSecretHash = await sha256Hex(deviceSecret);
@@ -182,6 +255,28 @@ export default {
     }
     if (!device) {
       return json({ error: "device_auth_failed" }, 403);
+    }
+
+    if (hasAppUsagePayload) {
+      const { error: appUsageError } = await ctx.supabaseAdmin
+        .from("app_usage_daily")
+        .upsert(
+          {
+            device_id: deviceId,
+            usage_date: appUsageDate,
+            total_seconds: appUsageTotalSeconds,
+            apps: normalizedAppUsage,
+            updated_at: now,
+          },
+          { onConflict: "device_id,usage_date" },
+        );
+
+      if (appUsageError) {
+        console.error(
+          "App usage snapshot upsert failed for " + deviceId,
+          appUsageError,
+        );
+      }
     }
 
     const alertTransitions = [
