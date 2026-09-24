@@ -191,6 +191,7 @@ fun MainScreen(
           } else {
             null
           },
+        dailyLimitReached = settingsStore.isDailyLimitLockActive(),
         onRequestMoreTime = { minutes ->
           settingsStore.setTimeRequestFeedback(null)
           timeRequestFeedback = null
@@ -207,7 +208,7 @@ fun MainScreen(
           if (accepted) {
             settingsStore.clearAllLocks()
             alarmScheduler.scheduleNext()
-            isLocked = false
+            isLocked = settingsStore.isEffectivelyLocked()
           }
           accepted
         },
@@ -685,6 +686,7 @@ private fun LockScreen(
   allowedPackages: Set<String>,
   timeRequestFeedback: String?,
   unlockTimeLabel: String?,
+  dailyLimitReached: Boolean,
   onRequestMoreTime: suspend (Int) -> ChildTimeRequestResult,
   onUnlock: (String) -> Boolean,
   modifier: Modifier = Modifier,
@@ -763,24 +765,36 @@ private fun LockScreen(
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      if (unlockTimeLabel != null) {
-        Text(
-          text = "Available again at",
-          style = MaterialTheme.typography.bodyLarge,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+      when {
+        unlockTimeLabel != null -> {
+          Text(
+            text = "Available again at",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
 
-        Text(
-          text = unlockTimeLabel,
-          style = MaterialTheme.typography.displaySmall,
-          fontWeight = FontWeight.Bold,
-        )
-      } else {
-        Text(
-          text = "Locked manually",
-          style = MaterialTheme.typography.titleMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+          Text(
+            text = unlockTimeLabel,
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold,
+          )
+        }
+
+        dailyLimitReached -> {
+          Text(
+            text = "Daily limit reached",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        else -> {
+          Text(
+            text = "Locked manually",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
       }
 
       Spacer(modifier = Modifier.height(28.dp))
@@ -1131,6 +1145,7 @@ private fun LockScreenPreview() {
       allowedPackages = emptySet(),
       timeRequestFeedback = "Your request for more time was denied by Parent.",
       unlockTimeLabel = "07:00",
+      dailyLimitReached = false,
       onRequestMoreTime = {
         ChildTimeRequestResult.Success(
           requestId = "preview-request",
