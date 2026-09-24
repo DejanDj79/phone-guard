@@ -108,7 +108,7 @@ class ParentMessagingService : FirebaseMessagingService() {
 
       ALERT_BATTERY_UNRESTRICTED_DISABLED -> {
         title = "PhoneGuard protection warning"
-        body = "Battery unrestricted access was disabled on " + displayName + "."
+        body = "Battery optimization exemption was disabled on " + displayName + "."
       }
 
       ALERT_CHILD_OFFLINE -> {
