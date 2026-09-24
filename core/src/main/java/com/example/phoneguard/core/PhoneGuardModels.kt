@@ -6,6 +6,7 @@ enum class RemoteCommandType {
   BONUS_TIME,
   SYNC_SCHEDULE,
   SYNC_ALLOWED_APPS,
+  SYNC_DAILY_LIMIT,
 }
 
 data class RemoteCommand(
@@ -22,7 +23,8 @@ data class RemoteCommand(
       RemoteCommandType.LOCK,
       RemoteCommandType.UNLOCK,
       RemoteCommandType.SYNC_SCHEDULE,
-      RemoteCommandType.SYNC_ALLOWED_APPS ->
+      RemoteCommandType.SYNC_ALLOWED_APPS,
+      RemoteCommandType.SYNC_DAILY_LIMIT ->
         require(bonusMinutes == null) {
           "$type must not include bonusMinutes."
         }
@@ -47,6 +49,9 @@ data class RemoteCommand(
 
     fun syncAllowedApps(): RemoteCommand =
       RemoteCommand(RemoteCommandType.SYNC_ALLOWED_APPS)
+
+    fun syncDailyLimit(): RemoteCommand =
+      RemoteCommand(RemoteCommandType.SYNC_DAILY_LIMIT)
   }
 }
 
@@ -71,6 +76,26 @@ data class DeviceProtectionStatus(
       }
 }
 
+data class DailyScreenTimeStatus(
+  val limitMinutes: Int? = null,
+  val usedSeconds: Int = 0,
+  val remainingMinutes: Int? = null,
+  val usageDate: String? = null,
+  val limitReached: Boolean = false,
+) {
+  init {
+    require(limitMinutes == null || limitMinutes > 0) {
+      "Daily screen time limit must be positive when enabled."
+    }
+    require(usedSeconds >= 0) {
+      "Daily used seconds must not be negative."
+    }
+    require(remainingMinutes == null || remainingMinutes >= 0) {
+      "Daily remaining minutes must not be negative."
+    }
+  }
+}
+
 data class ChildDevice(
   val deviceId: String,
   val displayName: String,
@@ -79,6 +104,7 @@ data class ChildDevice(
   val isOnline: Boolean = true,
   val lastSeenAt: String? = null,
   val protectionStatus: DeviceProtectionStatus = DeviceProtectionStatus(),
+  val dailyScreenTime: DailyScreenTimeStatus = DailyScreenTimeStatus(),
 ) {
   init {
     require(deviceId.isNotBlank()) { "deviceId must not be blank." }
