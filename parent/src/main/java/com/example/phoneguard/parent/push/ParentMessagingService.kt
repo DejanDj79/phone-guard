@@ -101,6 +101,16 @@ class ParentMessagingService : FirebaseMessagingService() {
         body = "Accessibility protection was disabled on " + displayName + "."
       }
 
+      ALERT_PRECISE_TIMING_DISABLED -> {
+        title = "PhoneGuard protection warning"
+        body = "Precise timing was disabled on " + displayName + "."
+      }
+
+      ALERT_BATTERY_UNRESTRICTED_DISABLED -> {
+        title = "PhoneGuard protection warning"
+        body = "Battery unrestricted access was disabled on " + displayName + "."
+      }
+
       ALERT_CHILD_OFFLINE -> {
         title = displayName + " is offline"
         body = "No heartbeat received for 5 minutes."
@@ -171,7 +181,7 @@ class ParentMessagingService : FirebaseMessagingService() {
         "Protection alerts",
         NotificationManager.IMPORTANCE_HIGH,
       ).apply {
-        description = "Alerts when PhoneGuard protection is disabled or a Child device goes offline."
+        description = "Alerts when Child protection settings change or a Child device goes offline."
       },
     )
   }
@@ -183,6 +193,8 @@ class ParentMessagingService : FirebaseMessagingService() {
     private const val TYPE_TIME_REQUEST = "TIME_REQUEST"
     private const val TYPE_PROTECTION_ALERT = "PROTECTION_ALERT"
     private const val ALERT_ACCESSIBILITY_DISABLED = "ACCESSIBILITY_DISABLED"
+    private const val ALERT_PRECISE_TIMING_DISABLED = "PRECISE_TIMING_DISABLED"
+    private const val ALERT_BATTERY_UNRESTRICTED_DISABLED = "BATTERY_UNRESTRICTED_DISABLED"
     private const val ALERT_CHILD_OFFLINE = "CHILD_OFFLINE"
     private const val TIME_REQUEST_CHANNEL_ID = "phoneguard_time_requests"
     private const val PROTECTION_ALERTS_CHANNEL_ID = "phoneguard_protection_alerts"
