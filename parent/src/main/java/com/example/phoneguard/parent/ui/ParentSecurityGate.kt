@@ -1,6 +1,10 @@
 package com.example.phoneguard.parent.ui
 
+import android.content.Context
+import android.content.ContextWrapper
 import android.os.SystemClock
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -47,6 +54,52 @@ fun ParentSecurityGate(
   var hasPin by remember { mutableStateOf(securityStore.hasPin()) }
   var unlocked by remember { mutableStateOf(false) }
   var backgroundedAt by remember { mutableStateOf<Long?>(null) }
+  var biometricPromptAttempted by remember { mutableStateOf(false) }
+
+  val fragmentActivity =
+    remember(context) {
+      context.findFragmentActivity()
+    }
+  val biometricAuthenticators =
+    BiometricManager.Authenticators.BIOMETRIC_STRONG or
+      BiometricManager.Authenticators.BIOMETRIC_WEAK
+  val biometricAvailable =
+    remember(context, fragmentActivity) {
+      fragmentActivity != null &&
+        BiometricManager.from(context)
+          .canAuthenticate(biometricAuthenticators) ==
+        BiometricManager.BIOMETRIC_SUCCESS
+    }
+  val biometricPrompt =
+    remember(fragmentActivity) {
+      fragmentActivity?.let { activity ->
+        BiometricPrompt(
+          activity,
+          ContextCompat.getMainExecutor(activity),
+          object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(
+              result: BiometricPrompt.AuthenticationResult,
+            ) {
+              super.onAuthenticationSucceeded(result)
+              unlocked = true
+            }
+          },
+        )
+      }
+    }
+  val biometricPromptInfo =
+    remember {
+      BiometricPrompt.PromptInfo.Builder()
+        .setTitle("Unlock PhoneGuard Parent")
+        .setSubtitle("Use fingerprint or face authentication")
+        .setAllowedAuthenticators(biometricAuthenticators)
+        .setNegativeButtonText("Use PIN")
+        .build()
+    }
+
+  fun showBiometricPrompt() {
+    biometricPrompt?.authenticate(biometricPromptInfo)
+  }
 
   DisposableEffect(lifecycleOwner) {
     val observer =
@@ -64,6 +117,7 @@ fun ParentSecurityGate(
               SystemClock.elapsedRealtime() - leftAt >= RELOCK_AFTER_BACKGROUND_MS
             ) {
               unlocked = false
+              biometricPromptAttempted = false
             }
             backgroundedAt = null
           }
@@ -75,6 +129,23 @@ fun ParentSecurityGate(
     lifecycleOwner.lifecycle.addObserver(observer)
     onDispose {
       lifecycleOwner.lifecycle.removeObserver(observer)
+    }
+  }
+
+  LaunchedEffect(
+    hasPin,
+    unlocked,
+    biometricAvailable,
+    biometricPromptAttempted,
+  ) {
+    if (
+      hasPin &&
+      !unlocked &&
+      biometricAvailable &&
+      !biometricPromptAttempted
+    ) {
+      biometricPromptAttempted = true
+      showBiometricPrompt()
     }
   }
 
@@ -93,6 +164,11 @@ fun ParentSecurityGate(
       ParentPinUnlockScreen(
         onUnlock = securityStore::verifyPin,
         onUnlocked = { unlocked = true },
+        biometricAvailable = biometricAvailable,
+        onBiometricUnlock = {
+          biometricPromptAttempted = true
+          showBiometricPrompt()
+        },
       )
     }
 
@@ -168,6 +244,8 @@ private fun ParentPinSetupScreen(
 private fun ParentPinUnlockScreen(
   onUnlock: (String) -> Boolean,
   onUnlocked: () -> Unit,
+  biometricAvailable: Boolean,
+  onBiometricUnlock: () -> Unit,
 ) {
   var pin by remember { mutableStateOf("") }
   var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -211,6 +289,17 @@ private fun ParentPinUnlockScreen(
       modifier = Modifier.fillMaxWidth(),
     ) {
       Text("UNLOCK")
+    }
+
+    if (biometricAvailable) {
+      Spacer(modifier = Modifier.height(12.dp))
+
+      Button(
+        onClick = onBiometricUnlock,
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text("USE BIOMETRICS")
+      }
     }
   }
 }
@@ -280,3 +369,15 @@ private fun ParentPinField(
 
 private fun String.parentPinDigits(): String =
   filter(Char::isDigit).take(6)
+
+
+private fun Context.findFragmentActivity(): FragmentActivity? {
+  var current = this
+
+  while (current is ContextWrapper) {
+    if (current is FragmentActivity) return current
+    current = current.baseContext
+  }
+
+  return current as? FragmentActivity
+}
