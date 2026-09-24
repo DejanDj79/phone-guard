@@ -36,9 +36,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import android.widget.NumberPicker
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import com.example.phoneguard.core.AllowedAppsSnapshot
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
@@ -426,7 +423,7 @@ fun ParentDashboardScreen(
                     if (device.isOnline) {
                       "Allowed apps saved and sent to the Child device."
                     } else {
-                      "Allowed apps saved and will be applied when the Child reconnects."
+                      "Allowed apps saved and will be applied when PhoneGuard checks in again."
                     }
                 }
 
@@ -483,7 +480,7 @@ fun ParentDashboardScreen(
                     if (device.isOnline) {
                       "Schedule saved and sent to the Child device."
                     } else {
-                      "Schedule saved and will be applied when the Child reconnects."
+                      "Schedule saved and will be applied when PhoneGuard checks in again."
                     }
                 }
 
@@ -713,7 +710,7 @@ fun ParentDashboardScreen(
             } else if (device.isOnline) {
               "Daily limit set to " + formatDurationMinutes(result.minutes) + "."
             } else {
-              "Daily limit saved and will apply when the Child reconnects."
+              "Daily limit saved and will apply when PhoneGuard checks in again."
             }
         }
 
@@ -878,7 +875,7 @@ fun ParentDashboardScreen(
 
         Text(
           text =
-            (if (device.isOnline) "● Online" else "○ Offline") +
+            devicePresenceSummary(device.lastSeenAt) +
               " · " +
               deviceStateLabel(device).removePrefix("● ").removePrefix("○ "),
           style = MaterialTheme.typography.bodyMedium,
@@ -930,19 +927,8 @@ fun ParentDashboardScreen(
           )
   
           Text(
-            text =
-              if (device.isOnline) {
-                "● Online"
-              } else {
-                "○ Device is offline"
-              },
+            text = devicePresenceSummary(device.lastSeenAt),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-  
-          Text(
-            text = formatLastSeen(device.lastSeenAt),
-            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
   
@@ -1060,8 +1046,17 @@ fun ParentDashboardScreen(
           Text(
             text =
               when {
-                !device.isOnline ->
-                  "○ Offline · showing last known protection state"
+                devicePresenceState(device.lastSeenAt) ==
+                  DevicePresenceState.POSSIBLE_SHUTDOWN ->
+                  "⚠ Possible shutdown · showing last known protection state"
+                devicePresenceState(device.lastSeenAt) ==
+                    DevicePresenceState.LAST_SEEN &&
+                  protectionKnown &&
+                  !protectionComplete ->
+                  "⚠ Last known protection state needs attention"
+                devicePresenceState(device.lastSeenAt) ==
+                  DevicePresenceState.LAST_SEEN ->
+                  "Showing last known protection state"
                 protectionComplete ->
                   "✓ All protection checks are active"
                 protectionKnown ->
@@ -1101,8 +1096,11 @@ fun ParentDashboardScreen(
 
           Text(
             text =
-              if (device.isOnline) {
-                "Heartbeat: online now"
+              if (
+                devicePresenceState(device.lastSeenAt) ==
+                  DevicePresenceState.ONLINE
+              ) {
+                "Heartbeat: active"
               } else {
                 formatLastSeen(device.lastSeenAt)
               },
@@ -1236,9 +1234,14 @@ fun ParentDashboardScreen(
             Text("ADD TIME")
           }
   
-          if (!device.isOnline && commandProgressMessage == null && commandNotice == null) {
+          if (
+            devicePresenceState(device.lastSeenAt) ==
+              DevicePresenceState.POSSIBLE_SHUTDOWN &&
+            commandProgressMessage == null &&
+            commandNotice == null
+          ) {
             Text(
-              text = "Device is offline. Sent commands will be applied when it reconnects.",
+              text = "PhoneGuard has not checked in for 30+ minutes. Commands will wait for its next check-in.",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1903,36 +1906,6 @@ private fun formatUsageSeconds(seconds: Int): String {
   }
 }
 
-private fun formatLastSeen(value: String?): String {
-  if (value.isNullOrBlank()) return "Last seen: unknown"
-
-  val normalized =
-    value.replace(
-      Regex("(\\.\\d{3})\\d+"),
-      "\$1",
-    )
-  val patterns =
-    listOf(
-      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
-      "yyyy-MM-dd'T'HH:mm:ssXXX",
-    )
-
-  var parsed: Date? = null
-  for (pattern in patterns) {
-    parsed =
-      runCatching {
-        SimpleDateFormat(pattern, Locale.US).parse(normalized)
-      }.getOrNull()
-    if (parsed != null) break
-  }
-
-  val date = parsed ?: return "Last seen: unknown"
-  val formatter =
-    SimpleDateFormat("MMM d, HH:mm:ss", Locale.getDefault())
-
-  return "Last seen: " + formatter.format(date)
-}
-
 private fun commandMatchesDeviceState(
   command: RemoteCommand,
   device: ChildDevice,
@@ -1955,7 +1928,7 @@ private fun commandSendingLabel(
   deviceOnline: Boolean,
 ): String =
   if (!deviceOnline) {
-    "Device is offline — the command will wait for reconnection."
+    "PhoneGuard has not checked in recently — the command will wait for the next check-in."
   } else {
     when (command.type) {
       com.example.phoneguard.core.RemoteCommandType.LOCK ->
@@ -1996,17 +1969,17 @@ private fun commandQueuedLabel(
   if (!deviceOnline) {
     when (command.type) {
       com.example.phoneguard.core.RemoteCommandType.LOCK ->
-        "Lock command queued and will be applied when the Child reconnects."
+        "Lock command queued and will be applied when PhoneGuard checks in again."
       com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
-        "Unlock command queued and will be applied when the Child reconnects."
+        "Unlock command queued and will be applied when PhoneGuard checks in again."
       com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
-        "Bonus time queued and will be applied when the Child reconnects."
+        "Bonus time queued and will be applied when PhoneGuard checks in again."
       com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
-        "The schedule will be applied when the Child reconnects."
+        "The schedule will be applied when PhoneGuard checks in again."
       com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
-        "Allowed apps will be applied when the Child reconnects."
+        "Allowed apps will be applied when PhoneGuard checks in again."
       com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
-        "Daily limit will be applied when the Child reconnects."
+        "Daily limit will be applied when PhoneGuard checks in again."
     }
   } else {
     when (command.type) {
