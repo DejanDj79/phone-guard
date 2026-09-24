@@ -131,11 +131,6 @@ class ParentMessagingService : FirebaseMessagingService() {
         body = "Clear app data was selected for PhoneGuard on " + displayName + "."
       }
 
-      ALERT_CHILD_OFFLINE -> {
-        title = displayName + " is offline"
-        body = "No heartbeat received for 5 minutes."
-      }
-
       else -> return
     }
 
@@ -201,7 +196,7 @@ class ParentMessagingService : FirebaseMessagingService() {
         "Protection alerts",
         NotificationManager.IMPORTANCE_HIGH,
       ).apply {
-        description = "Alerts when Child protection settings change or a Child device goes offline."
+        description = "Alerts when Child protection settings change or protection bypass attempts are detected."
       },
     )
   }
@@ -219,7 +214,6 @@ class ParentMessagingService : FirebaseMessagingService() {
     private const val ALERT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
     private const val ALERT_FORCE_STOP_ATTEMPT = "FORCE_STOP_ATTEMPT"
     private const val ALERT_CLEAR_DATA_ATTEMPT = "CLEAR_DATA_ATTEMPT"
-    private const val ALERT_CHILD_OFFLINE = "CHILD_OFFLINE"
     private const val TIME_REQUEST_CHANNEL_ID = "phoneguard_time_requests"
     private const val PROTECTION_ALERTS_CHANNEL_ID = "phoneguard_protection_alerts"
   }
