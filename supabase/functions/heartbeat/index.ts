@@ -3,6 +3,7 @@ import { sendFirebaseMessage } from "../_shared/firebase.ts";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const PROTECTION_HISTORY_RETAINED_PER_DEVICE = 100;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -209,6 +210,36 @@ export default {
           "Protection history insert failed for " + deviceId,
           historyError,
         );
+      } else {
+        const { data: excessEvents, error: excessEventsError } =
+          await ctx.supabaseAdmin
+            .from("protection_events")
+            .select("id")
+            .eq("device_id", deviceId)
+            .order("created_at", { ascending: false })
+            .range(PROTECTION_HISTORY_RETAINED_PER_DEVICE, 1099);
+
+        if (excessEventsError) {
+          console.error(
+            "Protection history retention query failed for " + deviceId,
+            excessEventsError,
+          );
+        } else if ((excessEvents ?? []).length > 0) {
+          const { error: pruneError } = await ctx.supabaseAdmin
+            .from("protection_events")
+            .delete()
+            .in(
+              "id",
+              (excessEvents ?? []).map((event) => event.id),
+            );
+
+          if (pruneError) {
+            console.error(
+              "Protection history retention delete failed for " + deviceId,
+              pruneError,
+            );
+          }
+        }
       }
     }
 
