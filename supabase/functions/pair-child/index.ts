@@ -26,14 +26,24 @@ function json(body: unknown, status = 200): Response {
   return Response.json(body, { status });
 }
 
+function clientIp(req: Request): string {
+  const cloudflareIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cloudflareIp) return cloudflareIp.slice(0, 128);
+
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp.slice(0, 128);
+
+  const forwardedFor = req.headers.get("x-forwarded-for") ?? "";
+  return forwardedFor.split(",")[0]?.trim().slice(0, 128) || "unknown";
+}
+
 export default {
   fetch: withSupabase({ auth: "none" }, async (req, ctx) => {
     if (req.method !== "POST") {
       return json({ error: "method_not_allowed" }, 405);
     }
 
-    const forwardedFor = req.headers.get("x-forwarded-for") ?? "";
-    const ipAddress = forwardedFor.split(",")[0]?.trim() || "unknown";
+    const ipAddress = clientIp(req);
     const windowStart = new Date(Date.now() - ATTEMPT_WINDOW_MS).toISOString();
 
     const { count, error: countError } = await ctx.supabaseAdmin
