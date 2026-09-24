@@ -34,6 +34,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import android.widget.NumberPicker
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.PairingRequest
@@ -81,6 +84,7 @@ fun ParentDashboardScreen(
   var commandNotice by remember { mutableStateOf<String?>(null) }
   var pendingCommandFeedback by remember { mutableStateOf<RemoteCommand?>(null) }
   var commandError by remember { mutableStateOf<String?>(null) }
+  var refreshInProgress by remember { mutableStateOf(false) }
   var showBonusTimePicker by remember { mutableStateOf(false) }
   var selectedBonusMinutes by remember { mutableStateOf(15) }
   var scheduleEditorSchedule by remember {
@@ -281,9 +285,14 @@ fun ParentDashboardScreen(
                 deliveryStatus = statusResult.status
 
                 if (statusResult.status == "APPLIED") {
-                  pairedDevice = statusResult.device
+                  val updatedDevice =
+                    statusResult.device.copy(
+                      lastSeenAt =
+                        pairedDevice?.lastSeenAt ?: device.lastSeenAt,
+                    )
+                  pairedDevice = updatedDevice
                   settingsStore.savePairing(
-                    device = statusResult.device,
+                    device = updatedDevice,
                     controlToken = controlToken,
                   )
                 }
@@ -384,6 +393,69 @@ fun ParentDashboardScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        Text(
+          text = formatLastSeen(device.lastSeenAt),
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        OutlinedButton(
+          onClick = {
+            if (!refreshInProgress) {
+              val controlToken = settingsStore.controlToken()
+              if (controlToken.isNullOrBlank()) {
+                commandError =
+                  "Control token is missing. Re-pairing is required."
+              } else {
+                scope.launch {
+                  refreshInProgress = true
+                  commandError = null
+
+                  when (
+                    val statusResult =
+                      withContext(Dispatchers.IO) {
+                        deviceStatusGateway.fetch(
+                          deviceId = device.deviceId,
+                          controlToken = controlToken,
+                        )
+                      }
+                  ) {
+                    is DeviceStatusResult.Success -> {
+                      pairedDevice = statusResult.device
+                      settingsStore.savePairing(
+                        device = statusResult.device,
+                        controlToken = controlToken,
+                      )
+
+                      pendingCommandFeedback?.let { pendingCommand ->
+                        if (
+                          commandMatchesDeviceState(
+                            pendingCommand,
+                            statusResult.device,
+                          )
+                        ) {
+                          commandNotice = commandAppliedLabel(pendingCommand)
+                          pendingCommandFeedback = null
+                        }
+                      }
+                    }
+
+                    is DeviceStatusResult.Error -> {
+                      commandError = statusResult.message
+                    }
+                  }
+
+                  refreshInProgress = false
+                }
+              }
+            }
+          },
+          enabled = !refreshInProgress,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text(if (refreshInProgress) "REFRESHING…" else "REFRESH STATUS")
+        }
+
         val protection = device.protectionStatus
         val protectionComplete = protection.criticalProtectionComplete
 
@@ -460,6 +532,9 @@ fun ParentDashboardScreen(
         )
 
         val isLocked = device.state == DeviceAccessState.LOCKED
+        val isUnlocked =
+          device.state == DeviceAccessState.ALLOWED ||
+            device.state == DeviceAccessState.TEMPORARILY_ALLOWED
 
         Button(
           onClick = { sendCommand(RemoteCommand.lock()) },
@@ -471,10 +546,10 @@ fun ParentDashboardScreen(
 
         OutlinedButton(
           onClick = { sendCommand(RemoteCommand.unlock()) },
-          enabled = !commandInProgress,
+          enabled = !commandInProgress && !isUnlocked,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("UNLOCK")
+          Text(if (isUnlocked) "UNLOCKED" else "UNLOCK")
         }
 
         Text(
@@ -482,6 +557,20 @@ fun ParentDashboardScreen(
           style = MaterialTheme.typography.labelLarge,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        if (
+          device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
+          device.temporaryAccessMinutesRemaining != null
+        ) {
+          Text(
+            text =
+              "Remaining: " +
+                device.temporaryAccessMinutesRemaining +
+                " min",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+        }
 
         OutlinedButton(
           onClick = { showBonusTimePicker = true },
@@ -801,6 +890,36 @@ private fun PairDeviceScreen(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   }
+}
+
+private fun formatLastSeen(value: String?): String {
+  if (value.isNullOrBlank()) return "Last seen: unknown"
+
+  val normalized =
+    value.replace(
+      Regex("(\\.\\d{3})\\d+"),
+      "$1",
+    )
+  val patterns =
+    listOf(
+      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+      "yyyy-MM-dd'T'HH:mm:ssXXX",
+    )
+
+  var parsed: Date? = null
+  for (pattern in patterns) {
+    parsed =
+      runCatching {
+        SimpleDateFormat(pattern, Locale.US).parse(normalized)
+      }.getOrNull()
+    if (parsed != null) break
+  }
+
+  val date = parsed ?: return "Last seen: unknown"
+  val formatter =
+    SimpleDateFormat("MMM d, HH:mm:ss", Locale.getDefault())
+
+  return "Last seen: " + formatter.format(date)
 }
 
 private fun commandMatchesDeviceState(
