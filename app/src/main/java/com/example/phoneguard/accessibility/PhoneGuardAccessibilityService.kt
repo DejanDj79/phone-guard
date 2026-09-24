@@ -121,6 +121,10 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       }
     }
 
+    if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+      detectUninstallActionClick(event)?.let(::reportProtectionEvent)
+    }
+
     if (
       event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
       event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
@@ -132,6 +136,67 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   }
 
   override fun onInterrupt() = Unit
+
+  private fun detectUninstallActionClick(event: AccessibilityEvent): String? {
+    val eventPackage = event.packageName?.toString().orEmpty()
+    if (
+      eventPackage != "com.miui.securitycenter" &&
+      eventPackage != "com.android.settings"
+    ) {
+      return null
+    }
+
+    val clickedText =
+      buildString {
+        event.text.forEach { item ->
+          append(item)
+          append(' ')
+        }
+        event.contentDescription?.let {
+          append(it)
+          append(' ')
+        }
+        event.source?.text?.let {
+          append(it)
+          append(' ')
+        }
+        event.source?.contentDescription?.let {
+          append(it)
+          append(' ')
+        }
+      }.lowercase()
+
+    val uninstallClicked =
+      clickedText.contains("uninstall") ||
+        clickedText.contains("deinstall") ||
+        clickedText.contains("deinstal") ||
+        clickedText.contains("remove app") ||
+        clickedText.contains("ukloni aplikaciju")
+
+    if (!uninstallClicked) return null
+
+    val activeText = activeWindowText()
+    val phoneGuardLabel =
+      runCatching {
+        packageManager
+          .getApplicationLabel(applicationInfo)
+          .toString()
+      }.getOrDefault("PhoneGuard")
+
+    val mentionsPhoneGuard =
+      activeText.contains(phoneGuardLabel, ignoreCase = true) ||
+        activeText.contains(packageName, ignoreCase = true)
+
+    if (!mentionsPhoneGuard) return null
+
+    Log.i(
+      TAG,
+      "PhoneGuard uninstall action clicked: package=" + eventPackage +
+        ", text=" + clickedText,
+    )
+
+    return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
+  }
 
   private fun detectProtectionBypassEvent(event: AccessibilityEvent): String? {
     val eventPackage = event.packageName?.toString().orEmpty()
