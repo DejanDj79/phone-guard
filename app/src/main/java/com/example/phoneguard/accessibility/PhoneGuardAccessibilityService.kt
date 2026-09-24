@@ -471,10 +471,10 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
             val selectedButton = this
             requestMoreTimeButton.isEnabled = false
             timeRequestOptions.visibility = View.GONE
+            settingsStore.setTimeRequestFeedback(null)
             timeRequestStatus.visibility = View.VISIBLE
             timeRequestStatus.setTextColor(Color.LTGRAY)
             timeRequestStatus.text = "Sending request…"
-            settingsStore.setTimeRequestFeedback(null)
 
             Thread {
               val identity = settingsStore.getOrCreatePairingIdentity()
@@ -490,6 +490,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
                 requestMoreTimeButton.isEnabled = true
                 selectedButton.isEnabled = true
+                timeRequestStatus.visibility = View.VISIBLE
 
                 when (result) {
                   is ChildTimeRequestResult.Success -> {
