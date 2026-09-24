@@ -3,11 +3,13 @@ package com.example.phoneguard.ui.main
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
@@ -39,6 +41,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.content.Intent
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.media.AudioManager
 import android.os.Build
 import androidx.navigation3.runtime.NavKey
 import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
@@ -79,6 +85,7 @@ fun MainScreen(
     mutableStateOf(BackgroundProtectionStatus.isBatteryOptimizationIgnored(context))
   }
   var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
+  var allowedPackages by remember { mutableStateOf(settingsStore.allowedPackages()) }
   var pairingIdentity by remember {
     mutableStateOf(settingsStore.getOrCreatePairingIdentity())
   }
@@ -123,6 +130,7 @@ fun MainScreen(
     val listener =
       settingsStore.registerLockStateListener {
         isLocked = settingsStore.isEffectivelyLocked()
+        allowedPackages = settingsStore.allowedPackages()
       }
 
     onDispose {
@@ -133,6 +141,7 @@ fun MainScreen(
   LaunchedEffect(Unit) {
     alarmScheduler.syncCurrentStateAndScheduleNext()
     isLocked = settingsStore.isEffectivelyLocked()
+    allowedPackages = settingsStore.allowedPackages()
   }
 
   LaunchedEffect(pairingIdentity, registrationRetryKey) {
@@ -169,6 +178,7 @@ fun MainScreen(
       }
 
       LockScreen(
+        allowedPackages = allowedPackages,
         unlockTimeLabel =
           if (settingsStore.isScheduleLockActive()) {
             settingsStore.currentScheduledUnlockLabel()
@@ -255,6 +265,45 @@ private fun ParentPinSetupScreen(
   var pin by remember { mutableStateOf("") }
   var confirmation by remember { mutableStateOf("") }
   var errorMessage by remember { mutableStateOf<String?>(null) }
+  val context = LocalContext.current
+  val packageManager = context.packageManager
+  val audioManager =
+    remember(context) { context.getSystemService(AudioManager::class.java) }
+  val cameraManager =
+    remember(context) { context.getSystemService(CameraManager::class.java) }
+  val torchCameraId =
+    remember(cameraManager) {
+      runCatching {
+        cameraManager.cameraIdList.firstOrNull { cameraId ->
+          cameraManager
+            .getCameraCharacteristics(cameraId)
+            .get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        }
+      }.getOrNull()
+    }
+  var flashlightEnabled by remember { mutableStateOf(false) }
+  var systemMessage by remember {
+    mutableStateOf(ringerModeLabel(audioManager.ringerMode))
+  }
+
+  val allowedApps =
+    remember(allowedPackages) {
+      allowedPackages
+        .mapNotNull { packageName ->
+          val launchIntent =
+            packageManager.getLaunchIntentForPackage(packageName)
+              ?: return@mapNotNull null
+          val label =
+            runCatching {
+              val applicationInfo =
+                packageManager.getApplicationInfo(packageName, 0)
+              packageManager.getApplicationLabel(applicationInfo).toString()
+            }.getOrDefault(packageName)
+
+          Triple(packageName, label, launchIntent)
+        }
+        .sortedBy { it.second.lowercase() }
+    }
 
   Surface(modifier = modifier.fillMaxSize()) {
     Column(
@@ -656,6 +705,7 @@ private fun ChildDashboard(
 
 @Composable
 private fun LockScreen(
+  allowedPackages: Set<String>,
   unlockTimeLabel: String?,
   onUnlock: (String) -> Boolean,
   modifier: Modifier = Modifier,
@@ -666,7 +716,11 @@ private fun LockScreen(
 
   Surface(modifier = modifier.fillMaxSize()) {
     Column(
-      modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+      modifier =
+        Modifier
+          .fillMaxSize()
+          .verticalScroll(rememberScrollState())
+          .padding(horizontal = 32.dp, vertical = 32.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center,
     ) {
@@ -706,7 +760,120 @@ private fun LockScreen(
         )
       }
 
-      Spacer(modifier = Modifier.height(40.dp))
+      Spacer(modifier = Modifier.height(28.dp))
+
+      if (allowedApps.isNotEmpty()) {
+        Text(
+          text = "Allowed apps",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        allowedApps.forEach { (_, label, launchIntent) ->
+          OutlinedButton(
+            onClick = {
+              runCatching {
+                context.startActivity(
+                  Intent(launchIntent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+              }.onFailure {
+                systemMessage = "This app could not be opened."
+              }
+            },
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(label)
+          }
+
+          Spacer(modifier = Modifier.height(6.dp))
+        }
+      }
+
+      Text(
+        text = "Sound",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+      )
+
+      Spacer(modifier = Modifier.height(8.dp))
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Button(
+          onClick = {
+            runCatching {
+              audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
+            }.onSuccess {
+              systemMessage = ringerModeLabel(audioManager.ringerMode)
+            }.onFailure {
+              systemMessage = "Android did not allow this sound change."
+            }
+          },
+          modifier = Modifier.weight(1f),
+        ) {
+          Text("SOUND")
+        }
+
+        Button(
+          onClick = {
+            runCatching {
+              audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+            }.onSuccess {
+              systemMessage = ringerModeLabel(audioManager.ringerMode)
+            }.onFailure {
+              systemMessage = "Android did not allow this sound change."
+            }
+          },
+          modifier = Modifier.weight(1f),
+        ) {
+          Text("VIBRATE")
+        }
+      }
+
+      Spacer(modifier = Modifier.height(8.dp))
+
+      Button(
+        onClick = {
+          val cameraId = torchCameraId
+          if (cameraId == null) {
+            systemMessage = "Flashlight is unavailable on this device."
+          } else {
+            val nextEnabled = !flashlightEnabled
+            runCatching {
+              cameraManager.setTorchMode(cameraId, nextEnabled)
+            }.onSuccess {
+              flashlightEnabled = nextEnabled
+              systemMessage =
+                if (flashlightEnabled) {
+                  "Flashlight is on"
+                } else {
+                  "Flashlight is off"
+                }
+            }.onFailure {
+              systemMessage = "Flashlight is currently unavailable."
+            }
+          }
+        },
+        enabled = torchCameraId != null,
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text(if (flashlightEnabled) "FLASHLIGHT OFF" else "FLASHLIGHT ON")
+      }
+
+      Spacer(modifier = Modifier.height(8.dp))
+
+      Text(
+        text = systemMessage,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+      )
+
+      Spacer(modifier = Modifier.height(28.dp))
 
       if (!showPinEntry) {
         OutlinedButton(
@@ -759,6 +926,13 @@ private fun LockScreen(
   }
 }
 
+private fun ringerModeLabel(mode: Int): String =
+  when (mode) {
+    AudioManager.RINGER_MODE_NORMAL -> "Current mode: Sound"
+    AudioManager.RINGER_MODE_VIBRATE -> "Current mode: Vibrate"
+    else -> "Current sound mode"
+  }
+
 private fun String.onlyPinDigits(): String =
   filter(Char::isDigit).take(6)
 
@@ -804,6 +978,7 @@ private fun ChildDashboardPreview() {
 private fun LockScreenPreview() {
   PhoneGuardTheme {
     LockScreen(
+      allowedPackages = emptySet(),
       unlockTimeLabel = "07:00",
       onUnlock = { false },
     )
