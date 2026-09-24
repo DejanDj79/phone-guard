@@ -3,6 +3,7 @@ package com.example.phoneguard.parent.data
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.DeviceProtectionStatus
+import com.example.phoneguard.core.DailyScreenTimeStatus
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -72,6 +73,7 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
           }
 
         val protectionJson = deviceJson.optJSONObject("protection")
+        val dailyScreenTimeJson = deviceJson.optJSONObject("dailyScreenTime")
 
         DeviceStatusResult.Success(
           device =
@@ -92,6 +94,22 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
                     protectionJson?.nullableBoolean("preciseTimingEnabled"),
                   batteryUnrestricted =
                     protectionJson?.nullableBoolean("batteryUnrestricted"),
+                ),
+              dailyScreenTime =
+                DailyScreenTimeStatus(
+                  limitMinutes =
+                    dailyScreenTimeJson?.nullableInt("limitMinutes"),
+                  usedSeconds =
+                    dailyScreenTimeJson?.optInt("usedSeconds", 0) ?: 0,
+                  remainingMinutes =
+                    dailyScreenTimeJson?.nullableInt("remainingMinutes"),
+                  usageDate =
+                    dailyScreenTimeJson
+                      ?.optString("usageDate")
+                      ?.takeIf { it.isNotBlank() && it != "null" },
+                  limitReached =
+                    dailyScreenTimeJson?.optBoolean("limitReached", false)
+                      ?: false,
                 ),
             ),
         )
@@ -129,3 +147,7 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
 
 private fun JSONObject.nullableBoolean(name: String): Boolean? =
   if (isNull(name)) null else getBoolean(name)
+
+
+private fun JSONObject.nullableInt(name: String): Int? =
+  if (isNull(name)) null else getInt(name)
