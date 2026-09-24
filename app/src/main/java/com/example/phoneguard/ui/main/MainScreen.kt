@@ -78,6 +78,9 @@ fun MainScreen(
   val backendClient = remember { ChildBackendClient() }
 
   var hasParentPin by remember { mutableStateOf(settingsStore.hasParentPin()) }
+  var setupWizardCompleted by remember {
+    mutableStateOf(settingsStore.isSetupWizardCompleted())
+  }
   var accessibilityEnabled by remember {
     mutableStateOf(PhoneGuardAccessibilityStatus.isEnabled(context))
   }
@@ -229,61 +232,112 @@ fun MainScreen(
     }
 
     else -> {
-      ChildDashboard(
-        modifier = modifier,
-        pairingIdentity = pairingIdentity,
-        registrationResult = registrationResult,
-        registrationInProgress = registrationInProgress,
-        accessibilityEnabled = accessibilityEnabled,
-        exactAlarmAccess = exactAlarmAccess,
-        batteryOptimizationIgnored = batteryOptimizationIgnored,
-        onEnableAccessibility = {
-          context.startActivity(PhoneGuardAccessibilityStatus.settingsIntent())
-        },
-        onOpenBatterySettings = {
-          context.startActivity(
-            BackgroundProtectionStatus.batteryOptimizationSettingsIntent(context),
-          )
-        },
-        onRequestExactAlarmAccess = {
-          alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
-            context.startActivity(intent)
-          }
-        },
-        onRegeneratePairingCode = {
-          registrationResult = null
-          pairingIdentity = settingsStore.regeneratePairingCode()
-        },
-        onRetryRegistration = {
-          registrationResult = null
-          registrationRetryKey += 1
-        },
-        onResetPairing = { pin ->
-          if (!settingsStore.verifyParentPin(pin)) {
-            ChildPairingResetResult.Failure("Incorrect parent PIN.")
-          } else {
-            val refreshedIdentity = settingsStore.regeneratePairingCode()
-            val result =
-              withContext(Dispatchers.IO) {
-                backendClient.resetPairing(
-                  identity = refreshedIdentity,
-                  deviceSecret = settingsStore.getOrCreateDeviceSecret(),
-                )
+      val registrationSuccess =
+        registrationResult as? ChildRegistrationResult.Success
+      val paired = registrationSuccess?.paired == true
+      val protectionReady =
+        accessibilityEnabled &&
+          exactAlarmAccess &&
+          batteryOptimizationIgnored
+
+      if (!setupWizardCompleted) {
+        ChildSetupWizard(
+          modifier = modifier,
+          pairingIdentity = pairingIdentity,
+          registrationResult = registrationResult,
+          registrationInProgress = registrationInProgress,
+          accessibilityEnabled = accessibilityEnabled,
+          exactAlarmAccess = exactAlarmAccess,
+          batteryOptimizationIgnored = batteryOptimizationIgnored,
+          onEnableAccessibility = {
+            context.startActivity(PhoneGuardAccessibilityStatus.settingsIntent())
+          },
+          onOpenBatterySettings = {
+            context.startActivity(
+              BackgroundProtectionStatus.batteryOptimizationSettingsIntent(context),
+            )
+          },
+          onRequestExactAlarmAccess = {
+            alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
+              context.startActivity(intent)
+            }
+          },
+          onRegeneratePairingCode = {
+            registrationResult = null
+            pairingIdentity = settingsStore.regeneratePairingCode()
+          },
+          onRetryRegistration = {
+            registrationResult = null
+            registrationRetryKey += 1
+          },
+          onFinish = {
+            if (protectionReady && paired) {
+              settingsStore.setSetupWizardCompleted(true)
+              setupWizardCompleted = true
+            }
+          },
+        )
+      } else {
+        ChildDashboard(
+          modifier = modifier,
+          pairingIdentity = pairingIdentity,
+          registrationResult = registrationResult,
+          registrationInProgress = registrationInProgress,
+          accessibilityEnabled = accessibilityEnabled,
+          exactAlarmAccess = exactAlarmAccess,
+          batteryOptimizationIgnored = batteryOptimizationIgnored,
+          onEnableAccessibility = {
+            context.startActivity(PhoneGuardAccessibilityStatus.settingsIntent())
+          },
+          onOpenBatterySettings = {
+            context.startActivity(
+              BackgroundProtectionStatus.batteryOptimizationSettingsIntent(context),
+            )
+          },
+          onRequestExactAlarmAccess = {
+            alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
+              context.startActivity(intent)
+            }
+          },
+          onRegeneratePairingCode = {
+            registrationResult = null
+            pairingIdentity = settingsStore.regeneratePairingCode()
+          },
+          onRetryRegistration = {
+            registrationResult = null
+            registrationRetryKey += 1
+          },
+          onRunSetupCheck = {
+            settingsStore.setSetupWizardCompleted(false)
+            setupWizardCompleted = false
+          },
+          onResetPairing = { pin ->
+            if (!settingsStore.verifyParentPin(pin)) {
+              ChildPairingResetResult.Failure("Incorrect parent PIN.")
+            } else {
+              val refreshedIdentity = settingsStore.regeneratePairingCode()
+              val result =
+                withContext(Dispatchers.IO) {
+                  backendClient.resetPairing(
+                    identity = refreshedIdentity,
+                    deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+                  )
+                }
+
+              if (result is ChildPairingResetResult.Success) {
+                pairingIdentity = refreshedIdentity
+                registrationResult =
+                  ChildRegistrationResult.Success(
+                    pairingExpiresAt = result.pairingExpiresAt,
+                    paired = false,
+                  )
               }
 
-            if (result is ChildPairingResetResult.Success) {
-              pairingIdentity = refreshedIdentity
-              registrationResult =
-                ChildRegistrationResult.Success(
-                  pairingExpiresAt = result.pairingExpiresAt,
-                  paired = false,
-                )
+              result
             }
-
-            result
-          }
-        },
-      )
+          },
+        )
+      }
     }
   }
 }
@@ -394,6 +448,268 @@ private fun PinField(
 }
 
 @Composable
+private fun ChildSetupWizard(
+  pairingIdentity: PairingIdentity,
+  registrationResult: ChildRegistrationResult?,
+  registrationInProgress: Boolean,
+  accessibilityEnabled: Boolean,
+  exactAlarmAccess: Boolean,
+  batteryOptimizationIgnored: Boolean,
+  onEnableAccessibility: () -> Unit,
+  onOpenBatterySettings: () -> Unit,
+  onRequestExactAlarmAccess: () -> Unit,
+  onRegeneratePairingCode: () -> Unit,
+  onRetryRegistration: () -> Unit,
+  onFinish: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  val registrationFailure =
+    registrationResult as? ChildRegistrationResult.Failure
+  val registrationSuccess =
+    registrationResult as? ChildRegistrationResult.Success
+  val paired = registrationSuccess?.paired == true
+  val completedSteps =
+    listOf(
+      accessibilityEnabled,
+      batteryOptimizationIgnored,
+      exactAlarmAccess,
+      paired,
+    ).count { it }
+
+  val currentStep =
+    when {
+      !accessibilityEnabled -> 1
+      !batteryOptimizationIgnored -> 2
+      !exactAlarmAccess -> 3
+      !paired -> 4
+      else -> 5
+    }
+
+  Column(
+    modifier =
+      modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
+        .padding(24.dp),
+    verticalArrangement = Arrangement.spacedBy(16.dp),
+  ) {
+    Text(
+      text = "PhoneGuard setup",
+      style = MaterialTheme.typography.headlineMedium,
+      fontWeight = FontWeight.Bold,
+    )
+
+    Text(
+      text =
+        if (currentStep == 5) {
+          "Protection ready"
+        } else {
+          "Step " + currentStep + " of 4"
+        },
+      style = MaterialTheme.typography.titleMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    Text(
+      text =
+        completedSteps.toString() +
+          " of 4 setup checks complete.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    SetupStatusLine(
+      label = "Screen protection",
+      complete = accessibilityEnabled,
+    )
+    SetupStatusLine(
+      label = "Background protection",
+      complete = batteryOptimizationIgnored,
+    )
+    SetupStatusLine(
+      label = "Exact timing",
+      complete = exactAlarmAccess,
+    )
+    SetupStatusLine(
+      label = "Parent connection",
+      complete = paired,
+    )
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        when (currentStep) {
+          1 -> {
+            Text(
+              text = "Enable screen protection",
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+              text =
+                "PhoneGuard needs its Accessibility service so the parental lock can stay above other apps.",
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+              onClick = onEnableAccessibility,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("OPEN ACCESSIBILITY SETTINGS")
+            }
+          }
+
+          2 -> {
+            Text(
+              text = "Allow background protection",
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+              text =
+                "Remove battery optimization for PhoneGuard so Android is less likely to suspend protection and background checks.",
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+              onClick = onOpenBatterySettings,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("ALLOW BACKGROUND PROTECTION")
+            }
+          }
+
+          3 -> {
+            Text(
+              text = "Allow exact timing",
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+              text =
+                "Exact alarm access keeps scheduled lock and unlock transitions as close to their configured time as Android allows.",
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+              onClick = onRequestExactAlarmAccess,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("ALLOW EXACT TIMING")
+            }
+          }
+
+          4 -> {
+            Text(
+              text = "Connect the Parent app",
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.SemiBold,
+            )
+
+            Text(
+              text =
+                when {
+                  registrationInProgress -> "Connecting this Child device…"
+                  registrationFailure != null ->
+                    "Connection error: " + registrationFailure.message
+                  else ->
+                    "Enter this code in the PhoneGuard Parent app."
+                },
+              style = MaterialTheme.typography.bodyMedium,
+              color =
+                if (registrationFailure != null) {
+                  MaterialTheme.colorScheme.error
+                } else {
+                  MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+
+            Text(
+              text = pairingIdentity.pairingCode,
+              style = MaterialTheme.typography.headlineMedium,
+              fontWeight = FontWeight.Bold,
+            )
+
+            OutlinedButton(
+              onClick = onRetryRegistration,
+              enabled = !registrationInProgress,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text(
+                if (registrationInProgress) {
+                  "CHECKING…"
+                } else {
+                  "CHECK CONNECTION"
+                },
+              )
+            }
+
+            OutlinedButton(
+              onClick = onRegeneratePairingCode,
+              enabled = !registrationInProgress,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("GENERATE NEW CODE")
+            }
+          }
+
+          else -> {
+            Text(
+              text = "✓ Protection ready",
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+              text =
+                "Screen protection, background protection, precise timing and the Parent connection are all ready.",
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+              onClick = onFinish,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("FINISH SETUP")
+            }
+          }
+        }
+      }
+    }
+
+    Text(
+      text =
+        "You can run this setup check again later from the Child dashboard.",
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  }
+}
+
+@Composable
+private fun SetupStatusLine(
+  label: String,
+  complete: Boolean,
+) {
+  Text(
+    text =
+      if (complete) {
+        "✓ " + label
+      } else {
+        "○ " + label
+      },
+    style = MaterialTheme.typography.bodyMedium,
+    color =
+      if (complete) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+      } else {
+        MaterialTheme.colorScheme.error
+      },
+  )
+}
+
+@Composable
 private fun ChildDashboard(
   pairingIdentity: PairingIdentity,
   registrationResult: ChildRegistrationResult?,
@@ -406,6 +722,7 @@ private fun ChildDashboard(
   onRequestExactAlarmAccess: () -> Unit,
   onRegeneratePairingCode: () -> Unit,
   onRetryRegistration: () -> Unit,
+  onRunSetupCheck: () -> Unit,
   onResetPairing: suspend (String) -> ChildPairingResetResult,
   modifier: Modifier = Modifier,
 ) {
@@ -529,6 +846,14 @@ private fun ChildDashboard(
           }
         }
 
+      }
+
+        OutlinedButton(
+          onClick = onRunSetupCheck,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("RUN SETUP CHECK")
+        }
       }
     }
 
@@ -1145,6 +1470,7 @@ private fun ChildDashboardPreview() {
       onRequestExactAlarmAccess = {},
       onRegeneratePairingCode = {},
       onRetryRegistration = {},
+      onRunSetupCheck = {},
       onResetPairing = { ChildPairingResetResult.Success("preview-expiry") },
     )
   }
