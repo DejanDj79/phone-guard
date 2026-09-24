@@ -229,7 +229,7 @@ fun MainScreen(
         },
         onOpenBatterySettings = {
           context.startActivity(
-            BackgroundProtectionStatus.batteryOptimizationSettingsIntent(),
+            BackgroundProtectionStatus.batteryOptimizationSettingsIntent(context),
           )
         },
         onRequestExactAlarmAccess = {
@@ -476,9 +476,9 @@ private fun ChildDashboard(
         Text(
           text =
             if (batteryOptimizationIgnored) {
-              "✓ Background activity is unrestricted"
+              "✓ Battery optimization exemption is enabled"
             } else {
-              "△ Android may restrict background activity"
+              "△ Battery optimization may suspend PhoneGuard"
             },
           style = MaterialTheme.typography.bodyMedium,
         )
@@ -503,7 +503,7 @@ private fun ChildDashboard(
             onClick = onOpenBatterySettings,
             modifier = Modifier.fillMaxWidth(),
           ) {
-            Text("BATTERY SETTINGS")
+            Text("ALLOW BACKGROUND PROTECTION")
           }
         }
 
