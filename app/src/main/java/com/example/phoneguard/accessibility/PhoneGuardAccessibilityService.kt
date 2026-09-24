@@ -130,7 +130,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }
     if (::heartbeatSender.isInitialized) {
       Thread {
-        heartbeatSender.send()
+        heartbeatSender.send(accessibilityEnabledOverride = false)
       }.start()
     }
     return super.onUnbind(intent)
