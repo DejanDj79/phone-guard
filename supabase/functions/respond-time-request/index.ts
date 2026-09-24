@@ -85,6 +85,24 @@ export default {
 
       if (error) return json({ error: "database_error" }, 500);
 
+      if (device.fcm_token) {
+        try {
+          await sendFirebaseMessage({
+            token: device.fcm_token,
+            data: {
+              type: "TIME_REQUEST_RESULT",
+              decision: "DENIED",
+              request_id: requestId,
+              requested_minutes: String(requestRow.requested_minutes),
+            },
+            collapseKey: "phoneguard-time-request-result",
+            ttl: "1800s",
+          });
+        } catch (pushError) {
+          console.error("Child denial feedback push failed", pushError);
+        }
+      }
+
       return json({
         ok: true,
         decision: "DENIED",
