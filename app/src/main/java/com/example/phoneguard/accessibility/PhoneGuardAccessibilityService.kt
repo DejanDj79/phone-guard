@@ -59,6 +59,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private var overlayTimeRequestFeedbackView: TextView? = null
   private var foregroundPackage: String? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+  private val lastProtectionEventAt = mutableMapOf<String, Long>()
 
   private val networkCallback =
     object : ConnectivityManager.NetworkCallback() {
@@ -117,12 +118,79 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       if (!eventPackage.isNullOrBlank()) {
         foregroundPackage = eventPackage
       }
+
+      detectProtectionBypassEvent(event)?.let(::reportProtectionEvent)
     }
 
     refreshOverlayOnMainThread()
   }
 
   override fun onInterrupt() = Unit
+
+  private fun detectProtectionBypassEvent(event: AccessibilityEvent): String? {
+    val eventPackage = event.packageName?.toString().orEmpty()
+    val className = event.className?.toString().orEmpty()
+    val phoneGuardLabel =
+      runCatching {
+        packageManager
+          .getApplicationLabel(applicationInfo)
+          .toString()
+      }.getOrDefault("PhoneGuard")
+
+    val eventText =
+      buildString {
+        event.text.forEach { item ->
+          append(item)
+          append(' ')
+        }
+        event.contentDescription?.let {
+          append(it)
+          append(' ')
+        }
+      }
+
+    val mentionsPhoneGuard =
+      eventText.contains(phoneGuardLabel, ignoreCase = true) ||
+        eventText.contains(packageName, ignoreCase = true)
+
+    if (!mentionsPhoneGuard) return null
+
+    val appInfoScreen =
+      eventPackage == "com.android.settings" &&
+        (
+          className.contains("InstalledAppDetails", ignoreCase = true) ||
+            className.contains("AppInfoDashboard", ignoreCase = true)
+        )
+
+    if (appInfoScreen) {
+      return PROTECTION_EVENT_APP_INFO_OPENED
+    }
+
+    val uninstallScreen =
+      className.contains("UninstallerActivity", ignoreCase = true) ||
+        (
+          eventPackage.contains("packageinstaller", ignoreCase = true) &&
+            className.contains("uninstall", ignoreCase = true)
+        )
+
+    return if (uninstallScreen) {
+      PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
+    } else {
+      null
+    }
+  }
+
+  private fun reportProtectionEvent(protectionEvent: String) {
+    val now = System.currentTimeMillis()
+    val previous = lastProtectionEventAt[protectionEvent] ?: 0L
+    if (now - previous < PROTECTION_EVENT_DEBOUNCE_MS) return
+
+    lastProtectionEventAt[protectionEvent] = now
+
+    Thread {
+      heartbeatSender.send(protectionEvent = protectionEvent)
+    }.start()
+  }
 
   override fun onUnbind(intent: Intent?): Boolean {
     if (::dailyUsageTracker.isInitialized) {
@@ -689,5 +757,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private companion object {
     const val TAG = "PhoneGuardAccessibility"
     const val HEARTBEAT_INTERVAL_MS = 30_000L
+    const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
+    const val PROTECTION_EVENT_APP_INFO_OPENED = "APP_INFO_OPENED"
+    const val PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
   }
 }
