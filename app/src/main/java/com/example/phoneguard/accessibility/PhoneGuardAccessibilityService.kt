@@ -115,31 +115,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     if (!::settingsStore.isInitialized || event == null) return
 
-    val rawEventPackage = event.packageName?.toString().orEmpty()
-    if (
-      rawEventPackage == "com.miui.securitycenter" ||
-      rawEventPackage == "com.android.systemui"
-    ) {
-      val activeWindowSnapshot =
-        if (
-          rawEventPackage == "com.android.systemui" &&
-          event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-        ) {
-          activeWindowText().take(MAX_DIAGNOSTIC_TEXT_LENGTH)
-        } else {
-          ""
-        }
-
-      Log.i(
-        TAG,
-        "MIUI event: type=" + AccessibilityEvent.eventTypeToString(event.eventType) +
-          ", package=" + rawEventPackage +
-          ", class=" + event.className?.toString().orEmpty() +
-          ", text=" + event.text.joinToString(" | ") +
-          ", activeWindow=" + activeWindowSnapshot,
-      )
-    }
-
     if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
       val eventPackage = event.packageName?.toString()?.trim()
       if (!eventPackage.isNullOrBlank()) {
@@ -204,7 +179,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         activeText.contains("ok")
 
     return if (isUninstallConfirmation) {
-      Log.i(TAG, "PhoneGuard uninstall confirmation detected from SystemUI")
       phoneGuardAppInfoActive = false
       PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     } else {
@@ -249,13 +223,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     if (!mentionsPhoneGuard) return null
 
-    Log.i(
-      TAG,
-      "PhoneGuard screen click: package=" + eventPackage +
-        ", class=" + event.className?.toString().orEmpty() +
-        ", text=" + clickedText,
-    )
-
     val uninstallClicked =
       clickedText.contains("uninstall") ||
         clickedText.contains("deinstall") ||
@@ -268,12 +235,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         clickedText.contains("obrisi aplikaciju")
 
     if (!uninstallClicked) return null
-
-    Log.i(
-      TAG,
-      "PhoneGuard uninstall action clicked: package=" + eventPackage +
-        ", text=" + clickedText,
-    )
 
     return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
   }
@@ -306,12 +267,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         visibleText.contains(packageName, ignoreCase = true)
 
     if (!mentionsPhoneGuard) return null
-
-    Log.i(
-      TAG,
-      "PhoneGuard settings screen: package=" + eventPackage +
-        ", class=" + className,
-    )
 
     val normalizedText = visibleText.lowercase()
 
@@ -982,7 +937,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
-    const val MAX_DIAGNOSTIC_TEXT_LENGTH = 800
     const val PROTECTION_EVENT_APP_INFO_OPENED = "APP_INFO_OPENED"
     const val PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
   }
