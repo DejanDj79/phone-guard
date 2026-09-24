@@ -45,6 +45,7 @@ import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.core.PairingIdentity
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.protection.BackgroundProtectionStatus
+import com.example.phoneguard.protection.SilentModeAccessStatus
 import com.example.phoneguard.remote.ChildBackendClient
 import com.example.phoneguard.remote.AppInventorySyncer
 import com.example.phoneguard.remote.ChildHeartbeatSender
@@ -78,6 +79,9 @@ fun MainScreen(
   var batteryOptimizationIgnored by remember {
     mutableStateOf(BackgroundProtectionStatus.isBatteryOptimizationIgnored(context))
   }
+  var silentModeAccessGranted by remember {
+    mutableStateOf(SilentModeAccessStatus.isGranted(context))
+  }
   var isLocked by remember { mutableStateOf(settingsStore.isEffectivelyLocked()) }
   var pairingIdentity by remember {
     mutableStateOf(settingsStore.getOrCreatePairingIdentity())
@@ -96,6 +100,8 @@ fun MainScreen(
           exactAlarmAccess = alarmScheduler.hasExactAlarmAccess()
           batteryOptimizationIgnored =
             BackgroundProtectionStatus.isBatteryOptimizationIgnored(context)
+          silentModeAccessGranted =
+            SilentModeAccessStatus.isGranted(context)
 
           Thread {
             AppInventorySyncer(context.applicationContext).sync()
@@ -188,6 +194,7 @@ fun MainScreen(
         accessibilityEnabled = accessibilityEnabled,
         exactAlarmAccess = exactAlarmAccess,
         batteryOptimizationIgnored = batteryOptimizationIgnored,
+        silentModeAccessGranted = silentModeAccessGranted,
         onEnableAccessibility = {
           context.startActivity(PhoneGuardAccessibilityStatus.settingsIntent())
         },
@@ -200,6 +207,9 @@ fun MainScreen(
           alarmScheduler.exactAlarmPermissionIntent()?.let { intent ->
             context.startActivity(intent)
           }
+        },
+        onRequestSilentModeAccess = {
+          context.startActivity(SilentModeAccessStatus.settingsIntent())
         },
         onRegeneratePairingCode = {
           registrationResult = null
@@ -353,9 +363,11 @@ private fun ChildDashboard(
   accessibilityEnabled: Boolean,
   exactAlarmAccess: Boolean,
   batteryOptimizationIgnored: Boolean,
+  silentModeAccessGranted: Boolean,
   onEnableAccessibility: () -> Unit,
   onOpenBatterySettings: () -> Unit,
   onRequestExactAlarmAccess: () -> Unit,
+  onRequestSilentModeAccess: () -> Unit,
   onRegeneratePairingCode: () -> Unit,
   onRetryRegistration: () -> Unit,
   onResetPairing: suspend (String) -> ChildPairingResetResult,
@@ -449,6 +461,16 @@ private fun ChildDashboard(
         )
 
         Text(
+          text =
+            if (silentModeAccessGranted) {
+              "✓ Silent mode control is enabled"
+            } else {
+              "△ Silent mode control is not allowed"
+            },
+          style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
           text = "PhoneGuard uses Accessibility only to keep the parental lock screen above other apps while protection is active.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -478,6 +500,15 @@ private fun ChildDashboard(
             modifier = Modifier.fillMaxWidth(),
           ) {
             Text("ALLOW EXACT TIMING")
+          }
+        }
+
+        if (!silentModeAccessGranted) {
+          OutlinedButton(
+            onClick = onRequestSilentModeAccess,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("ALLOW SILENT MODE")
           }
         }
       }
@@ -780,9 +811,11 @@ private fun ChildDashboardPreview() {
       accessibilityEnabled = false,
       exactAlarmAccess = false,
       batteryOptimizationIgnored = false,
+      silentModeAccessGranted = false,
       onEnableAccessibility = {},
       onOpenBatterySettings = {},
       onRequestExactAlarmAccess = {},
+      onRequestSilentModeAccess = {},
       onRegeneratePairingCode = {},
       onRetryRegistration = {},
       onResetPairing = { ChildPairingResetResult.Success("preview-expiry") },
