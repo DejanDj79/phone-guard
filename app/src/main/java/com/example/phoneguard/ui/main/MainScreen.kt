@@ -265,46 +265,6 @@ private fun ParentPinSetupScreen(
   var pin by remember { mutableStateOf("") }
   var confirmation by remember { mutableStateOf("") }
   var errorMessage by remember { mutableStateOf<String?>(null) }
-  val context = LocalContext.current
-  val packageManager = context.packageManager
-  val audioManager =
-    remember(context) { context.getSystemService(AudioManager::class.java) }
-  val cameraManager =
-    remember(context) { context.getSystemService(CameraManager::class.java) }
-  val torchCameraId =
-    remember(cameraManager) {
-      runCatching {
-        cameraManager.cameraIdList.firstOrNull { cameraId ->
-          cameraManager
-            .getCameraCharacteristics(cameraId)
-            .get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
-        }
-      }.getOrNull()
-    }
-  var flashlightEnabled by remember { mutableStateOf(false) }
-  var systemMessage by remember {
-    mutableStateOf(ringerModeLabel(audioManager.ringerMode))
-  }
-
-  val allowedApps =
-    remember(allowedPackages) {
-      allowedPackages
-        .mapNotNull { packageName ->
-          val launchIntent =
-            packageManager.getLaunchIntentForPackage(packageName)
-              ?: return@mapNotNull null
-          val label =
-            runCatching {
-              val applicationInfo =
-                packageManager.getApplicationInfo(packageName, 0)
-              packageManager.getApplicationLabel(applicationInfo).toString()
-            }.getOrDefault(packageName)
-
-          Triple(packageName, label, launchIntent)
-        }
-        .sortedBy { it.second.lowercase() }
-    }
-
   Surface(modifier = modifier.fillMaxSize()) {
     Column(
       modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -713,6 +673,46 @@ private fun LockScreen(
   var pin by remember { mutableStateOf("") }
   var showPinEntry by remember { mutableStateOf(false) }
   var errorMessage by remember { mutableStateOf<String?>(null) }
+
+  val context = LocalContext.current
+  val packageManager = context.packageManager
+  val audioManager =
+    remember(context) { context.getSystemService(AudioManager::class.java) }
+  val cameraManager =
+    remember(context) { context.getSystemService(CameraManager::class.java) }
+  val torchCameraId =
+    remember(cameraManager) {
+      runCatching {
+        cameraManager.cameraIdList.firstOrNull { cameraId ->
+          cameraManager
+            .getCameraCharacteristics(cameraId)
+            .get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        }
+      }.getOrNull()
+    }
+  var flashlightEnabled by remember { mutableStateOf(false) }
+  var systemMessage by remember {
+    mutableStateOf(ringerModeLabel(audioManager.ringerMode))
+  }
+
+  val allowedApps =
+    remember(allowedPackages) {
+      allowedPackages
+        .mapNotNull { packageName ->
+          val launchIntent =
+            packageManager.getLaunchIntentForPackage(packageName)
+              ?: return@mapNotNull null
+          val label =
+            runCatching {
+              val applicationInfo =
+                packageManager.getApplicationInfo(packageName, 0)
+              packageManager.getApplicationLabel(applicationInfo).toString()
+            }.getOrDefault(packageName)
+
+          Triple(packageName, label, launchIntent)
+        }
+        .sortedBy { it.second.lowercase() }
+    }
 
   Surface(modifier = modifier.fillMaxSize()) {
     Column(
