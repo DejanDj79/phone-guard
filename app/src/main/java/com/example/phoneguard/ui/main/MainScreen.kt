@@ -89,6 +89,8 @@ fun MainScreen(
   var registrationRetryKey by remember { mutableStateOf(0) }
 
   DisposableEffect(lifecycleOwner, context) {
+    var firstResume = true
+
     val observer =
       LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_RESUME) {
@@ -96,6 +98,12 @@ fun MainScreen(
           exactAlarmAccess = alarmScheduler.hasExactAlarmAccess()
           batteryOptimizationIgnored =
             BackgroundProtectionStatus.isBatteryOptimizationIgnored(context)
+
+          if (firstResume) {
+            firstResume = false
+          } else {
+            registrationRetryKey += 1
+          }
 
           Thread {
             AppInventorySyncer(context.applicationContext).sync()
