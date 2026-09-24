@@ -189,8 +189,8 @@ class ChildBackendClient {
 
         ChildPairingResetResult.Failure(
           when (error) {
-            "device_auth_failed" -> "Child uređaj nije autorizovan."
-            "pairing_code_collision" -> "Kod je već zauzet. Pokušaj ponovo."
+            "device_auth_failed" -> "Child device is not authorized."
+            "pairing_code_collision" -> "Pairing code is already in use. Please try again."
             else -> error
           },
         )
