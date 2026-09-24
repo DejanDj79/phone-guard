@@ -464,7 +464,7 @@ fun ParentDashboardScreen(
           enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("LOCK NOW")
+          Text("ZAKLJUČAJ SADA")
         }
 
         OutlinedButton(
@@ -472,7 +472,7 @@ fun ParentDashboardScreen(
           enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("UNLOCK")
+          Text("OTKLJUČAJ")
         }
 
         Text(
@@ -486,7 +486,7 @@ fun ParentDashboardScreen(
           enabled = !commandInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("ADD TIME")
+          Text("DODAJ VREME")
         }
 
         if (!device.isOnline && commandProgressMessage == null && commandNotice == null) {
@@ -740,7 +740,7 @@ private fun PairDeviceScreen(
             .take(6)
         errorMessage = null
       },
-      label = { Text("Pairing code") },
+      label = { Text("Kod za uparivanje") },
       singleLine = true,
       enabled = !pairingInProgress,
       keyboardOptions =
@@ -784,9 +784,9 @@ private fun PairDeviceScreen(
     ) {
       Text(
         if (pairingInProgress) {
-          "PAIRING…"
+          "UPARUJEM…"
         } else {
-          "PAIR DEVICE"
+          "UPARI UREĐAJ"
         },
       )
     }
