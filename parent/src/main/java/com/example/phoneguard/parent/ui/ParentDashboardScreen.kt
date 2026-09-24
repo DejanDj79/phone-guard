@@ -59,9 +59,13 @@ import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.PairingGateway
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.data.HttpScheduleGateway
+import com.example.phoneguard.parent.data.HttpTimeRequestGateway
 import com.example.phoneguard.parent.data.RenameDeviceResult
 import com.example.phoneguard.parent.data.ScheduleFetchResult
 import com.example.phoneguard.parent.data.ScheduleSaveResult
+import com.example.phoneguard.parent.data.PendingTimeRequest
+import com.example.phoneguard.parent.data.TimeRequestFetchResult
+import com.example.phoneguard.parent.data.TimeRequestResponseResult
 import com.example.phoneguard.parent.data.UnpairDeviceResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -85,6 +89,7 @@ fun ParentDashboardScreen(
   val scheduleGateway = remember { HttpScheduleGateway() }
   val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
   val deviceManagementGateway = remember { HttpDeviceManagementGateway() }
+  val timeRequestGateway = remember { HttpTimeRequestGateway() }
   val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
@@ -124,6 +129,12 @@ fun ParentDashboardScreen(
   var deviceRenaming by remember { mutableStateOf(false) }
   var deviceUnpairing by remember { mutableStateOf(false) }
   var deviceManagementError by remember { mutableStateOf<String?>(null) }
+  var pendingTimeRequest by remember {
+    mutableStateOf<PendingTimeRequest?>(null)
+  }
+  var timeRequestResponding by remember { mutableStateOf(false) }
+  var timeRequestError by remember { mutableStateOf<String?>(null) }
+  var timeRequestNotice by remember { mutableStateOf<String?>(null) }
 
   fun removeInvalidPairing(
     deviceId: String,
@@ -143,6 +154,9 @@ fun ParentDashboardScreen(
     showBonusTimePicker = false
     showDeviceManagement = false
     deviceManagementError = null
+    pendingTimeRequest = null
+    timeRequestError = null
+    timeRequestNotice = null
     showDevices = false
     selectedTab = 0
 
@@ -239,6 +253,9 @@ fun ParentDashboardScreen(
           showBonusTimePicker = false
           showDeviceManagement = false
           deviceManagementError = null
+          pendingTimeRequest = null
+          timeRequestError = null
+          timeRequestNotice = null
           showDevices = false
           selectedTab = 0
         }
@@ -515,6 +532,98 @@ fun ParentDashboardScreen(
 
         delay(15_000)
       }
+    }
+  }
+
+  LaunchedEffect(device.deviceId, "time-request-poll") {
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (!controlToken.isNullOrBlank()) {
+      while (true) {
+        when (
+          val result =
+            withContext(Dispatchers.IO) {
+              timeRequestGateway.fetch(
+                deviceId = device.deviceId,
+                controlToken = controlToken,
+              )
+            }
+        ) {
+          is TimeRequestFetchResult.Success -> {
+            pendingTimeRequest = result.request
+            if (result.request == null) {
+              timeRequestError = null
+            }
+          }
+
+          is TimeRequestFetchResult.Error -> {
+            if (result.pairingInvalid) {
+              removeInvalidPairing(
+                deviceId = device.deviceId,
+                displayName = device.displayName,
+              )
+              return@LaunchedEffect
+            } else {
+              timeRequestError = result.message
+            }
+          }
+        }
+
+        delay(10_000)
+      }
+    }
+  }
+
+  fun respondToTimeRequest(
+    request: PendingTimeRequest,
+    approve: Boolean,
+  ) {
+    if (timeRequestResponding) return
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      timeRequestError = "Control token is missing. Re-pairing is required."
+      return
+    }
+
+    scope.launch {
+      timeRequestResponding = true
+      timeRequestError = null
+      timeRequestNotice = null
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            timeRequestGateway.respond(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+              requestId = request.requestId,
+              approve = approve,
+            )
+          }
+      ) {
+        is TimeRequestResponseResult.Success -> {
+          pendingTimeRequest = null
+          timeRequestNotice =
+            if (result.approved) {
+              "Approved " + result.requestedMinutes + " minutes."
+            } else {
+              "Time request denied."
+            }
+        }
+
+        is TimeRequestResponseResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+          } else {
+            timeRequestError = result.message
+          }
+        }
+      }
+
+      timeRequestResponding = false
     }
   }
 
@@ -888,6 +997,68 @@ fun ParentDashboardScreen(
     }
 
     if (selectedTab == 0) {
+      pendingTimeRequest?.let { request ->
+        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+          Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+          ) {
+            Text(
+              text = "More time requested",
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.SemiBold,
+            )
+
+            Text(
+              text =
+                request.displayName +
+                  " is asking for " +
+                  request.requestedMinutes +
+                  " more minutes.",
+              style = MaterialTheme.typography.bodyLarge,
+            )
+
+            Button(
+              onClick = { respondToTimeRequest(request, approve = true) },
+              enabled = !timeRequestResponding,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text(
+                if (timeRequestResponding) {
+                  "RESPONDING…"
+                } else {
+                  "APPROVE " + request.requestedMinutes + " MIN"
+                },
+              )
+            }
+
+            OutlinedButton(
+              onClick = { respondToTimeRequest(request, approve = false) },
+              enabled = !timeRequestResponding,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("DENY")
+            }
+          }
+        }
+      }
+
+      timeRequestNotice?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+
+      timeRequestError?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.error,
+        )
+      }
+
       ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
           modifier = Modifier.padding(20.dp),
