@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.os.Handler
@@ -279,6 +280,65 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         }
       }
 
+    val audioManager = getSystemService(AudioManager::class.java)
+
+    val soundTitle =
+      TextView(this).apply {
+        text = "Sound"
+        textSize = 16f
+        gravity = Gravity.CENTER
+        setTextColor(Color.WHITE)
+        setPadding(0, dp(16), 0, dp(8))
+      }
+
+    val soundStatus =
+      TextView(this).apply {
+        text = ringerModeLabel(audioManager.ringerMode)
+        textSize = 14f
+        gravity = Gravity.CENTER
+        setTextColor(Color.LTGRAY)
+        setPadding(0, 0, 0, dp(8))
+      }
+
+    val soundControls =
+      LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
+        layoutParams =
+          LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+          )
+      }
+
+    listOf(
+      "SOUND" to AudioManager.RINGER_MODE_NORMAL,
+      "VIBRATE" to AudioManager.RINGER_MODE_VIBRATE,
+      "SILENT" to AudioManager.RINGER_MODE_SILENT,
+    ).forEach { (label, mode) ->
+      soundControls.addView(
+        Button(this).apply {
+          text = label
+          layoutParams =
+            LinearLayout.LayoutParams(
+              0,
+              LinearLayout.LayoutParams.WRAP_CONTENT,
+              1f,
+            ).apply {
+              marginStart = dp(3)
+              marginEnd = dp(3)
+            }
+          setOnClickListener {
+            applyRingerMode(
+              audioManager = audioManager,
+              mode = mode,
+              statusView = soundStatus,
+            )
+          }
+        },
+      )
+    }
+
     val disclosure =
       TextView(this).apply {
         text = "Unlocking requires the parent PIN."
@@ -343,6 +403,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     content.addView(subtitle)
     allowedTitle?.let(content::addView)
     allowedButtons.forEach(content::addView)
+    content.addView(soundTitle)
+    content.addView(soundStatus)
+    content.addView(soundControls)
     content.addView(disclosure)
     content.addView(pinInput)
     content.addView(error)
@@ -369,6 +432,36 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       Log.e(TAG, "Failed to show lock overlay", error)
     }
   }
+
+  private fun applyRingerMode(
+    audioManager: AudioManager,
+    mode: Int,
+    statusView: TextView,
+  ) {
+    runCatching {
+      audioManager.ringerMode = mode
+    }.onSuccess {
+      if (audioManager.ringerMode == mode) {
+        statusView.text = ringerModeLabel(mode)
+        statusView.setTextColor(Color.LTGRAY)
+      } else {
+        statusView.text = "Android did not allow this sound change."
+        statusView.setTextColor(Color.rgb(255, 170, 100))
+      }
+    }.onFailure { error ->
+      Log.w(TAG, "Ringer mode change blocked", error)
+      statusView.text = "Android did not allow this sound change."
+      statusView.setTextColor(Color.rgb(255, 170, 100))
+    }
+  }
+
+  private fun ringerModeLabel(mode: Int): String =
+    when (mode) {
+      AudioManager.RINGER_MODE_NORMAL -> "Current mode: Sound"
+      AudioManager.RINGER_MODE_VIBRATE -> "Current mode: Vibrate"
+      AudioManager.RINGER_MODE_SILENT -> "Current mode: Silent"
+      else -> "Current sound mode"
+    }
 
   private fun hideOverlay() {
     val view = overlayView ?: return
