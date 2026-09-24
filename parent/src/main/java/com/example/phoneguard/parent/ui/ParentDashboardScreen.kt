@@ -1399,6 +1399,7 @@ fun ParentDashboardScreen(
       }
 
       val dailyScreenTime = device.dailyScreenTime
+      val dailyLimitMinutes = dailyScreenTime.limitMinutes
 
       ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -1411,7 +1412,7 @@ fun ParentDashboardScreen(
             fontWeight = FontWeight.SemiBold,
           )
 
-          if (dailyScreenTime.limitMinutes == null) {
+          if (dailyLimitMinutes == null) {
             Text(
               text = "No daily limit is set.",
               style = MaterialTheme.typography.bodyLarge,
@@ -1420,7 +1421,7 @@ fun ParentDashboardScreen(
             Text(
               text =
                 "Daily limit: " +
-                  formatDurationMinutes(dailyScreenTime.limitMinutes),
+                  formatDurationMinutes(dailyLimitMinutes),
               style = MaterialTheme.typography.bodyLarge,
             )
           }
@@ -1461,7 +1462,7 @@ fun ParentDashboardScreen(
           Button(
             onClick = {
               selectedDailyLimitMinutes =
-                dailyScreenTime.limitMinutes ?: 120
+                dailyLimitMinutes ?: 120
               dailyLimitError = null
               dailyLimitNotice = null
               showDailyLimitPicker = true
@@ -1472,7 +1473,7 @@ fun ParentDashboardScreen(
             Text(
               if (dailyLimitSaving) {
                 "SAVING…"
-              } else if (dailyScreenTime.limitMinutes == null) {
+              } else if (dailyLimitMinutes == null) {
                 "SET DAILY LIMIT"
               } else {
                 "CHANGE DAILY LIMIT"
@@ -1480,7 +1481,7 @@ fun ParentDashboardScreen(
             )
           }
 
-          if (dailyScreenTime.limitMinutes != null) {
+          if (dailyLimitMinutes != null) {
             OutlinedButton(
               onClick = { saveDailyLimit(null) },
               enabled = !dailyLimitSaving,
