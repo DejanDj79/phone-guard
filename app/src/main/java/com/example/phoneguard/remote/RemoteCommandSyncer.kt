@@ -14,6 +14,7 @@ class RemoteCommandSyncer(context: Context) {
   fun sync() {
     RemoteScheduleSyncer(appContext).sync()
     RemoteAllowedAppsSyncer(appContext).sync()
+    RemoteDailyLimitSyncer(appContext).sync()
 
     val identity = settingsStore.getOrCreatePairingIdentity()
     val deviceSecret = settingsStore.getOrCreateDeviceSecret()
@@ -45,6 +46,7 @@ class RemoteCommandSyncer(context: Context) {
 
               "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
               "SYNC_ALLOWED_APPS" -> RemoteCommand.syncAllowedApps()
+              "SYNC_DAILY_LIMIT" -> RemoteCommand.syncDailyLimit()
 
               else -> {
                 Log.e(TAG, "Unknown remote command: " + pending.command)
