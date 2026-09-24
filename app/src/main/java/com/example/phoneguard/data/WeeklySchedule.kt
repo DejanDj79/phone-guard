@@ -6,13 +6,13 @@ enum class GuardDay(
   val calendarDay: Int,
   val displayName: String,
 ) {
-  MONDAY(Calendar.MONDAY, "Ponedeljak"),
-  TUESDAY(Calendar.TUESDAY, "Utorak"),
-  WEDNESDAY(Calendar.WEDNESDAY, "Sreda"),
-  THURSDAY(Calendar.THURSDAY, "Četvrtak"),
-  FRIDAY(Calendar.FRIDAY, "Petak"),
-  SATURDAY(Calendar.SATURDAY, "Subota"),
-  SUNDAY(Calendar.SUNDAY, "Nedelja");
+  MONDAY(Calendar.MONDAY, "Monday"),
+  TUESDAY(Calendar.TUESDAY, "Tuesday"),
+  WEDNESDAY(Calendar.WEDNESDAY, "Wednesday"),
+  THURSDAY(Calendar.THURSDAY, "Thursday"),
+  FRIDAY(Calendar.FRIDAY, "Friday"),
+  SATURDAY(Calendar.SATURDAY, "Saturday"),
+  SUNDAY(Calendar.SUNDAY, "Sunday");
 
   companion object {
     fun fromCalendarDay(calendarDay: Int): GuardDay =
