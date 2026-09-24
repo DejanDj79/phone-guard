@@ -1842,6 +1842,30 @@ private fun PairDeviceScreen(
   }
 }
 
+private fun formatDurationMinutes(minutes: Int): String {
+  val safeMinutes = minutes.coerceAtLeast(0)
+  val hours = safeMinutes / 60
+  val remainingMinutes = safeMinutes % 60
+
+  return when {
+    hours == 0 -> safeMinutes.toString() + " min"
+    remainingMinutes == 0 -> hours.toString() + " h"
+    else -> hours.toString() + " h " + remainingMinutes + " min"
+  }
+}
+
+private fun formatUsageSeconds(seconds: Int): String {
+  val safeSeconds = seconds.coerceAtLeast(0)
+  val totalMinutes = safeSeconds / 60
+  val remainingSeconds = safeSeconds % 60
+
+  return if (totalMinutes == 0) {
+    remainingSeconds.toString() + " sec"
+  } else {
+    formatDurationMinutes(totalMinutes)
+  }
+}
+
 private fun formatLastSeen(value: String?): String {
   if (value.isNullOrBlank()) return "Last seen: unknown"
 
@@ -1884,7 +1908,8 @@ private fun commandMatchesDeviceState(
     com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
       device.state == DeviceAccessState.TEMPORARILY_ALLOWED
     com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE,
-    com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
+    com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS,
+    com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
       false
   }
 
@@ -1906,6 +1931,8 @@ private fun commandSendingLabel(
         "Syncing schedule…"
       com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
         "Syncing allowed apps…"
+      com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
+        "Syncing daily limit…"
     }
   }
 
@@ -1921,6 +1948,8 @@ private fun commandAppliedLabel(command: RemoteCommand): String =
       "Schedule applied ✓"
     com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
       "Allowed apps updated ✓"
+    com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
+      "Daily limit updated ✓"
   }
 
 private fun commandQueuedLabel(
@@ -1939,6 +1968,8 @@ private fun commandQueuedLabel(
         "The schedule will be applied when the Child reconnects."
       com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
         "Allowed apps will be applied when the Child reconnects."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
+        "Daily limit will be applied when the Child reconnects."
     }
   } else {
     when (command.type) {
@@ -1952,6 +1983,8 @@ private fun commandQueuedLabel(
         "Schedule sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS ->
         "Allowed apps sent. Waiting for the Child device to confirm."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
+        "Daily limit sent. Waiting for the Child device to confirm."
     }
   }
 
