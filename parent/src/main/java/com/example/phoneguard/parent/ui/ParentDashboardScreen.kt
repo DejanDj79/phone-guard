@@ -180,7 +180,7 @@ fun ParentDashboardScreen(
       errorMessage = deviceManagementError,
       onRename = { displayName ->
         if (!deviceRenaming && !deviceUnpairing) {
-          val controlToken = settingsStore.controlToken()
+          val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
             deviceManagementError =
               "Control token is missing. Re-pairing is required."
@@ -207,6 +207,7 @@ fun ParentDashboardScreen(
                     device = updatedDevice,
                     controlToken = controlToken,
                   )
+                  pairedDevices = settingsStore.loadPairedDevices()
                   showDeviceManagement = false
                   commandNotice = "Device renamed to " + result.displayName + "."
                 }
@@ -223,7 +224,7 @@ fun ParentDashboardScreen(
       },
       onUnpair = {
         if (!deviceRenaming && !deviceUnpairing) {
-          val controlToken = settingsStore.controlToken()
+          val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
             deviceManagementError =
               "Control token is missing. Re-pairing is required."
@@ -279,7 +280,7 @@ fun ParentDashboardScreen(
       saveError = allowedAppsError,
       onSave = { allowedPackages ->
         if (!allowedAppsSaving) {
-          val controlToken = settingsStore.controlToken()
+          val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
             allowedAppsError =
               "Control token is missing. Re-pairing is required."
@@ -337,7 +338,7 @@ fun ParentDashboardScreen(
       saveError = scheduleError,
       onSave = { updatedSchedule ->
         if (!scheduleSaving) {
-          val controlToken = settingsStore.controlToken()
+          val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
             scheduleError =
               "Control token is missing. Re-pairing is required."
@@ -388,7 +389,7 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId) {
-    val controlToken = settingsStore.controlToken()
+    val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
       commandError = "Control token is missing. Re-pairing is required."
     } else {
@@ -408,6 +409,7 @@ fun ParentDashboardScreen(
               device = statusResult.device,
               controlToken = controlToken,
             )
+            pairedDevices = settingsStore.loadPairedDevices()
 
             pendingCommandFeedback?.let { pendingCommand ->
               if (commandMatchesDeviceState(pendingCommand, statusResult.device)) {
@@ -430,7 +432,7 @@ fun ParentDashboardScreen(
   fun sendCommand(command: RemoteCommand) {
     if (commandInProgress) return
 
-    val controlToken = settingsStore.controlToken()
+    val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
       commandError = "Control token is missing. Re-pairing is required."
       return
@@ -487,6 +489,7 @@ fun ParentDashboardScreen(
                     device = updatedDevice,
                     controlToken = controlToken,
                   )
+                  pairedDevices = settingsStore.loadPairedDevices()
                 }
               }
 
@@ -564,25 +567,72 @@ fun ParentDashboardScreen(
         )
 
         pairedDevices.forEach { paired ->
-          OutlinedButton(
-            onClick = {
-              if (settingsStore.selectDevice(paired.deviceId)) {
-                pairedDevice = settingsStore.loadPairedDevice()
-                commandNotice = null
-                commandError = null
-                pendingCommandFeedback = null
-              }
-            },
-            enabled = paired.deviceId != device.deviceId,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
-            Text(
-              if (paired.deviceId == device.deviceId) {
-                "✓ " + paired.displayName
+          ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            Column(
+              modifier = Modifier.padding(14.dp),
+              verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+              Text(
+                text =
+                  if (paired.deviceId == device.deviceId) {
+                    "✓ " + paired.displayName
+                  } else {
+                    paired.displayName
+                  },
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+              )
+
+              Text(
+                text =
+                  (if (paired.isOnline) "● Online" else "○ Offline") +
+                    " · " +
+                    deviceStateLabel(paired).removePrefix("● ").removePrefix("○ "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+
+              if (paired.deviceId != device.deviceId) {
+                OutlinedButton(
+                  onClick = {
+                    if (settingsStore.selectDevice(paired.deviceId)) {
+                      pairedDevice = settingsStore.loadPairedDevice()
+                      commandNotice = null
+                      commandProgressMessage = null
+                      commandError = null
+                      pendingCommandFeedback = null
+                      scheduleEditorSchedule = null
+                      scheduleError = null
+                      scheduleNotice = null
+                      allowedAppsEditorSnapshot = null
+                      allowedAppsError = null
+                      allowedAppsNotice = null
+                      showBonusTimePicker = false
+                      showDeviceManagement = false
+                      deviceManagementError = null
+                    }
+                  },
+                  enabled =
+                    !commandInProgress &&
+                      !refreshInProgress &&
+                      !scheduleLoading &&
+                      !scheduleSaving &&
+                      !allowedAppsLoading &&
+                      !allowedAppsSaving &&
+                      !deviceRenaming &&
+                      !deviceUnpairing,
+                  modifier = Modifier.fillMaxWidth(),
+                ) {
+                  Text("SELECT DEVICE")
+                }
               } else {
-                paired.displayName
-              },
-            )
+                Text(
+                  text = "Currently selected",
+                  style = MaterialTheme.typography.labelMedium,
+                  color = MaterialTheme.colorScheme.primary,
+                )
+              }
+            }
           }
         }
 
@@ -638,7 +688,7 @@ fun ParentDashboardScreen(
         OutlinedButton(
           onClick = {
             if (!refreshInProgress) {
-              val controlToken = settingsStore.controlToken()
+              val controlToken = settingsStore.controlToken(device.deviceId)
               if (controlToken.isNullOrBlank()) {
                 commandError =
                   "Control token is missing. Re-pairing is required."
@@ -662,6 +712,7 @@ fun ParentDashboardScreen(
                         device = statusResult.device,
                         controlToken = controlToken,
                       )
+                      pairedDevices = settingsStore.loadPairedDevices()
 
                       pendingCommandFeedback?.let { pendingCommand ->
                         if (
@@ -878,7 +929,7 @@ fun ParentDashboardScreen(
         OutlinedButton(
           onClick = {
             if (!allowedAppsLoading) {
-              val controlToken = settingsStore.controlToken()
+              val controlToken = settingsStore.controlToken(device.deviceId)
               if (controlToken.isNullOrBlank()) {
                 commandError =
                   "Control token is missing. Re-pairing is required."
@@ -957,7 +1008,7 @@ fun ParentDashboardScreen(
         OutlinedButton(
           onClick = {
             if (!scheduleLoading) {
-              val controlToken = settingsStore.controlToken()
+              val controlToken = settingsStore.controlToken(device.deviceId)
               if (controlToken.isNullOrBlank()) {
                 commandError =
                   "Control token is missing. Re-pairing is required."
