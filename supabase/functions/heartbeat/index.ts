@@ -319,23 +319,23 @@ export default {
     if (requestedAlertTypes.length > 0) {
       const cooldownCutoff =
         new Date(Date.now() - PROTECTION_ALERT_COOLDOWN_MS).toISOString();
-      const { data: recentEvents, error: recentEventsError } =
+      const { data: recentAlerts, error: recentAlertsError } =
         await ctx.supabaseAdmin
-          .from("protection_events")
-          .select("event_type")
+          .from("protection_alert_state")
+          .select("alert_type, last_sent_at")
           .eq("device_id", deviceId)
-          .in("event_type", requestedAlertTypes)
-          .gte("created_at", cooldownCutoff);
+          .in("alert_type", requestedAlertTypes)
+          .gte("last_sent_at", cooldownCutoff);
 
-      if (recentEventsError) {
+      if (recentAlertsError) {
         console.error(
           "Protection alert cooldown query failed for " + deviceId,
-          recentEventsError,
+          recentAlertsError,
         );
       } else {
-        for (const event of recentEvents ?? []) {
-          if (typeof event.event_type === "string") {
-            recentAlertTypes.add(event.event_type);
+        for (const alertState of recentAlerts ?? []) {
+          if (typeof alertState.alert_type === "string") {
+            recentAlertTypes.add(alertState.alert_type);
           }
         }
       }
@@ -440,6 +440,25 @@ export default {
             ttl: "3600s",
           });
           protectionAlerts.push(transition.alert);
+
+          const { error: alertStateError } = await ctx.supabaseAdmin
+            .from("protection_alert_state")
+            .upsert(
+              {
+                device_id: deviceId,
+                alert_type: transition.alert,
+                last_sent_at: now,
+              },
+              { onConflict: "device_id,alert_type" },
+            );
+
+          if (alertStateError) {
+            console.error(
+              "Protection alert delivery state update failed for " +
+                transition.alert,
+              alertStateError,
+            );
+          }
         } catch (error) {
           console.error(
             "Parent protection alert push failed for " +
