@@ -1039,66 +1039,76 @@ fun ParentDashboardScreen(
           }
   
           val protection = device.protectionStatus
-          val protectionComplete = protection.criticalProtectionComplete
-  
+          val protectionValues =
+            listOf(
+              protection.accessibilityEnabled,
+              protection.preciseTimingEnabled,
+              protection.batteryUnrestricted,
+            )
+          val protectionKnown = protectionValues.all { it != null }
+          val protectionComplete =
+            protectionKnown && protectionValues.all { it == true }
+
+          Spacer(modifier = Modifier.height(4.dp))
+
+          Text(
+            text = "Protection status",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+
           Text(
             text =
               when {
-                device.isOnline && protectionComplete == true ->
-                  "✓ Device protection is active"
-                device.isOnline && protectionComplete == false ->
-                  "⚠ Device protection is incomplete"
-                device.isOnline ->
-                  "Checking device protection…"
-                protectionComplete == false ->
-                  "⚠ Last known state: protection is incomplete"
-                protectionComplete == true ->
-                  "Last known state: protection was active"
+                !device.isOnline ->
+                  "○ Offline · showing last known protection state"
+                protectionComplete ->
+                  "✓ All protection checks are active"
+                protectionKnown ->
+                  "⚠ Protection needs attention"
                 else ->
-                  "Protection status is unknown"
+                  "Checking protection status…"
               },
             style = MaterialTheme.typography.bodyMedium,
             color =
-              if (protectionComplete == false) {
+              if (protectionKnown && !protectionComplete) {
                 MaterialTheme.colorScheme.error
               } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
               },
           )
-  
-          if (protection.accessibilityEnabled == false) {
-            Text(
-              text =
-                if (device.isOnline) {
-                  "Accessibility protection is disabled."
-                } else {
-                  "Last known state: Accessibility protection was disabled."
-                },
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-  
-          if (protection.preciseTimingEnabled == false) {
-            Text(
-              text =
-                if (device.isOnline) {
-                  "Exact lock timing is not allowed."
-                } else {
-                  "Last known state: exact lock timing was not allowed."
-                },
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-  
-          if (protection.batteryUnrestricted == false) {
-            Text(
-              text = "Android may restrict PhoneGuard background activity.",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
+
+          ProtectionStatusLine(
+            label = "Accessibility",
+            enabled = protection.accessibilityEnabled,
+            enabledText = "Enabled",
+            disabledText = "Disabled",
+          )
+
+          ProtectionStatusLine(
+            label = "Precise timing",
+            enabled = protection.preciseTimingEnabled,
+            enabledText = "Allowed",
+            disabledText = "Not allowed",
+          )
+
+          ProtectionStatusLine(
+            label = "Background protection",
+            enabled = protection.batteryUnrestricted,
+            enabledText = "Unrestricted",
+            disabledText = "Battery restricted",
+          )
+
+          Text(
+            text =
+              if (device.isOnline) {
+                "Heartbeat: online now"
+              } else {
+                formatLastSeen(device.lastSeenAt)
+              },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
         }
       }
     }
@@ -1841,6 +1851,32 @@ private fun PairDeviceScreen(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   }
+}
+
+@Composable
+private fun ProtectionStatusLine(
+  label: String,
+  enabled: Boolean?,
+  enabledText: String,
+  disabledText: String,
+) {
+  val statusText =
+    when (enabled) {
+      true -> "✓ " + enabledText
+      false -> "⚠ " + disabledText
+      null -> "… Unknown"
+    }
+
+  Text(
+    text = label + ": " + statusText,
+    style = MaterialTheme.typography.bodyMedium,
+    color =
+      if (enabled == false) {
+        MaterialTheme.colorScheme.error
+      } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+      },
+  )
 }
 
 private fun formatDurationMinutes(minutes: Int): String {
