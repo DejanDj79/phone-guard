@@ -119,12 +119,23 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       rawEventPackage == "com.miui.securitycenter" ||
       rawEventPackage == "com.android.systemui"
     ) {
+      val activeWindowSnapshot =
+        if (
+          rawEventPackage == "com.android.systemui" &&
+          event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+        ) {
+          activeWindowText().take(MAX_DIAGNOSTIC_TEXT_LENGTH)
+        } else {
+          ""
+        }
+
       Log.i(
         TAG,
         "MIUI event: type=" + AccessibilityEvent.eventTypeToString(event.eventType) +
           ", package=" + rawEventPackage +
           ", class=" + event.className?.toString().orEmpty() +
-          ", text=" + event.text.joinToString(" | "),
+          ", text=" + event.text.joinToString(" | ") +
+          ", activeWindow=" + activeWindowSnapshot,
       )
     }
 
@@ -921,6 +932,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
+    const val MAX_DIAGNOSTIC_TEXT_LENGTH = 800
     const val PROTECTION_EVENT_APP_INFO_OPENED = "APP_INFO_OPENED"
     const val PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED = "UNINSTALL_SCREEN_OPENED"
   }
