@@ -35,6 +35,19 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
       "FCM message received: keys=" + message.data.keys.sorted().joinToString(","),
     )
 
+    val settingsStore = ChildSettingsStore(applicationContext)
+    if (message.data[KEY_TYPE]?.uppercase() == TYPE_TIME_REQUEST_RESULT) {
+      when (message.data[KEY_DECISION]?.uppercase()) {
+        "DENIED" ->
+          settingsStore.setTimeRequestFeedback(
+            "Your request for more time was denied by Parent.",
+          )
+        "APPROVED" ->
+          settingsStore.setTimeRequestFeedback(null)
+      }
+      return
+    }
+
     val commandId = message.data[KEY_COMMAND_ID]?.trim().orEmpty()
 
     val command =
@@ -78,5 +91,8 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
     const val KEY_COMMAND = "command"
     const val KEY_COMMAND_ID = "command_id"
     const val KEY_BONUS_MINUTES = "bonus_minutes"
+    const val KEY_TYPE = "type"
+    const val KEY_DECISION = "decision"
+    const val TYPE_TIME_REQUEST_RESULT = "TIME_REQUEST_RESULT"
   }
 }
