@@ -32,6 +32,7 @@ import com.example.phoneguard.remote.ChildHeartbeatSender
 import com.example.phoneguard.remote.ChildTimeRequestResult
 import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
+import com.example.phoneguard.usage.DailyUsageTracker
 
 class PhoneGuardAccessibilityService : AccessibilityService() {
   private lateinit var settingsStore: ChildSettingsStore
@@ -39,12 +40,16 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private lateinit var windowManager: WindowManager
   private lateinit var connectivityManager: ConnectivityManager
   private lateinit var heartbeatSender: ChildHeartbeatSender
+  private lateinit var dailyUsageTracker: DailyUsageTracker
 
   private val mainHandler = Handler(Looper.getMainLooper())
 
   private val heartbeatRunnable =
     object : Runnable {
       override fun run() {
+        if (::dailyUsageTracker.isInitialized) {
+          dailyUsageTracker.flush()
+        }
         sendHeartbeat()
         mainHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS)
       }
@@ -72,6 +77,10 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     windowManager = getSystemService(WindowManager::class.java)
     connectivityManager = getSystemService(ConnectivityManager::class.java)
     heartbeatSender = ChildHeartbeatSender(applicationContext)
+    dailyUsageTracker =
+      DailyUsageTracker(applicationContext) {
+        refreshOverlayOnMainThread()
+      }
 
     Log.i(TAG, "Accessibility service connected")
 
@@ -85,6 +94,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         refreshOverlayOnMainThread()
       }
 
+    dailyUsageTracker.start()
     alarmScheduler.syncCurrentStateAndScheduleNext()
     refreshOverlayOnMainThread()
 
@@ -115,6 +125,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   override fun onInterrupt() = Unit
 
   override fun onUnbind(intent: Intent?): Boolean {
+    if (::dailyUsageTracker.isInitialized) {
+      dailyUsageTracker.flush()
+    }
     if (::heartbeatSender.isInitialized) {
       Thread {
         heartbeatSender.send()
@@ -125,6 +138,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   override fun onDestroy() {
     mainHandler.removeCallbacks(heartbeatRunnable)
+    if (::dailyUsageTracker.isInitialized) {
+      dailyUsageTracker.stop()
+    }
     lockStateListener?.let(settingsStore::unregisterLockStateListener)
     if (::connectivityManager.isInitialized) {
       runCatching {
@@ -234,9 +250,16 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     val subtitle =
       TextView(this).apply {
         text =
-          settingsStore.currentScheduledUnlockLabel()?.let {
-            "Available again at $it"
-          } ?: "Locked manually"
+          when {
+            settingsStore.isScheduleLockActive() ->
+              settingsStore.currentScheduledUnlockLabel()?.let {
+                "Available again at $it"
+              } ?: "Locked by schedule"
+            settingsStore.isDailyLimitLockActive() ->
+              "Daily limit reached"
+            else ->
+              "Locked manually"
+          }
         textSize = 18f
         gravity = Gravity.CENTER
         setTextColor(Color.LTGRAY)
