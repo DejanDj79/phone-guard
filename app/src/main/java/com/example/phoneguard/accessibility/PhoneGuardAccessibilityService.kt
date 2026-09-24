@@ -106,6 +106,13 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         refreshOverlayOnMainThread()
       }
 
+    foregroundPackage =
+      rootInActiveWindow
+        ?.packageName
+        ?.toString()
+        ?.trim()
+        ?.takeIf { it.isNotBlank() }
+
     dailyUsageTracker.start()
     appUsageTracker.start(foregroundPackage)
     alarmScheduler.syncCurrentStateAndScheduleNext()
