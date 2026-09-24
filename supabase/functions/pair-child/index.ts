@@ -79,6 +79,7 @@ export default {
       .from("child_devices")
       .update({
         control_token_hash: controlTokenHash,
+        parent_fcm_token: null,
         pairing_expires_at: now,
         updated_at: now,
       })
@@ -96,6 +97,15 @@ export default {
     if (!pairedDevice) {
       return json({ error: "invalid_or_expired_code" }, 404);
     }
+
+    await ctx.supabaseAdmin
+      .from("time_requests")
+      .update({
+        status: "EXPIRED",
+        resolved_at: now,
+      })
+      .eq("device_id", pairedDevice.device_id)
+      .eq("status", "PENDING");
 
     const temporaryAccessMinutesRemaining =
       pairedDevice.access_state === "TEMPORARILY_ALLOWED" &&
