@@ -75,6 +75,7 @@ export default {
       .from("child_devices")
       .update({
         control_token_hash: null,
+        parent_fcm_token: null,
         pairing_expires_at: now,
         updated_at: now,
       })
@@ -89,6 +90,15 @@ export default {
     if (!updated) {
       return json({ error: "device_auth_failed" }, 403);
     }
+
+    await ctx.supabaseAdmin
+      .from("time_requests")
+      .update({
+        status: "EXPIRED",
+        resolved_at: now,
+      })
+      .eq("device_id", deviceId)
+      .eq("status", "PENDING");
 
     return json({
       ok: true,
