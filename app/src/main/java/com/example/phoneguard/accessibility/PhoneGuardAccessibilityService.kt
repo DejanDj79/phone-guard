@@ -189,13 +189,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         normalizedText.contains("potvr") ||
         normalizedText.contains("ok")
 
-    val miuiUninstallConfirmation =
-      eventPackage == "com.miui.securitycenter" &&
-        className.contains("ApplicationsDetailsActivity", ignoreCase = true) &&
-        hasUninstallAction &&
+    val uninstallConfirmation =
+      hasUninstallAction &&
         hasConfirmationAction
 
-    if (uninstallScreen || miuiUninstallConfirmation) {
+    if (uninstallScreen || uninstallConfirmation) {
       return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     }
 
