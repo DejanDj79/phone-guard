@@ -36,6 +36,12 @@ class RemoteCommandProcessor(context: Context) {
           "Remote schedule sync failed."
         }
       }
+
+      RemoteCommandType.SYNC_ALLOWED_APPS -> {
+        check(RemoteAllowedAppsSyncer(appContext).sync()) {
+          "Remote allowed apps sync failed."
+        }
+      }
     }
   }
 }
