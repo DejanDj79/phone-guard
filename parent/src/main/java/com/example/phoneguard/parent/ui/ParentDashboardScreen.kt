@@ -17,6 +17,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,6 +97,7 @@ fun ParentDashboardScreen(
     mutableStateOf(pairedDevice == null)
   }
   var showDevices by remember { mutableStateOf(false) }
+  var selectedTab by remember { mutableStateOf(0) }
   var commandInProgress by remember { mutableStateOf(false) }
   var commandProgressMessage by remember { mutableStateOf<String?>(null) }
   var commandNotice by remember { mutableStateOf<String?>(null) }
@@ -203,6 +206,7 @@ fun ParentDashboardScreen(
           showDeviceManagement = false
           deviceManagementError = null
           showDevices = false
+          selectedTab = 0
         }
       },
       onAddDevice = {
@@ -600,12 +604,12 @@ fun ParentDashboardScreen(
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
       Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
       ) {
         Text(
-          text = "Paired device",
-          style = MaterialTheme.typography.labelLarge,
+          text = "Managing",
+          style = MaterialTheme.typography.labelMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
@@ -616,410 +620,466 @@ fun ParentDashboardScreen(
         )
 
         Text(
-          text = deviceStateLabel(device),
-          style = MaterialTheme.typography.bodyLarge,
-        )
-
-        Text(
           text =
-            if (device.isOnline) {
-              "● Online"
-            } else {
-              "○ Device is offline"
-            },
+            (if (device.isOnline) "● Online" else "○ Offline") +
+              " · " +
+              deviceStateLabel(device).removePrefix("● ").removePrefix("○ "),
           style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Text(
-          text = formatLastSeen(device.lastSeenAt),
-          style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         OutlinedButton(
           onClick = { showDevices = true },
-          enabled =
-            !refreshInProgress &&
-              !commandInProgress &&
-              !deviceRenaming &&
-              !deviceUnpairing,
+          enabled = !commandInProgress && !refreshInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("DEVICES (" + pairedDevices.size + ")")
-        }
-
-        OutlinedButton(
-          onClick = {
-            if (!refreshInProgress) {
-              val controlToken = settingsStore.controlToken(device.deviceId)
-              if (controlToken.isNullOrBlank()) {
-                commandError =
-                  "Control token is missing. Re-pairing is required."
-              } else {
-                scope.launch {
-                  refreshInProgress = true
-                  commandError = null
-
-                  when (
-                    val statusResult =
-                      withContext(Dispatchers.IO) {
-                        deviceStatusGateway.fetch(
-                          deviceId = device.deviceId,
-                          controlToken = controlToken,
-                        )
-                      }
-                  ) {
-                    is DeviceStatusResult.Success -> {
-                      pairedDevice = statusResult.device
-                      settingsStore.savePairing(
-                        device = statusResult.device,
-                        controlToken = controlToken,
-                      )
-                      pairedDevices = settingsStore.loadPairedDevices()
-
-                      pendingCommandFeedback?.let { pendingCommand ->
-                        if (
-                          commandMatchesDeviceState(
-                            pendingCommand,
-                            statusResult.device,
-                          )
-                        ) {
-                          commandNotice = commandAppliedLabel(pendingCommand)
-                          pendingCommandFeedback = null
-                        }
-                      }
-                    }
-
-                    is DeviceStatusResult.Error -> {
-                      commandError = statusResult.message
-                    }
-                  }
-
-                  refreshInProgress = false
-                }
-              }
-            }
-          },
-          enabled = !refreshInProgress,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text(if (refreshInProgress) "REFRESHING…" else "REFRESH STATUS")
-        }
-
-        OutlinedButton(
-          onClick = {
-            deviceManagementError = null
-            showDeviceManagement = true
-          },
-          enabled =
-            !refreshInProgress &&
-              !commandInProgress &&
-              !deviceRenaming &&
-              !deviceUnpairing,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("MANAGE DEVICE")
-        }
-
-        val protection = device.protectionStatus
-        val protectionComplete = protection.criticalProtectionComplete
-
-        Text(
-          text =
-            when {
-              device.isOnline && protectionComplete == true ->
-                "✓ Device protection is active"
-              device.isOnline && protectionComplete == false ->
-                "⚠ Device protection is incomplete"
-              device.isOnline ->
-                "Checking device protection…"
-              protectionComplete == false ->
-                "⚠ Last known state: protection is incomplete"
-              protectionComplete == true ->
-                "Last known state: protection was active"
-              else ->
-                "Protection status is unknown"
-            },
-          style = MaterialTheme.typography.bodyMedium,
-          color =
-            if (protectionComplete == false) {
-              MaterialTheme.colorScheme.error
-            } else {
-              MaterialTheme.colorScheme.onSurfaceVariant
-            },
-        )
-
-        if (protection.accessibilityEnabled == false) {
-          Text(
-            text =
-              if (device.isOnline) {
-                "Accessibility protection is disabled."
-              } else {
-                "Last known state: Accessibility protection was disabled."
-              },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-          )
-        }
-
-        if (protection.preciseTimingEnabled == false) {
-          Text(
-            text =
-              if (device.isOnline) {
-                "Exact lock timing is not allowed."
-              } else {
-                "Last known state: exact lock timing was not allowed."
-              },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error,
-          )
-        }
-
-        if (protection.batteryUnrestricted == false) {
-          Text(
-            text = "Android may restrict PhoneGuard background activity.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
+          Text("CHANGE DEVICE")
         }
       }
     }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-      ) {
-        Text(
-          text = "Quick actions",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
+    TabRow(selectedTabIndex = selectedTab) {
+      listOf("Overview", "Schedule", "Apps", "Device").forEachIndexed { index, label ->
+        Tab(
+          selected = selectedTab == index,
+          onClick = { selectedTab = index },
+          text = { Text(label) },
         )
+      }
+    }
 
-        val isLocked = device.state == DeviceAccessState.LOCKED
-        val isUnlocked =
-          device.state == DeviceAccessState.ALLOWED ||
-            device.state == DeviceAccessState.TEMPORARILY_ALLOWED
-
-        Button(
-          onClick = { sendCommand(RemoteCommand.lock()) },
-          enabled = !commandInProgress && !isLocked,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text(if (isLocked) "LOCKED" else "LOCK NOW")
-        }
-
-        OutlinedButton(
-          onClick = { sendCommand(RemoteCommand.unlock()) },
-          enabled = !commandInProgress && !isUnlocked,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text(if (isUnlocked) "UNLOCKED" else "UNLOCK")
-        }
-
-        Text(
-          text = "Bonus time",
-          style = MaterialTheme.typography.labelLarge,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        if (
-          device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
-          device.temporaryAccessMinutesRemaining != null
+    if (selectedTab == 3) {
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
           Text(
-            text =
-              "Remaining: " +
-                device.temporaryAccessMinutesRemaining +
-                " min",
-            style = MaterialTheme.typography.bodyMedium,
+            text = "Device details",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+  
+          Text(
+            text = device.displayName,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
           )
-        }
-
-        OutlinedButton(
-          onClick = { showBonusTimePicker = true },
-          enabled = !commandInProgress,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("ADD TIME")
-        }
-
-        if (!device.isOnline && commandProgressMessage == null && commandNotice == null) {
+  
           Text(
-            text = "Device is offline. Sent commands will be applied when it reconnects.",
+            text = deviceStateLabel(device),
+            style = MaterialTheme.typography.bodyLarge,
+          )
+  
+          Text(
+            text =
+              if (device.isOnline) {
+                "● Online"
+              } else {
+                "○ Device is offline"
+              },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+  
+          Text(
+            text = formatLastSeen(device.lastSeenAt),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
-        }
-
-        commandProgressMessage?.let { message ->
-          Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
-
-        commandNotice?.let { message ->
-          Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
-      }
-    }
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-      ) {
-        Text(
-          text = "Allowed apps",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-        )
-
-        Text(
-          text =
-            "Choose which apps can still be used while the Child phone is locked.",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        OutlinedButton(
-          onClick = {
-            if (!allowedAppsLoading) {
-              val controlToken = settingsStore.controlToken(device.deviceId)
-              if (controlToken.isNullOrBlank()) {
-                commandError =
-                  "Control token is missing. Re-pairing is required."
-              } else {
-                scope.launch {
-                  allowedAppsLoading = true
-                  allowedAppsError = null
-                  allowedAppsNotice = null
-                  commandError = null
-
-                  when (
-                    val result =
-                      withContext(Dispatchers.IO) {
-                        allowedAppsGateway.fetch(
-                          deviceId = device.deviceId,
+  
+          OutlinedButton(
+            onClick = { showDevices = true },
+            enabled =
+              !refreshInProgress &&
+                !commandInProgress &&
+                !deviceRenaming &&
+                !deviceUnpairing,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("DEVICES (" + pairedDevices.size + ")")
+          }
+  
+          OutlinedButton(
+            onClick = {
+              if (!refreshInProgress) {
+                val controlToken = settingsStore.controlToken(device.deviceId)
+                if (controlToken.isNullOrBlank()) {
+                  commandError =
+                    "Control token is missing. Re-pairing is required."
+                } else {
+                  scope.launch {
+                    refreshInProgress = true
+                    commandError = null
+  
+                    when (
+                      val statusResult =
+                        withContext(Dispatchers.IO) {
+                          deviceStatusGateway.fetch(
+                            deviceId = device.deviceId,
+                            controlToken = controlToken,
+                          )
+                        }
+                    ) {
+                      is DeviceStatusResult.Success -> {
+                        pairedDevice = statusResult.device
+                        settingsStore.savePairing(
+                          device = statusResult.device,
                           controlToken = controlToken,
                         )
+                        pairedDevices = settingsStore.loadPairedDevices()
+  
+                        pendingCommandFeedback?.let { pendingCommand ->
+                          if (
+                            commandMatchesDeviceState(
+                              pendingCommand,
+                              statusResult.device,
+                            )
+                          ) {
+                            commandNotice = commandAppliedLabel(pendingCommand)
+                            pendingCommandFeedback = null
+                          }
+                        }
                       }
-                  ) {
-                    is AllowedAppsFetchResult.Success -> {
-                      allowedAppsEditorSnapshot = result.snapshot
+  
+                      is DeviceStatusResult.Error -> {
+                        commandError = statusResult.message
+                      }
                     }
-
-                    is AllowedAppsFetchResult.Error -> {
-                      commandError = result.message
-                    }
+  
+                    refreshInProgress = false
                   }
-
-                  allowedAppsLoading = false
                 }
               }
-            }
-          },
-          enabled =
-            !allowedAppsLoading &&
-              !allowedAppsSaving &&
-              !commandInProgress,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text(
-            if (allowedAppsLoading) {
-              "LOADING…"
-            } else {
-              "MANAGE ALLOWED APPS"
             },
-          )
-        }
-
-        allowedAppsNotice?.let { message ->
+            enabled = !refreshInProgress,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(if (refreshInProgress) "REFRESHING…" else "REFRESH STATUS")
+          }
+  
+          OutlinedButton(
+            onClick = {
+              deviceManagementError = null
+              showDeviceManagement = true
+            },
+            enabled =
+              !refreshInProgress &&
+                !commandInProgress &&
+                !deviceRenaming &&
+                !deviceUnpairing,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("MANAGE DEVICE")
+          }
+  
+          val protection = device.protectionStatus
+          val protectionComplete = protection.criticalProtectionComplete
+  
           Text(
-            text = message,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text =
+              when {
+                device.isOnline && protectionComplete == true ->
+                  "✓ Device protection is active"
+                device.isOnline && protectionComplete == false ->
+                  "⚠ Device protection is incomplete"
+                device.isOnline ->
+                  "Checking device protection…"
+                protectionComplete == false ->
+                  "⚠ Last known state: protection is incomplete"
+                protectionComplete == true ->
+                  "Last known state: protection was active"
+                else ->
+                  "Protection status is unknown"
+              },
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+              if (protectionComplete == false) {
+                MaterialTheme.colorScheme.error
+              } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+              },
           )
+  
+          if (protection.accessibilityEnabled == false) {
+            Text(
+              text =
+                if (device.isOnline) {
+                  "Accessibility protection is disabled."
+                } else {
+                  "Last known state: Accessibility protection was disabled."
+                },
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
+  
+          if (protection.preciseTimingEnabled == false) {
+            Text(
+              text =
+                if (device.isOnline) {
+                  "Exact lock timing is not allowed."
+                } else {
+                  "Last known state: exact lock timing was not allowed."
+                },
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
+  
+          if (protection.batteryUnrestricted == false) {
+            Text(
+              text = "Android may restrict PhoneGuard background activity.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
         }
       }
     }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-      ) {
-        Text(
-          text = "Lock schedule",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-        )
+    if (selectedTab == 0) {
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+          Text(
+            text = "Quick actions",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+  
+          val isLocked = device.state == DeviceAccessState.LOCKED
+          val isUnlocked =
+            device.state == DeviceAccessState.ALLOWED ||
+              device.state == DeviceAccessState.TEMPORARILY_ALLOWED
+  
+          Button(
+            onClick = { sendCommand(RemoteCommand.lock()) },
+            enabled = !commandInProgress && !isLocked,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(if (isLocked) "LOCKED" else "LOCK NOW")
+          }
+  
+          OutlinedButton(
+            onClick = { sendCommand(RemoteCommand.unlock()) },
+            enabled = !commandInProgress && !isUnlocked,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(if (isUnlocked) "UNLOCKED" else "UNLOCK")
+          }
+  
+          Text(
+            text = "Bonus time",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+  
+          if (
+            device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
+            device.temporaryAccessMinutesRemaining != null
+          ) {
+            Text(
+              text =
+                "Remaining: " +
+                  device.temporaryAccessMinutesRemaining +
+                  " min",
+              style = MaterialTheme.typography.bodyMedium,
+              fontWeight = FontWeight.SemiBold,
+            )
+          }
+  
+          OutlinedButton(
+            onClick = { showBonusTimePicker = true },
+            enabled = !commandInProgress,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text("ADD TIME")
+          }
+  
+          if (!device.isOnline && commandProgressMessage == null && commandNotice == null) {
+            Text(
+              text = "Device is offline. Sent commands will be applied when it reconnects.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+  
+          commandProgressMessage?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+  
+          commandNotice?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
+      }
+    }
 
+    if (selectedTab == 2) {
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+          Text(
+            text = "Allowed apps",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+  
+          Text(
+            text =
+              "Choose which apps can still be used while the Child phone is locked.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+  
+          OutlinedButton(
+            onClick = {
+              if (!allowedAppsLoading) {
+                val controlToken = settingsStore.controlToken(device.deviceId)
+                if (controlToken.isNullOrBlank()) {
+                  commandError =
+                    "Control token is missing. Re-pairing is required."
+                } else {
+                  scope.launch {
+                    allowedAppsLoading = true
+                    allowedAppsError = null
+                    allowedAppsNotice = null
+                    commandError = null
+  
+                    when (
+                      val result =
+                        withContext(Dispatchers.IO) {
+                          allowedAppsGateway.fetch(
+                            deviceId = device.deviceId,
+                            controlToken = controlToken,
+                          )
+                        }
+                    ) {
+                      is AllowedAppsFetchResult.Success -> {
+                        allowedAppsEditorSnapshot = result.snapshot
+                      }
+  
+                      is AllowedAppsFetchResult.Error -> {
+                        commandError = result.message
+                      }
+                    }
+  
+                    allowedAppsLoading = false
+                  }
+                }
+              }
+            },
+            enabled =
+              !allowedAppsLoading &&
+                !allowedAppsSaving &&
+                !commandInProgress,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(
+              if (allowedAppsLoading) {
+                "LOADING…"
+              } else {
+                "MANAGE ALLOWED APPS"
+              },
+            )
+          }
+  
+          allowedAppsNotice?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
+      }
+    }
+
+    if (selectedTab == 1) {
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+          Text(
+            text = "Lock schedule",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+  
+          Text(
+            text = "Set the days and times when the Child phone will lock automatically.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+  
+          OutlinedButton(
+            onClick = {
+              if (!scheduleLoading) {
+                val controlToken = settingsStore.controlToken(device.deviceId)
+                if (controlToken.isNullOrBlank()) {
+                  commandError =
+                    "Control token is missing. Re-pairing is required."
+                } else {
+                  scope.launch {
+                    scheduleLoading = true
+                    scheduleError = null
+                    commandError = null
+                    scheduleNotice = null
+  
+                    when (
+                      val result =
+                        withContext(Dispatchers.IO) {
+                          scheduleGateway.fetch(
+                            deviceId = device.deviceId,
+                            controlToken = controlToken,
+                          )
+                        }
+                    ) {
+                      is ScheduleFetchResult.Success -> {
+                        scheduleEditorSchedule = result.schedule
+                      }
+  
+                      is ScheduleFetchResult.Error -> {
+                        commandError = result.message
+                      }
+                    }
+  
+                    scheduleLoading = false
+                  }
+                }
+              }
+            },
+            enabled = !scheduleLoading && !commandInProgress,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(if (scheduleLoading) "LOADING…" else "EDIT SCHEDULE")
+          }
+        }
+      }
+    }
+
+    if (selectedTab == 1) {
+      scheduleNotice?.let { message ->
         Text(
-          text = "Set the days and times when the Child phone will lock automatically.",
+          text = message,
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-
-        OutlinedButton(
-          onClick = {
-            if (!scheduleLoading) {
-              val controlToken = settingsStore.controlToken(device.deviceId)
-              if (controlToken.isNullOrBlank()) {
-                commandError =
-                  "Control token is missing. Re-pairing is required."
-              } else {
-                scope.launch {
-                  scheduleLoading = true
-                  scheduleError = null
-                  commandError = null
-                  scheduleNotice = null
-
-                  when (
-                    val result =
-                      withContext(Dispatchers.IO) {
-                        scheduleGateway.fetch(
-                          deviceId = device.deviceId,
-                          controlToken = controlToken,
-                        )
-                      }
-                  ) {
-                    is ScheduleFetchResult.Success -> {
-                      scheduleEditorSchedule = result.schedule
-                    }
-
-                    is ScheduleFetchResult.Error -> {
-                      commandError = result.message
-                    }
-                  }
-
-                  scheduleLoading = false
-                }
-              }
-            }
-          },
-          enabled = !scheduleLoading && !commandInProgress,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text(if (scheduleLoading) "LOADING…" else "EDIT SCHEDULE")
-        }
       }
-    }
-
-    scheduleNotice?.let { message ->
-      Text(
-        text = message,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
     }
 
     commandError?.let { message ->
