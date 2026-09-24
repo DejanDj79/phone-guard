@@ -898,7 +898,7 @@ private fun formatLastSeen(value: String?): String {
   val normalized =
     value.replace(
       Regex("(\\.\\d{3})\\d+"),
-      "$1",
+      "\$1",
     )
   val patterns =
     listOf(
