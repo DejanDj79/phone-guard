@@ -22,18 +22,18 @@ def readSigningValue = { String propertyName, String environmentName ->
 
 def keystorePath =
   readSigningValue("phoneguard.keystore.file", "PHONEGUARD_KEYSTORE_FILE")
-def keystorePassword =
+def configuredKeystorePassword =
   readSigningValue("phoneguard.keystore.password", "PHONEGUARD_KEYSTORE_PASSWORD")
-def keyAlias =
+def configuredKeyAlias =
   readSigningValue("phoneguard.key.alias", "PHONEGUARD_KEY_ALIAS")
-def keyPassword =
+def configuredKeyPassword =
   readSigningValue("phoneguard.key.password", "PHONEGUARD_KEY_PASSWORD")
 
 def missing = []
 if (keystorePath == null) missing.add("phoneguard.keystore.file / PHONEGUARD_KEYSTORE_FILE")
-if (keystorePassword == null) missing.add("phoneguard.keystore.password / PHONEGUARD_KEYSTORE_PASSWORD")
-if (keyAlias == null) missing.add("phoneguard.key.alias / PHONEGUARD_KEY_ALIAS")
-if (keyPassword == null) missing.add("phoneguard.key.password / PHONEGUARD_KEY_PASSWORD")
+if (configuredKeystorePassword == null) missing.add("phoneguard.keystore.password / PHONEGUARD_KEYSTORE_PASSWORD")
+if (configuredKeyAlias == null) missing.add("phoneguard.key.alias / PHONEGUARD_KEY_ALIAS")
+if (configuredKeyPassword == null) missing.add("phoneguard.key.password / PHONEGUARD_KEY_PASSWORD")
 
 if (!missing.isEmpty()) {
   throw new GradleException(
@@ -55,10 +55,10 @@ if (!sharedKeystore.exists()) {
 android {
   signingConfigs {
     phoneguardSharedDebug {
-      storeFile sharedKeystore
-      storePassword keystorePassword
-      keyAlias keyAlias
-      keyPassword keyPassword
+      storeFile = sharedKeystore
+      storePassword = configuredKeystorePassword
+      keyAlias = configuredKeyAlias
+      keyPassword = configuredKeyPassword
     }
   }
 
