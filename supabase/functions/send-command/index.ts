@@ -8,6 +8,7 @@ const VALID_COMMANDS = new Set([
   "BONUS_TIME",
   "SYNC_SCHEDULE",
   "SYNC_ALLOWED_APPS",
+  "SYNC_DAILY_LIMIT",
 ]);
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const DEFAULT_TOKEN_URI = "https://oauth2.googleapis.com/token";
