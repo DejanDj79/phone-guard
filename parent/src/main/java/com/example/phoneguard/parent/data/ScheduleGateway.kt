@@ -88,7 +88,7 @@ class HttpScheduleGateway : ScheduleGateway {
         ScheduleFetchResult.Error(errorMessage(responseBody, statusCode))
       }
     } catch (error: Exception) {
-      ScheduleFetchResult.Error(error.message ?: "Mrežna greška.")
+      ScheduleFetchResult.Error(error.message ?: "Network error.")
     } finally {
       connection.disconnect()
     }
@@ -136,7 +136,7 @@ class HttpScheduleGateway : ScheduleGateway {
         ScheduleSaveResult.Error(errorMessage(responseBody, statusCode))
       }
     } catch (error: Exception) {
-      ScheduleSaveResult.Error(error.message ?: "Mrežna greška.")
+      ScheduleSaveResult.Error(error.message ?: "Network error.")
     } finally {
       connection.disconnect()
     }
@@ -152,15 +152,15 @@ class HttpScheduleGateway : ScheduleGateway {
 
     return when (errorCode) {
       "device_auth_failed" ->
-        "Parent pairing više nije važeći."
+        "Parent pairing is no longer valid."
       "invalid_schedule" ->
-        "Raspored nije ispravan."
+        "Schedule is invalid."
       "schedule_version_conflict" ->
-        "Raspored je u međuvremenu promenjen. Pokušaj ponovo."
+        "Schedule changed in the meantime. Please try again."
       "schedule_saved_but_sync_queue_failed" ->
-        "Raspored je sačuvan, ali Child sinhronizacija trenutno nije dostupna."
+        "Schedule was saved, but Child synchronization is currently unavailable."
       else ->
-        errorCode.ifBlank { "Backend greška: HTTP " + statusCode }
+        errorCode.ifBlank { "Backend error: HTTP " + statusCode }
     }
   }
 
