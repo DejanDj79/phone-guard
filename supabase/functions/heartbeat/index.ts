@@ -101,7 +101,7 @@ export default {
       await ctx.supabaseAdmin
         .from("child_devices")
         .select(
-          "device_id, display_name, accessibility_enabled, parent_fcm_token",
+          "device_id, display_name, accessibility_enabled, precise_timing_enabled, battery_unrestricted, parent_fcm_token",
         )
         .eq("device_id", deviceId)
         .eq("device_secret_hash", deviceSecretHash)
@@ -117,6 +117,12 @@ export default {
     const accessibilityJustDisabled =
       previousDevice.accessibility_enabled === true &&
       accessibilityEnabled === false;
+    const preciseTimingJustDisabled =
+      previousDevice.precise_timing_enabled === true &&
+      preciseTimingEnabled === false;
+    const batteryUnrestrictedJustDisabled =
+      previousDevice.battery_unrestricted === true &&
+      batteryUnrestricted === false;
 
     const { data: device, error } = await ctx.supabaseAdmin
       .from("child_devices")
@@ -152,37 +158,68 @@ export default {
       return json({ error: "device_auth_failed" }, 403);
     }
 
-    let protectionAlertSent = false;
-    if (
-      accessibilityJustDisabled &&
-      typeof previousDevice.parent_fcm_token === "string" &&
-      previousDevice.parent_fcm_token
-    ) {
-      try {
-        await sendFirebaseMessage({
-          token: previousDevice.parent_fcm_token,
-          data: {
-            type: "PROTECTION_ALERT",
-            alert: "ACCESSIBILITY_DISABLED",
-            device_id: deviceId,
-            display_name:
-              typeof previousDevice.display_name === "string"
-                ? previousDevice.display_name
-                : "Child device",
-          },
-          collapseKey: "phoneguard-protection-" + deviceId,
-          ttl: "3600s",
-        });
-        protectionAlertSent = true;
-      } catch (error) {
-        console.error("Parent protection alert push failed", error);
+    const parentToken =
+      typeof previousDevice.parent_fcm_token === "string"
+        ? previousDevice.parent_fcm_token.trim()
+        : "";
+    const displayName =
+      typeof previousDevice.display_name === "string" &&
+          previousDevice.display_name.trim()
+        ? previousDevice.display_name.trim()
+        : "Child device";
+
+    const protectionAlerts: string[] = [];
+    const alertTransitions = [
+      {
+        shouldSend: accessibilityJustDisabled,
+        alert: "ACCESSIBILITY_DISABLED",
+      },
+      {
+        shouldSend: preciseTimingJustDisabled,
+        alert: "PRECISE_TIMING_DISABLED",
+      },
+      {
+        shouldSend: batteryUnrestrictedJustDisabled,
+        alert: "BATTERY_UNRESTRICTED_DISABLED",
+      },
+    ];
+
+    if (parentToken) {
+      for (const transition of alertTransitions) {
+        if (!transition.shouldSend) continue;
+
+        try {
+          await sendFirebaseMessage({
+            token: parentToken,
+            data: {
+              type: "PROTECTION_ALERT",
+              alert: transition.alert,
+              device_id: deviceId,
+              display_name: displayName,
+            },
+            collapseKey:
+              "phoneguard-protection-" +
+              transition.alert.toLowerCase() +
+              "-" +
+              deviceId,
+            ttl: "3600s",
+          });
+          protectionAlerts.push(transition.alert);
+        } catch (error) {
+          console.error(
+            "Parent protection alert push failed for " +
+              transition.alert,
+            error,
+          );
+        }
       }
     }
 
     return json({
       ok: true,
       lastSeenAt: device.last_seen_at,
-      protectionAlertSent,
+      protectionAlertSent: protectionAlerts.length > 0,
+      protectionAlerts,
     });
   }),
 };
