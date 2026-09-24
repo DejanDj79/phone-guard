@@ -4,7 +4,7 @@ import { sendFirebaseMessage } from "../_shared/firebase.ts";
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PROTECTION_HISTORY_RETAINED_PER_DEVICE = 100;
-const PROTECTION_ALERT_COOLDOWN_MS = 5 * 60_000;
+const PROTECTION_ALERT_COOLDOWN_MS = 60_000;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
