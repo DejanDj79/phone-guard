@@ -77,6 +77,8 @@ fun ParentDashboardScreen(
     mutableStateOf(settingsStore.loadPairedDevice())
   }
   var commandInProgress by remember { mutableStateOf(false) }
+  var commandProgressMessage by remember { mutableStateOf<String?>(null) }
+  var commandNotice by remember { mutableStateOf<String?>(null) }
   var commandError by remember { mutableStateOf<String?>(null) }
   var showBonusTimePicker by remember { mutableStateOf(false) }
   var selectedBonusMinutes by remember { mutableStateOf(15) }
@@ -232,6 +234,8 @@ fun ParentDashboardScreen(
 
     scope.launch {
       commandInProgress = true
+      commandProgressMessage = commandSendingLabel(command, device.isOnline)
+      commandNotice = null
       commandError = null
 
       when (
@@ -282,6 +286,19 @@ fun ParentDashboardScreen(
               }
             }
           }
+
+          if (commandError == null) {
+            commandNotice =
+              when (deliveryStatus) {
+                "APPLIED" -> commandAppliedLabel(command)
+                "FAILED" -> null
+                else -> commandQueuedLabel(command, device.isOnline)
+              }
+
+            if (deliveryStatus == "FAILED") {
+              commandError = "Komanda nije mogla da se primeni. Pokušaj ponovo."
+            }
+          }
         }
 
         is CommandResult.Error -> {
@@ -289,6 +306,7 @@ fun ParentDashboardScreen(
         }
       }
 
+      commandProgressMessage = null
       commandInProgress = false
     }
   }
@@ -531,9 +549,17 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (commandInProgress) {
+    commandProgressMessage?.let { message ->
       Text(
-        text = "Šaljem komandu…",
+        text = message,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+
+    commandNotice?.let { message ->
+      Text(
+        text = message,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
@@ -754,6 +780,65 @@ private fun PairDeviceScreen(
     )
   }
 }
+
+private fun commandSendingLabel(
+  command: RemoteCommand,
+  deviceOnline: Boolean,
+): String =
+  if (!deviceOnline) {
+    "Uređaj je offline — komanda će sačekati ponovno povezivanje."
+  } else {
+    when (command.type) {
+      com.example.phoneguard.core.RemoteCommandType.LOCK ->
+        "Šaljem zaključavanje…"
+      com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
+        "Šaljem otključavanje…"
+      com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
+        "Dodajem " + command.bonusMinutes + " min…"
+      com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
+        "Sinhronizujem raspored…"
+    }
+  }
+
+private fun commandAppliedLabel(command: RemoteCommand): String =
+  when (command.type) {
+    com.example.phoneguard.core.RemoteCommandType.LOCK ->
+      "Telefon je zaključan ✓"
+    com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
+      "Telefon je otključan ✓"
+    com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
+      "Dodato " + command.bonusMinutes + " min ✓"
+    com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
+      "Raspored je primenjen ✓"
+  }
+
+private fun commandQueuedLabel(
+  command: RemoteCommand,
+  deviceOnline: Boolean,
+): String =
+  if (!deviceOnline) {
+    when (command.type) {
+      com.example.phoneguard.core.RemoteCommandType.LOCK ->
+        "Zaključavanje je sačuvano i primeniće se kada se Child poveže."
+      com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
+        "Otključavanje je sačuvano i primeniće se kada se Child poveže."
+      com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
+        "Dodatno vreme je poslato i primeniće se kada se Child poveže."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
+        "Raspored će se primeniti kada se Child poveže."
+    }
+  } else {
+    when (command.type) {
+      com.example.phoneguard.core.RemoteCommandType.LOCK ->
+        "Zaključavanje je poslato. Čekam potvrdu Child uređaja."
+      com.example.phoneguard.core.RemoteCommandType.UNLOCK ->
+        "Otključavanje je poslato. Čekam potvrdu Child uređaja."
+      com.example.phoneguard.core.RemoteCommandType.BONUS_TIME ->
+        "Dodatno vreme je poslato. Čekam potvrdu Child uređaja."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE ->
+        "Raspored je poslat. Čekam potvrdu Child uređaja."
+    }
+  }
 
 private fun deviceStateLabel(device: ChildDevice): String =
   when (device.state) {
