@@ -85,7 +85,12 @@ export default {
     }
     if (
       protectionEvent &&
-      !["APP_INFO_OPENED", "UNINSTALL_SCREEN_OPENED"].includes(protectionEvent)
+      ![
+        "APP_INFO_OPENED",
+        "UNINSTALL_SCREEN_OPENED",
+        "FORCE_STOP_ATTEMPT",
+        "CLEAR_DATA_ATTEMPT",
+      ].includes(protectionEvent)
     ) {
       return json({ error: "invalid_protection_event" }, 400);
     }
@@ -200,6 +205,14 @@ export default {
       {
         shouldSend: protectionEvent === "UNINSTALL_SCREEN_OPENED",
         alert: "UNINSTALL_SCREEN_OPENED",
+      },
+      {
+        shouldSend: protectionEvent === "FORCE_STOP_ATTEMPT",
+        alert: "FORCE_STOP_ATTEMPT",
+      },
+      {
+        shouldSend: protectionEvent === "CLEAR_DATA_ATTEMPT",
+        alert: "CLEAR_DATA_ATTEMPT",
       },
     ];
 
