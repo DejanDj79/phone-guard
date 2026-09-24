@@ -67,7 +67,7 @@ fun DevicesScreen(
 
             Text(
               text =
-                (if (device.isOnline) "● Online" else "○ Offline") +
+                devicePresenceSummary(device.lastSeenAt) +
                   " · " +
                   devicesStateLabel(device),
               style = MaterialTheme.typography.bodyMedium,
