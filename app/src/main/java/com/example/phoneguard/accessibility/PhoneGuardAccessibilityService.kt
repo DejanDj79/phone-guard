@@ -128,10 +128,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     if (::dailyUsageTracker.isInitialized) {
       dailyUsageTracker.flush()
     }
-    if (::heartbeatSender.isInitialized) {
-      Thread {
-        heartbeatSender.send(accessibilityEnabledOverride = false)
-      }.start()
+    if (::alarmScheduler.isInitialized) {
+      alarmScheduler.scheduleProtectionStatusCheck()
     }
     return super.onUnbind(intent)
   }
