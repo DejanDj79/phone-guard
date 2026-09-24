@@ -33,6 +33,7 @@ import com.example.phoneguard.remote.ChildHeartbeatSender
 import com.example.phoneguard.remote.ChildTimeRequestResult
 import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
+import com.example.phoneguard.usage.AppUsageTracker
 import com.example.phoneguard.usage.DailyUsageTracker
 
 class PhoneGuardAccessibilityService : AccessibilityService() {
@@ -42,6 +43,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private lateinit var connectivityManager: ConnectivityManager
   private lateinit var heartbeatSender: ChildHeartbeatSender
   private lateinit var dailyUsageTracker: DailyUsageTracker
+  private lateinit var appUsageTracker: AppUsageTracker
 
   private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -50,6 +52,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       override fun run() {
         if (::dailyUsageTracker.isInitialized) {
           dailyUsageTracker.flush()
+        }
+        if (::appUsageTracker.isInitialized) {
+          appUsageTracker.flush()
         }
         sendHeartbeat()
         mainHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS)
@@ -84,6 +89,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       DailyUsageTracker(applicationContext) {
         refreshOverlayOnMainThread()
       }
+    appUsageTracker = AppUsageTracker(applicationContext)
 
     Log.i(TAG, "Accessibility service connected")
 
@@ -94,10 +100,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           "Lock state changed: effectivelyLocked=" +
             settingsStore.isEffectivelyLocked(),
         )
+        if (::appUsageTracker.isInitialized) {
+          appUsageTracker.flush()
+        }
         refreshOverlayOnMainThread()
       }
 
     dailyUsageTracker.start()
+    appUsageTracker.start(foregroundPackage)
     alarmScheduler.syncCurrentStateAndScheduleNext()
     refreshOverlayOnMainThread()
 
@@ -118,6 +128,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
       val eventPackage = event.packageName?.toString()?.trim()
       if (!eventPackage.isNullOrBlank()) {
+        if (::appUsageTracker.isInitialized) {
+          appUsageTracker.onForegroundPackageChanged(eventPackage)
+        }
         foregroundPackage = eventPackage
 
         val isPackageInstaller =
@@ -502,6 +515,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     if (::dailyUsageTracker.isInitialized) {
       dailyUsageTracker.flush()
     }
+    if (::appUsageTracker.isInitialized) {
+      appUsageTracker.flush()
+    }
     if (::alarmScheduler.isInitialized) {
       alarmScheduler.scheduleProtectionStatusCheck()
     }
@@ -512,6 +528,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     mainHandler.removeCallbacks(heartbeatRunnable)
     if (::dailyUsageTracker.isInitialized) {
       dailyUsageTracker.stop()
+    }
+    if (::appUsageTracker.isInitialized) {
+      appUsageTracker.stop()
     }
     lockStateListener?.let(settingsStore::unregisterLockStateListener)
     if (::connectivityManager.isInitialized) {
