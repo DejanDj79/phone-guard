@@ -1397,6 +1397,116 @@ fun ParentDashboardScreen(
           }
         }
       }
+
+      val dailyScreenTime = device.dailyScreenTime
+
+      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+          Text(
+            text = "Daily screen time",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+
+          if (dailyScreenTime.limitMinutes == null) {
+            Text(
+              text = "No daily limit is set.",
+              style = MaterialTheme.typography.bodyLarge,
+            )
+          } else {
+            Text(
+              text =
+                "Daily limit: " +
+                  formatDurationMinutes(dailyScreenTime.limitMinutes),
+              style = MaterialTheme.typography.bodyLarge,
+            )
+          }
+
+          Text(
+            text =
+              "Used today: " +
+                formatUsageSeconds(dailyScreenTime.usedSeconds),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          dailyScreenTime.remainingMinutes?.let { remaining ->
+            Text(
+              text =
+                if (dailyScreenTime.limitReached) {
+                  "Daily limit reached."
+                } else {
+                  "Remaining: " + formatDurationMinutes(remaining)
+                },
+              style = MaterialTheme.typography.bodyMedium,
+              color =
+                if (dailyScreenTime.limitReached) {
+                  MaterialTheme.colorScheme.error
+                } else {
+                  MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+          }
+
+          Text(
+            text =
+              "Only normal unlocked use counts. Allowed apps used while the phone is locked do not consume this limit.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          Button(
+            onClick = {
+              selectedDailyLimitMinutes =
+                dailyScreenTime.limitMinutes ?: 120
+              dailyLimitError = null
+              dailyLimitNotice = null
+              showDailyLimitPicker = true
+            },
+            enabled = !dailyLimitSaving,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(
+              if (dailyLimitSaving) {
+                "SAVING…"
+              } else if (dailyScreenTime.limitMinutes == null) {
+                "SET DAILY LIMIT"
+              } else {
+                "CHANGE DAILY LIMIT"
+              },
+            )
+          }
+
+          if (dailyScreenTime.limitMinutes != null) {
+            OutlinedButton(
+              onClick = { saveDailyLimit(null) },
+              enabled = !dailyLimitSaving,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text("DISABLE DAILY LIMIT")
+            }
+          }
+
+          dailyLimitNotice?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+
+          dailyLimitError?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
+        }
+      }
     }
 
     if (selectedTab == 1) {
@@ -1423,6 +1533,21 @@ fun ParentDashboardScreen(
     Spacer(modifier = Modifier.height(8.dp))
   }
 
+  if (showDailyLimitPicker) {
+    DailyLimitWheelDialog(
+      initialMinutes = selectedDailyLimitMinutes,
+      onDismiss = {
+        if (!dailyLimitSaving) {
+          showDailyLimitPicker = false
+        }
+      },
+      onConfirm = { minutes ->
+        selectedDailyLimitMinutes = minutes
+        saveDailyLimit(minutes)
+      },
+    )
+  }
+
   if (showBonusTimePicker) {
     BonusTimeWheelDialog(
       initialMinutes = selectedBonusMinutes,
@@ -1434,6 +1559,81 @@ fun ParentDashboardScreen(
       },
     )
   }
+}
+
+@Composable
+private fun DailyLimitWheelDialog(
+  initialMinutes: Int,
+  onDismiss: () -> Unit,
+  onConfirm: (Int) -> Unit,
+) {
+  var selectedMinutes by remember(initialMinutes) {
+    mutableStateOf(initialMinutes.coerceIn(1, 1440))
+  }
+
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = {
+      Text(
+        text = "Daily screen time limit",
+        fontWeight = FontWeight.SemiBold,
+      )
+    },
+    text = {
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Text(
+          text = "Choose the total normal screen time allowed each day.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        AndroidView(
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .height(190.dp),
+          factory = { context ->
+            NumberPicker(context).apply {
+              minValue = 1
+              maxValue = 1440
+              value = selectedMinutes
+              wrapSelectorWheel = false
+              descendantFocusability = NumberPicker.FOCUS_BLOCK_DESCENDANTS
+              setOnValueChangedListener { _, _, newValue ->
+                selectedMinutes = newValue
+              }
+            }
+          },
+          update = { picker ->
+            if (picker.value != selectedMinutes) {
+              picker.value = selectedMinutes
+            }
+          },
+        )
+
+        Text(
+          text = formatDurationMinutes(selectedMinutes),
+          modifier = Modifier.fillMaxWidth(),
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+          textAlign = TextAlign.Center,
+        )
+      }
+    },
+    confirmButton = {
+      Button(onClick = { onConfirm(selectedMinutes) }) {
+        Text("SAVE")
+      }
+    },
+    dismissButton = {
+      OutlinedButton(onClick = onDismiss) {
+        Text("CANCEL")
+      }
+    },
+  )
 }
 
 @Composable
