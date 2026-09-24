@@ -50,14 +50,17 @@ import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.DeviceStatusResult
 import com.example.phoneguard.parent.data.HttpAllowedAppsGateway
+import com.example.phoneguard.parent.data.HttpDeviceManagementGateway
 import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.PairingGateway
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.data.HttpScheduleGateway
+import com.example.phoneguard.parent.data.RenameDeviceResult
 import com.example.phoneguard.parent.data.ScheduleFetchResult
 import com.example.phoneguard.parent.data.ScheduleSaveResult
+import com.example.phoneguard.parent.data.UnpairDeviceResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,6 +82,7 @@ fun ParentDashboardScreen(
   val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
   val scheduleGateway = remember { HttpScheduleGateway() }
   val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
+  val deviceManagementGateway = remember { HttpDeviceManagementGateway() }
   val scope = rememberCoroutineScope()
 
   var pairedDevice by remember {
@@ -106,6 +110,10 @@ fun ParentDashboardScreen(
   var allowedAppsSaving by remember { mutableStateOf(false) }
   var allowedAppsError by remember { mutableStateOf<String?>(null) }
   var allowedAppsNotice by remember { mutableStateOf<String?>(null) }
+  var showDeviceManagement by remember { mutableStateOf(false) }
+  var deviceRenaming by remember { mutableStateOf(false) }
+  var deviceUnpairing by remember { mutableStateOf(false) }
+  var deviceManagementError by remember { mutableStateOf<String?>(null) }
 
   if (pairedDevice == null) {
     PairDeviceScreen(
@@ -149,6 +157,104 @@ fun ParentDashboardScreen(
   }
 
   val device = pairedDevice!!
+
+  if (showDeviceManagement) {
+    DeviceManagementScreen(
+      currentName = device.displayName,
+      renaming = deviceRenaming,
+      unpairing = deviceUnpairing,
+      errorMessage = deviceManagementError,
+      onRename = { displayName ->
+        if (!deviceRenaming && !deviceUnpairing) {
+          val controlToken = settingsStore.controlToken()
+          if (controlToken.isNullOrBlank()) {
+            deviceManagementError =
+              "Control token is missing. Re-pairing is required."
+          } else {
+            scope.launch {
+              deviceRenaming = true
+              deviceManagementError = null
+
+              when (
+                val result =
+                  withContext(Dispatchers.IO) {
+                    deviceManagementGateway.rename(
+                      deviceId = device.deviceId,
+                      controlToken = controlToken,
+                      displayName = displayName,
+                    )
+                  }
+              ) {
+                is RenameDeviceResult.Success -> {
+                  val updatedDevice =
+                    device.copy(displayName = result.displayName)
+                  pairedDevice = updatedDevice
+                  settingsStore.savePairing(
+                    device = updatedDevice,
+                    controlToken = controlToken,
+                  )
+                  showDeviceManagement = false
+                  commandNotice = "Device renamed to " + result.displayName + "."
+                }
+
+                is RenameDeviceResult.Error -> {
+                  deviceManagementError = result.message
+                }
+              }
+
+              deviceRenaming = false
+            }
+          }
+        }
+      },
+      onUnpair = {
+        if (!deviceRenaming && !deviceUnpairing) {
+          val controlToken = settingsStore.controlToken()
+          if (controlToken.isNullOrBlank()) {
+            deviceManagementError =
+              "Control token is missing. Re-pairing is required."
+          } else {
+            scope.launch {
+              deviceUnpairing = true
+              deviceManagementError = null
+
+              when (
+                val result =
+                  withContext(Dispatchers.IO) {
+                    deviceManagementGateway.unpair(
+                      deviceId = device.deviceId,
+                      controlToken = controlToken,
+                    )
+                  }
+              ) {
+                UnpairDeviceResult.Success -> {
+                  settingsStore.clearPairing()
+                  pairedDevice = null
+                  showDeviceManagement = false
+                  commandNotice = null
+                  pendingCommandFeedback = null
+                }
+
+                is UnpairDeviceResult.Error -> {
+                  deviceManagementError = result.message
+                }
+              }
+
+              deviceUnpairing = false
+            }
+          }
+        }
+      },
+      onBack = {
+        if (!deviceRenaming && !deviceUnpairing) {
+          showDeviceManagement = false
+          deviceManagementError = null
+        }
+      },
+      modifier = modifier,
+    )
+    return
+  }
 
   allowedAppsEditorSnapshot?.let { snapshot ->
     AllowedAppsEditorScreen(
@@ -524,6 +630,21 @@ fun ParentDashboardScreen(
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text(if (refreshInProgress) "REFRESHING…" else "REFRESH STATUS")
+        }
+
+        OutlinedButton(
+          onClick = {
+            deviceManagementError = null
+            showDeviceManagement = true
+          },
+          enabled =
+            !refreshInProgress &&
+              !commandInProgress &&
+              !deviceRenaming &&
+              !deviceUnpairing,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("MANAGE DEVICE")
         }
 
         val protection = device.protectionStatus
