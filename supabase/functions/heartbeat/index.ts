@@ -276,6 +276,24 @@ export default {
           "App usage snapshot upsert failed for " + deviceId,
           appUsageError,
         );
+      } else {
+        const retentionCutoff = new Date(appUsageDate + "T00:00:00Z");
+        retentionCutoff.setUTCDate(retentionCutoff.getUTCDate() - 6);
+        const cutoffDate = retentionCutoff.toISOString().slice(0, 10);
+
+        const { error: appUsageRetentionError } =
+          await ctx.supabaseAdmin
+            .from("app_usage_daily")
+            .delete()
+            .eq("device_id", deviceId)
+            .lt("usage_date", cutoffDate);
+
+        if (appUsageRetentionError) {
+          console.error(
+            "App usage retention cleanup failed for " + deviceId,
+            appUsageRetentionError,
+          );
+        }
       }
     }
 
