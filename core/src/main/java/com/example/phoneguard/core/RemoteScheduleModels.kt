@@ -3,13 +3,13 @@ package com.example.phoneguard.core
 enum class ScheduleDay(
   val displayName: String,
 ) {
-  MONDAY("Ponedeljak"),
-  TUESDAY("Utorak"),
-  WEDNESDAY("Sreda"),
-  THURSDAY("Četvrtak"),
-  FRIDAY("Petak"),
-  SATURDAY("Subota"),
-  SUNDAY("Nedelja"),
+  MONDAY("Monday"),
+  TUESDAY("Tuesday"),
+  WEDNESDAY("Wednesday"),
+  THURSDAY("Thursday"),
+  FRIDAY("Friday"),
+  SATURDAY("Saturday"),
+  SUNDAY("Sunday"),
 }
 
 data class RemoteDaySchedule(
