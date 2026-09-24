@@ -27,7 +27,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.remote.AppInventorySyncer
+import com.example.phoneguard.remote.ChildBackendClient
 import com.example.phoneguard.remote.ChildHeartbeatSender
+import com.example.phoneguard.remote.ChildTimeRequestResult
 import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 
@@ -49,6 +51,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }
 
   private var overlayView: View? = null
+  private var overlayTimeRequestFeedbackView: TextView? = null
   private var foregroundPackage: String? = null
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
@@ -177,6 +180,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     if (effectivelyLocked && !foregroundAllowed) {
       showOverlay()
+      overlayTimeRequestFeedbackView?.apply {
+        val feedback = settingsStore.timeRequestFeedback()
+        text = feedback.orEmpty()
+        visibility = if (feedback.isNullOrBlank()) View.GONE else View.VISIBLE
+      }
     } else {
       hideOverlay()
     }
@@ -404,6 +412,110 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         }
       }
 
+    val timeRequestStatus =
+      TextView(this).apply {
+        val feedback = settingsStore.timeRequestFeedback()
+        text = feedback.orEmpty()
+        textSize = 14f
+        gravity = Gravity.CENTER
+        setTextColor(Color.rgb(255, 120, 120))
+        setPadding(0, dp(10), 0, dp(10))
+        visibility = if (feedback.isNullOrBlank()) View.GONE else View.VISIBLE
+      }
+    overlayTimeRequestFeedbackView = timeRequestStatus
+
+    val timeRequestOptions =
+      LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        visibility = View.GONE
+        layoutParams =
+          LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+          )
+      }
+
+    val requestMoreTimeButton =
+      Button(this).apply {
+        text = "REQUEST MORE TIME"
+        layoutParams =
+          LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+          ).apply {
+            topMargin = dp(16)
+          }
+        setOnClickListener {
+          timeRequestOptions.visibility =
+            if (timeRequestOptions.visibility == View.VISIBLE) {
+              View.GONE
+            } else {
+              View.VISIBLE
+            }
+        }
+      }
+
+    listOf(5, 15, 30, 60).forEach { minutes ->
+      timeRequestOptions.addView(
+        Button(this).apply {
+          text = minutes.toString() + " MINUTES"
+          layoutParams =
+            LinearLayout.LayoutParams(
+              LinearLayout.LayoutParams.MATCH_PARENT,
+              LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+              topMargin = dp(4)
+            }
+
+          setOnClickListener {
+            val selectedButton = this
+            requestMoreTimeButton.isEnabled = false
+            timeRequestOptions.visibility = View.GONE
+            timeRequestStatus.visibility = View.VISIBLE
+            timeRequestStatus.setTextColor(Color.LTGRAY)
+            timeRequestStatus.text = "Sending request…"
+            settingsStore.setTimeRequestFeedback(null)
+
+            Thread {
+              val identity = settingsStore.getOrCreatePairingIdentity()
+              val result =
+                ChildBackendClient().requestMoreTime(
+                  deviceId = identity.deviceId,
+                  deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+                  requestedMinutes = minutes,
+                )
+
+              mainHandler.post {
+                if (overlayView == null) return@post
+
+                requestMoreTimeButton.isEnabled = true
+                selectedButton.isEnabled = true
+
+                when (result) {
+                  is ChildTimeRequestResult.Success -> {
+                    timeRequestStatus.setTextColor(Color.LTGRAY)
+                    timeRequestStatus.text =
+                      if (result.alreadyPending) {
+                        "A request is already waiting for Parent approval."
+                      } else if (result.pushSent) {
+                        "Request sent to Parent."
+                      } else {
+                        "Request sent. Parent will see it in PhoneGuard."
+                      }
+                  }
+
+                  is ChildTimeRequestResult.Failure -> {
+                    timeRequestStatus.setTextColor(Color.rgb(255, 120, 120))
+                    timeRequestStatus.text = result.message
+                  }
+                }
+              }
+            }.start()
+          }
+        },
+      )
+    }
+
     val disclosure =
       TextView(this).apply {
         text = "Unlocking requires the parent PIN."
@@ -473,6 +585,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     content.addView(soundControls)
     content.addView(flashlightStatus)
     content.addView(flashlightButton)
+    content.addView(requestMoreTimeButton)
+    content.addView(timeRequestOptions)
+    content.addView(timeRequestStatus)
     content.addView(disclosure)
     content.addView(pinInput)
     content.addView(error)
@@ -531,6 +646,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private fun hideOverlay() {
     val view = overlayView ?: return
+    overlayTimeRequestFeedbackView = null
     runCatching { windowManager.removeView(view) }
       .onSuccess {
         Log.i(TAG, "Lock overlay hidden")
