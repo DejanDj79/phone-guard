@@ -99,15 +99,15 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
         DeviceStatusResult.Error(
           when (errorCode) {
             "device_auth_failed" ->
-              "Parent pairing više nije važeći."
+              "Parent pairing is no longer valid."
             else ->
-              errorCode.ifBlank { "Backend greška: HTTP " + statusCode }
+              errorCode.ifBlank { "Backend error: HTTP " + statusCode }
           },
         )
       }
     } catch (error: Exception) {
       DeviceStatusResult.Error(
-        error.message ?: "Mrežna greška.",
+        error.message ?: "Network error.",
       )
     } finally {
       connection.disconnect()
