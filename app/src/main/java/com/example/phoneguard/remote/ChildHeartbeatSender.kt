@@ -12,7 +12,10 @@ class ChildHeartbeatSender(context: Context) {
   private val settingsStore = ChildSettingsStore(appContext)
   private val alarmScheduler = ScheduleAlarmScheduler(appContext)
 
-  fun send(accessibilityEnabledOverride: Boolean? = null) {
+  fun send(
+    accessibilityEnabledOverride: Boolean? = null,
+    protectionEvent: String? = null,
+  ) {
     val identity = settingsStore.getOrCreatePairingIdentity()
     val now = System.currentTimeMillis()
     val temporaryAllowanceUntil = settingsStore.temporaryAllowanceUntilMillis()
@@ -44,6 +47,7 @@ class ChildHeartbeatSender(context: Context) {
           accessibilityEnabled = accessibilityEnabled,
           preciseTimingEnabled = preciseTimingEnabled,
           batteryUnrestricted = batteryUnrestricted,
+          protectionEvent = protectionEvent,
           dailyUsageDate = dailyUsageDate,
           dailyUsageSeconds = dailyUsageSeconds,
         )
