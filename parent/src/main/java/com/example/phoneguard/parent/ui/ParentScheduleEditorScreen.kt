@@ -72,7 +72,7 @@ fun ParentScheduleEditorScreen(
           .padding(24.dp),
     ) {
       Text(
-        text = "Raspored zaključavanja",
+        text = "Lock schedule",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold,
       )
@@ -80,7 +80,7 @@ fun ParentScheduleEditorScreen(
       Spacer(modifier = Modifier.height(8.dp))
 
       Text(
-        text = "Podesi periode kada će Child telefon biti zaključan. Noćni period može prelaziti preko ponoći, na primer 22:00–07:00.",
+        text = "Set the periods when the Child phone will be locked. An overnight period can cross midnight, for example 22:00–07:00.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
@@ -130,7 +130,7 @@ fun ParentScheduleEditorScreen(
                 validationError = null
               },
               enabled = row.enabled && !saving,
-              label = { Text("Od") },
+              label = { Text("From") },
               placeholder = { Text("22:00") },
               singleLine = true,
               keyboardOptions =
@@ -146,7 +146,7 @@ fun ParentScheduleEditorScreen(
                 validationError = null
               },
               enabled = row.enabled && !saving,
-              label = { Text("Do") },
+              label = { Text("To") },
               placeholder = { Text("07:00") },
               singleLine = true,
               keyboardOptions =
@@ -184,12 +184,12 @@ fun ParentScheduleEditorScreen(
             val end = parseScheduleTimeToMinutes(row.end)
 
             if (start == null || end == null) {
-              error = day.displayName + ": vreme mora biti u formatu HH:mm."
+              error = day.displayName + ": time must use HH:mm format."
               break
             }
 
             if (row.enabled && start == end) {
-              error = day.displayName + ": početak i kraj ne mogu biti isti."
+              error = day.displayName + ": start and end times cannot be the same."
               break
             }
 
@@ -211,7 +211,7 @@ fun ParentScheduleEditorScreen(
         enabled = !saving,
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text(if (saving) "ČUVAM…" else "SAČUVAJ RASPORED")
+        Text(if (saving) "SAVING…" else "SAVE SCHEDULE")
       }
 
       Spacer(modifier = Modifier.height(10.dp))
@@ -221,7 +221,7 @@ fun ParentScheduleEditorScreen(
         enabled = !saving,
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text("ODUSTANI")
+        Text("CANCEL")
       }
 
       Spacer(modifier = Modifier.height(24.dp))
