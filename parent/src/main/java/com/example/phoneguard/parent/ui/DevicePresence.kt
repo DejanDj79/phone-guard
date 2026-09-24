@@ -50,6 +50,15 @@ internal fun formatLastSeen(value: String?): String {
   return "Last seen: " + formatter.format(date)
 }
 
+internal fun formatProtectionEventTime(value: String): String {
+  val date = parseLastSeenMillis(value)?.let(::Date)
+    ?: return "Unknown time"
+  val formatter =
+    SimpleDateFormat("MMM d, HH:mm", Locale.getDefault())
+
+  return formatter.format(date)
+}
+
 private fun parseLastSeenMillis(value: String?): Long? {
   if (value.isNullOrBlank()) return null
 
