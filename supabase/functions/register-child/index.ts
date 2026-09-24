@@ -4,6 +4,8 @@ const PAIRING_TTL_MS = 15 * 60 * 1000;
 const PAIRING_CODE = /^[A-Z0-9]{6}$/;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_NEW_REGISTRATIONS = 10;
+const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -15,6 +17,17 @@ async function sha256Hex(value: string): Promise<string> {
 
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status });
+}
+
+function clientIp(req: Request): string {
+  const cloudflareIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cloudflareIp) return cloudflareIp.slice(0, 128);
+
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp.slice(0, 128);
+
+  const forwardedFor = req.headers.get("x-forwarded-for") ?? "";
+  return forwardedFor.split(",")[0]?.trim().slice(0, 128) || "unknown";
 }
 
 export default {
@@ -74,6 +87,34 @@ export default {
 
     if (existing && existing.device_secret_hash !== deviceSecretHash) {
       return json({ error: "device_auth_failed" }, 403);
+    }
+
+    if (!existing) {
+      const ipAddress = clientIp(req);
+      const windowStart =
+        new Date(Date.now() - REGISTRATION_WINDOW_MS).toISOString();
+
+      const { count, error: countError } = await ctx.supabaseAdmin
+        .from("registration_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("ip_address", ipAddress)
+        .gte("attempted_at", windowStart);
+
+      if (countError) {
+        return json({ error: "database_error" }, 500);
+      }
+
+      if ((count ?? 0) >= MAX_NEW_REGISTRATIONS) {
+        return json({ error: "too_many_registrations" }, 429);
+      }
+
+      const { error: attemptError } = await ctx.supabaseAdmin
+        .from("registration_attempts")
+        .insert({ ip_address: ipAddress });
+
+      if (attemptError) {
+        return json({ error: "database_error" }, 500);
+      }
     }
 
     let writeError;
