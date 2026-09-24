@@ -18,7 +18,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -792,8 +792,9 @@ fun ParentDashboardScreen(
       }
     }
 
-    TabRow(selectedTabIndex = selectedTab) {
-      listOf("Overview", "Schedule", "Apps", "Device").forEachIndexed { index, label ->
+    ScrollableTabRow(selectedTabIndex = selectedTab) {
+      listOf("Overview", "Schedule", "Apps", "Device", "Settings")
+        .forEachIndexed { index, label ->
         Tab(
           selected = selectedTab == index,
           onClick = { selectedTab = index },
@@ -1303,6 +1304,10 @@ fun ParentDashboardScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
+    }
+
+    if (selectedTab == 4) {
+      ParentSettingsScreen()
     }
 
     commandError?.let { message ->
