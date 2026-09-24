@@ -114,6 +114,20 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     if (!::settingsStore.isInitialized || event == null) return
 
+    val rawEventPackage = event.packageName?.toString().orEmpty()
+    if (
+      rawEventPackage == "com.miui.securitycenter" ||
+      rawEventPackage == "com.android.systemui"
+    ) {
+      Log.i(
+        TAG,
+        "MIUI event: type=" + AccessibilityEvent.eventTypeToString(event.eventType) +
+          ", package=" + rawEventPackage +
+          ", class=" + event.className?.toString().orEmpty() +
+          ", text=" + event.text.joinToString(" | "),
+      )
+    }
+
     if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
       val eventPackage = event.packageName?.toString()?.trim()
       if (!eventPackage.isNullOrBlank()) {
