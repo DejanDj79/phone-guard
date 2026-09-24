@@ -50,6 +50,14 @@ export default {
       typeof payload.batteryUnrestricted === "boolean"
         ? payload.batteryUnrestricted
         : null;
+    const dailyUsageDate =
+      typeof payload.dailyUsageDate === "string"
+        ? payload.dailyUsageDate.trim()
+        : null;
+    const dailyUsageSeconds =
+      typeof payload.dailyUsageSeconds === "number"
+        ? Math.trunc(payload.dailyUsageSeconds)
+        : null;
 
     if (!UUID_PATTERN.test(deviceId)) {
       return json({ error: "invalid_device_id" }, 400);
@@ -70,6 +78,20 @@ export default {
     ) {
       return json({ error: "temporary_allow_until_invalid" }, 400);
     }
+    const hasUsagePayload =
+      dailyUsageDate !== null || dailyUsageSeconds !== null;
+    if (
+      hasUsagePayload &&
+      (
+        dailyUsageDate === null ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(dailyUsageDate) ||
+        dailyUsageSeconds === null ||
+        dailyUsageSeconds < 0 ||
+        dailyUsageSeconds > 172800
+      )
+    ) {
+      return json({ error: "daily_usage_invalid" }, 400);
+    }
 
     const deviceSecretHash = await sha256Hex(deviceSecret);
     const now = new Date().toISOString();
@@ -88,6 +110,12 @@ export default {
         protection_updated_at: now,
         last_seen_at: now,
         updated_at: now,
+        ...(hasUsagePayload
+          ? {
+              daily_usage_date: dailyUsageDate,
+              daily_usage_seconds: dailyUsageSeconds,
+            }
+          : {}),
       })
       .eq("device_id", deviceId)
       .eq("device_secret_hash", deviceSecretHash)
