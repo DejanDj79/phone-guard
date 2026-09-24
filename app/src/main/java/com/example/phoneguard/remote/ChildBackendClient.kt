@@ -82,6 +82,19 @@ sealed interface ChildHeartbeatResult {
   ) : ChildHeartbeatResult
 }
 
+sealed interface ChildTimeRequestResult {
+  data class Success(
+    val requestId: String,
+    val requestedMinutes: Int,
+    val alreadyPending: Boolean,
+    val pushSent: Boolean,
+  ) : ChildTimeRequestResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildTimeRequestResult
+}
+
 sealed interface ChildCommandAckResult {
   data object Success : ChildCommandAckResult
 
@@ -591,6 +604,72 @@ class ChildBackendClient {
     }
   }
 
+  fun requestMoreTime(
+    deviceId: String,
+    deviceSecret: String,
+    requestedMinutes: Int,
+  ): ChildTimeRequestResult {
+    val connection =
+      (URL(REQUEST_MORE_TIME_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .put("requestedMinutes", requestedMinutes)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        val json = JSONObject(responseBody)
+        ChildTimeRequestResult.Success(
+          requestId = json.getString("requestId"),
+          requestedMinutes = json.optInt("requestedMinutes", requestedMinutes),
+          alreadyPending = json.optBoolean("alreadyPending", false),
+          pushSent = json.optBoolean("pushSent", false),
+        )
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+
+        ChildTimeRequestResult.Failure(
+          when (error) {
+            "child_not_paired" ->
+              "This Child device is not paired with a Parent app."
+            "invalid_requested_minutes" ->
+              "Requested time must be between 1 and 120 minutes."
+            else ->
+              error.ifBlank { "Backend error: HTTP " + statusCode }
+          },
+        )
+      }
+    } catch (error: Exception) {
+      ChildTimeRequestResult.Failure(
+        error.message ?: "Network error.",
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
   fun heartbeat(
     deviceId: String,
     deviceSecret: String,
@@ -666,6 +745,8 @@ class ChildBackendClient {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/sync-commands"
     const val HEARTBEAT_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/heartbeat"
+    const val REQUEST_MORE_TIME_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/request-more-time"
     const val GET_SCHEDULE_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/get-schedule"
     const val INITIALIZE_SCHEDULE_URL =
