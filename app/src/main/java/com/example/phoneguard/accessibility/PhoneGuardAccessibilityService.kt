@@ -426,7 +426,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val timeRequestOptions =
       LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
         visibility = View.GONE
         layoutParams =
           LinearLayout.LayoutParams(
@@ -455,16 +456,19 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         }
       }
 
-    listOf(5, 15, 30, 60).forEach { minutes ->
+    listOf(5, 15, 30).forEach { minutes ->
       timeRequestOptions.addView(
         Button(this).apply {
-          text = minutes.toString() + " MINUTES"
+          text = minutes.toString() + " MIN"
           layoutParams =
             LinearLayout.LayoutParams(
-              LinearLayout.LayoutParams.MATCH_PARENT,
+              0,
               LinearLayout.LayoutParams.WRAP_CONTENT,
+              1f,
             ).apply {
               topMargin = dp(4)
+              marginStart = dp(3)
+              marginEnd = dp(3)
             }
 
           setOnClickListener {
