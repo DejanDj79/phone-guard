@@ -469,10 +469,26 @@ fun ParentDashboardScreen(
           Text("ADD TIME")
         }
 
-        if (!device.isOnline) {
+        if (!device.isOnline && commandProgressMessage == null && commandNotice == null) {
           Text(
             text = "Uređaj je offline. Poslate komande će se primeniti kada se ponovo poveže.",
             style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        commandProgressMessage?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        commandNotice?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
@@ -542,22 +558,6 @@ fun ParentDashboardScreen(
     }
 
     scheduleNotice?.let { message ->
-      Text(
-        text = message,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-    }
-
-    commandProgressMessage?.let { message ->
-      Text(
-        text = message,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-    }
-
-    commandNotice?.let { message ->
       Text(
         text = message,
         style = MaterialTheme.typography.bodyMedium,
