@@ -22,6 +22,7 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         fcmToken = token,
       )
 
+      AppInventorySyncer(applicationContext).sync()
       RemoteCommandSyncer(applicationContext).sync()
     }.start()
   }
@@ -51,6 +52,7 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         }
 
         "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
+        "SYNC_ALLOWED_APPS" -> RemoteCommand.syncAllowedApps()
 
         else -> return
       }
