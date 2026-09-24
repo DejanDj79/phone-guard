@@ -178,7 +178,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val title =
       TextView(this).apply {
-        text = "Telefon je trenutno zaključan"
+        text = "Phone is currently locked"
         textSize = 24f
         gravity = Gravity.CENTER
         setTextColor(Color.WHITE)
@@ -189,8 +189,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       TextView(this).apply {
         text =
           settingsStore.currentScheduledUnlockLabel()?.let {
-            "Ponovo dostupno u $it"
-          } ?: "Ručno zaključano"
+            "Available again at $it"
+          } ?: "Locked manually"
         textSize = 18f
         gravity = Gravity.CENTER
         setTextColor(Color.LTGRAY)
@@ -199,7 +199,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val disclosure =
       TextView(this).apply {
-        text = "Otključavanje je dostupno roditeljskim PIN-om."
+        text = "Unlocking requires the parent PIN."
         textSize = 14f
         gravity = Gravity.CENTER
         setTextColor(Color.LTGRAY)
@@ -208,7 +208,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val pinInput =
       EditText(this).apply {
-        hint = "Roditeljski PIN"
+        hint = "Parent PIN"
         inputType =
           InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
         filters = arrayOf(InputFilter.LengthFilter(6))
@@ -232,7 +232,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val unlockButton =
       Button(this).apply {
-        text = "OTKLJUČAJ"
+        text = "UNLOCK"
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -251,7 +251,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
             hideOverlay()
           } else {
             pinInput.setText("")
-            error.text = "Pogrešan PIN."
+            error.text = "Incorrect PIN."
           }
         }
       }
