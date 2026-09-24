@@ -38,8 +38,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.phoneguard.parent.data.ParentSecurityStore
 
-private const val RELOCK_AFTER_BACKGROUND_MS = 30_000L
-
 @Composable
 fun ParentSecurityGate(
   content: @Composable () -> Unit,
@@ -55,6 +53,12 @@ fun ParentSecurityGate(
   var unlocked by remember { mutableStateOf(false) }
   var backgroundedAt by remember { mutableStateOf<Long?>(null) }
   var biometricPromptAttempted by remember { mutableStateOf(false) }
+  var biometricEnabled by remember {
+    mutableStateOf(securityStore.biometricEnabled())
+  }
+  var relockAfterBackgroundMs by remember {
+    mutableStateOf(securityStore.relockAfterBackgroundMillis())
+  }
 
   val fragmentActivity =
     remember(context) {
@@ -110,11 +114,14 @@ fun ParentSecurityGate(
           }
 
           Lifecycle.Event.ON_START -> {
+            biometricEnabled = securityStore.biometricEnabled()
+            relockAfterBackgroundMs = securityStore.relockAfterBackgroundMillis()
+
             val leftAt = backgroundedAt
             if (
               hasPin &&
               leftAt != null &&
-              SystemClock.elapsedRealtime() - leftAt >= RELOCK_AFTER_BACKGROUND_MS
+              SystemClock.elapsedRealtime() - leftAt >= relockAfterBackgroundMs
             ) {
               unlocked = false
               biometricPromptAttempted = false
@@ -136,11 +143,13 @@ fun ParentSecurityGate(
     hasPin,
     unlocked,
     biometricAvailable,
+    biometricEnabled,
     biometricPromptAttempted,
   ) {
     if (
       hasPin &&
       !unlocked &&
+      biometricEnabled &&
       biometricAvailable &&
       !biometricPromptAttempted
     ) {
@@ -164,7 +173,7 @@ fun ParentSecurityGate(
       ParentPinUnlockScreen(
         onUnlock = securityStore::verifyPin,
         onUnlocked = { unlocked = true },
-        biometricAvailable = biometricAvailable,
+        biometricAvailable = biometricEnabled && biometricAvailable,
         onBiometricUnlock = {
           biometricPromptAttempted = true
           showBiometricPrompt()
