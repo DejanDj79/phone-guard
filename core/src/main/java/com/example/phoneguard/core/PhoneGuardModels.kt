@@ -72,6 +72,7 @@ data class ChildDevice(
   val state: DeviceAccessState,
   val temporaryAccessMinutesRemaining: Int? = null,
   val isOnline: Boolean = true,
+  val lastSeenAt: String? = null,
   val protectionStatus: DeviceProtectionStatus = DeviceProtectionStatus(),
 ) {
   init {
