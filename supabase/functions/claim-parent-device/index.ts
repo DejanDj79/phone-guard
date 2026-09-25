@@ -1,4 +1,5 @@
 import { withSupabase } from "npm:@supabase/server@1.7.1";
+import { requireParentUserId } from "../_shared/parent-auth.ts";
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -15,32 +16,13 @@ function json(body: unknown, status = 200): Response {
   return Response.json(body, { status });
 }
 
-async function authenticatedUserId(
-  req: Request,
-  ctx: { supabaseAdmin: any },
-): Promise<string | null> {
-  const authorization = req.headers.get("authorization")?.trim() ?? "";
-  const match = /^Bearer\s+(.+)$/i.exec(authorization);
-  const token = match?.[1]?.trim();
-
-  if (!token) return null;
-
-  const {
-    data: { user },
-    error,
-  } = await ctx.supabaseAdmin.auth.getUser(token);
-
-  if (error || !user) return null;
-  return user.id;
-}
-
 export default {
   fetch: withSupabase({ auth: "none" }, async (req, ctx) => {
     if (req.method !== "POST") {
       return json({ error: "method_not_allowed" }, 405);
     }
 
-    const parentUserId = await authenticatedUserId(req, ctx);
+    const parentUserId = await requireParentUserId(req, ctx);
     if (!parentUserId) {
       return json({ error: "parent_auth_required" }, 401);
     }
