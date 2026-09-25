@@ -8,8 +8,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
@@ -150,6 +153,7 @@ internal fun ParentDashboardShell(
                   expanded = accountMenuExpanded,
                   onExpandedChange = { accountMenuExpanded = it },
                   parentEmail = parentEmail,
+                  childName = device.displayName,
                   actionsBusy = actionsBusy,
                   coloredHeader = false,
                   onChangeDevice = onChangeDevice,
@@ -199,6 +203,7 @@ internal fun ParentDashboardShell(
                   expanded = accountMenuExpanded,
                   onExpandedChange = { accountMenuExpanded = it },
                   parentEmail = parentEmail,
+                  childName = device.displayName,
                   actionsBusy = actionsBusy,
                   coloredHeader = true,
                   onChangeDevice = onChangeDevice,
@@ -276,6 +281,7 @@ private fun ParentAccountMenuButton(
   expanded: Boolean,
   onExpandedChange: (Boolean) -> Unit,
   parentEmail: String?,
+  childName: String,
   actionsBusy: Boolean,
   coloredHeader: Boolean,
   onChangeDevice: () -> Unit,
@@ -289,7 +295,7 @@ private fun ParentAccountMenuButton(
         if (coloredHeader) {
           MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
         } else {
-          Color.Transparent
+          ParentSectionHeaderColor
         },
       modifier =
         if (coloredHeader) {
@@ -297,17 +303,14 @@ private fun ParentAccountMenuButton(
             .padding(end = 10.dp)
             .size(38.dp)
         } else {
-          Modifier.padding(start = 4.dp)
+          Modifier
+            .padding(start = 10.dp)
+            .size(38.dp)
         },
     ) {
       IconButton(
         onClick = { onExpandedChange(true) },
-        modifier =
-          if (coloredHeader) {
-            Modifier.size(38.dp)
-          } else {
-            Modifier
-          },
+        modifier = Modifier.size(38.dp),
       ) {
         Icon(
           imageVector = Icons.Default.AccountCircle,
@@ -316,14 +319,9 @@ private fun ParentAccountMenuButton(
             if (coloredHeader) {
               ParentSectionHeaderColor
             } else {
-              MaterialTheme.colorScheme.onBackground
+              Color.White
             },
-          modifier =
-            if (coloredHeader) {
-              Modifier.size(20.dp)
-            } else {
-              Modifier
-            },
+          modifier = Modifier.size(20.dp),
         )
       }
     }
@@ -332,28 +330,39 @@ private fun ParentAccountMenuButton(
       expanded = expanded,
       onDismissRequest = { onExpandedChange(false) },
     ) {
-      parentEmail
-        ?.takeIf { it.isNotBlank() }
-        ?.let { email ->
-          DropdownMenuItem(
-            text = {
-              Text(
-                text = email,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-              )
-            },
-            leadingIcon = {
-              Icon(
-                imageVector = Icons.Default.AccountCircle,
-                contentDescription = null,
-              )
-            },
-            onClick = {},
-            enabled = false,
-          )
-          Divider()
-        }
+      Column(
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+      ) {
+        Text(
+          text = "PARENT ACCOUNT",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Text(
+          text =
+            parentEmail
+              ?.takeIf { it.isNotBlank() }
+              ?: "Signed in Parent",
+          style = MaterialTheme.typography.bodyMedium,
+          fontWeight = FontWeight.Bold,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+
+        Text(
+          text = "Managing " + childName,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+      }
+
+      Divider()
 
       DropdownMenuItem(
         text = { Text("Manage children") },
@@ -390,7 +399,7 @@ private fun ParentAccountMenuButton(
         text = { Text("Sign out") },
         leadingIcon = {
           Icon(
-            imageVector = Icons.Default.AccountCircle,
+            imageVector = Icons.Default.Logout,
             contentDescription = null,
           )
         },
