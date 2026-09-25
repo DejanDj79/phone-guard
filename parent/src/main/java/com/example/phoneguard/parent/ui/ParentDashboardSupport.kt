@@ -196,6 +196,7 @@ internal fun BonusTimeWheelDialog(
 
 @Composable
 internal fun PairDeviceScreen(
+  parentEmail: String?,
   onPair: suspend (String) -> PairingResult,
   onSwitchAccount: suspend () -> String?,
   onCancel: (() -> Unit)? = null,
@@ -236,6 +237,17 @@ internal fun PairDeviceScreen(
       style = MaterialTheme.typography.bodyMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+
+    parentEmail
+      ?.takeIf { it.isNotBlank() }
+      ?.let { email ->
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+          text = "Signed in as " + email,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
 
     Spacer(modifier = Modifier.height(24.dp))
 
