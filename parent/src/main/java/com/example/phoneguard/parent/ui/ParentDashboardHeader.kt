@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -225,41 +226,56 @@ internal fun ParentDashboardShell(
     },
     bottomBar = {
       if (showBottomNavigation) {
-        NavigationBar(
-          containerColor = ParentSectionHeaderColor,
-          tonalElevation = 0.dp,
+        Box(
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .navigationBarsPadding()
+              .padding(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 10.dp),
         ) {
-          parentBottomSections.forEachIndexed { index, section ->
-            NavigationBarItem(
-              selected = selectedSection == index,
-              onClick = { onSectionSelected(index) },
-              icon = {
-                Icon(
-                  imageVector = section.icon,
-                  contentDescription = section.label,
+          Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(30.dp),
+            color = ParentSectionHeaderColor,
+            shadowElevation = 10.dp,
+          ) {
+            NavigationBar(
+              containerColor = Color.Transparent,
+              tonalElevation = 0.dp,
+            ) {
+              parentBottomSections.forEachIndexed { index, section ->
+                NavigationBarItem(
+                  selected = selectedSection == index,
+                  onClick = { onSectionSelected(index) },
+                  icon = {
+                    Icon(
+                      imageVector = section.icon,
+                      contentDescription = section.label,
+                    )
+                  },
+                  label = {
+                    Text(
+                      text = section.label,
+                      style = MaterialTheme.typography.labelSmall,
+                      fontWeight =
+                        if (selectedSection == index) {
+                          FontWeight.Bold
+                        } else {
+                          FontWeight.Medium
+                        },
+                    )
+                  },
+                  colors =
+                    NavigationBarItemDefaults.colors(
+                      selectedIconColor = ParentSectionHeaderColor,
+                      selectedTextColor = Color.White,
+                      indicatorColor = Color.White,
+                      unselectedIconColor = Color.White.copy(alpha = 0.72f),
+                      unselectedTextColor = Color.White.copy(alpha = 0.72f),
+                    ),
                 )
-              },
-              label = {
-                Text(
-                  text = section.label,
-                  style = MaterialTheme.typography.labelSmall,
-                  fontWeight =
-                    if (selectedSection == index) {
-                      FontWeight.Bold
-                    } else {
-                      FontWeight.Medium
-                    },
-                )
-              },
-              colors =
-                NavigationBarItemDefaults.colors(
-                  selectedIconColor = ParentSectionHeaderColor,
-                  selectedTextColor = Color.White,
-                  indicatorColor = Color.White,
-                  unselectedIconColor = Color.White.copy(alpha = 0.72f),
-                  unselectedTextColor = Color.White.copy(alpha = 0.72f),
-                ),
-            )
+              }
+            }
           }
         }
       }
