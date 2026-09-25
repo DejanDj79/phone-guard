@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import com.example.phoneguard.parent.auth.ParentSupabase
 import com.example.phoneguard.parent.data.ParentSettingsStore
@@ -15,6 +14,7 @@ import com.example.phoneguard.parent.ui.ParentAuthGate
 import com.example.phoneguard.parent.ui.ParentDashboardScreen
 import com.example.phoneguard.parent.ui.ParentSecurityGate
 import com.example.phoneguard.parent.ui.ParentPostAuthOnboardingGate
+import com.example.phoneguard.parent.ui.PhoneGuardParentTheme
 import com.google.firebase.FirebaseApp
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
@@ -27,8 +27,10 @@ class MainActivity : FragmentActivity() {
     selectRequestedDevice(intent)
     enableEdgeToEdge()
     setContent {
-      MaterialTheme {
-        Surface {
+      PhoneGuardParentTheme {
+        Surface(
+          color = androidx.compose.material3.MaterialTheme.colorScheme.background,
+        ) {
           ParentAuthGate {
             ParentSecurityGate {
               ParentPostAuthOnboardingGate {
