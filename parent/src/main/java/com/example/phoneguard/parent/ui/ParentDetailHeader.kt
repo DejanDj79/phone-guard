@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -55,7 +56,16 @@ internal fun ParentDetailHeader(
   ) {
     Surface(
       color = Color.Transparent,
-      shape = RoundedCornerShape(0.dp),
+      shape =
+        RoundedCornerShape(
+          bottomStart = 28.dp,
+          bottomEnd = 28.dp,
+        ),
+      border =
+        BorderStroke(
+          width = 1.dp,
+          color = MaterialTheme.colorScheme.outline.copy(alpha = 0.58f),
+        ),
     ) {
       Box(
         modifier =
