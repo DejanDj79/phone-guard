@@ -117,7 +117,7 @@ fun ParentScheduleEditorScreen(
       )
 
       Row(
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(5.dp),
       ) {
         ScheduleDay.entries.forEach { day ->
@@ -165,7 +165,7 @@ fun ParentScheduleEditorScreen(
       }
 
       Surface(
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surface,
       ) {
@@ -174,7 +174,7 @@ fun ParentScheduleEditorScreen(
           verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
           Row(
-            modifier = Modifier.heightIn(min = 52.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
           ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -211,7 +211,7 @@ fun ParentScheduleEditorScreen(
           }
 
           Row(
-            modifier = Modifier.heightIn(min = 52.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
           ) {
             if (editingStart) {
