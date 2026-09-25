@@ -188,8 +188,8 @@ Home is the main command center and should prioritize only information that matt
 - [x] Parent pairing flow redesign
 - [x] Child five-step setup wizard
 - [x] Clarified Child Change Parent flow
-- [ ] Parent modern app shell: top app bar + navigation drawer + account menu
-- [ ] Parent Home final minimalist redesign
+- [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting physical UI review
+- [ ] Parent Home final minimalist redesign — first modern pass implemented, awaiting physical UI review
 - [ ] Schedule screen redesign
 - [ ] Apps screen redesign
 - [ ] Device / protection screen redesign
