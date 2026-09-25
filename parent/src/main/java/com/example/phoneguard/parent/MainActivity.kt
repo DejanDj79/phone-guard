@@ -11,24 +11,30 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
 import androidx.core.content.ContextCompat
 import androidx.compose.material3.Surface
+import com.example.phoneguard.parent.auth.ParentSupabase
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.push.ParentMessagingService
 import com.example.phoneguard.parent.push.ParentPushRegistrar
+import com.example.phoneguard.parent.ui.ParentAuthGate
 import com.example.phoneguard.parent.ui.ParentDashboardScreen
 import com.example.phoneguard.parent.ui.ParentSecurityGate
 import com.google.firebase.FirebaseApp
+import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : FragmentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    ParentSupabase.client.handleDeeplinks(intent)
     selectRequestedDevice(intent)
     enableEdgeToEdge()
     setContent {
       MaterialTheme {
         Surface {
-          ParentSecurityGate {
-            ParentDashboardScreen()
+          ParentAuthGate {
+            ParentSecurityGate {
+              ParentDashboardScreen()
+            }
           }
         }
       }
@@ -66,6 +72,7 @@ class MainActivity : FragmentActivity() {
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     setIntent(intent)
+    ParentSupabase.client.handleDeeplinks(intent)
 
     if (selectRequestedDevice(intent)) {
       recreate()
