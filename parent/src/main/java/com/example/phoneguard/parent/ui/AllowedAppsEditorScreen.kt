@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -53,21 +52,22 @@ fun AllowedAppsEditorScreen(
     color = MaterialTheme.colorScheme.background,
   ) {
     Column(
-      modifier =
-        Modifier
-          .fillMaxSize()
-          .verticalScroll(rememberScrollState())
-          .statusBarsPadding()
-          .padding(horizontal = 20.dp, vertical = 24.dp),
-      verticalArrangement = Arrangement.spacedBy(14.dp),
+      modifier = Modifier.fillMaxSize(),
     ) {
-      Text(
-        text = "Allowed apps",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
+      ParentDetailHeader(
+        title = "Allowed apps",
+        onBack = onCancel,
       )
 
-      Text(
+      Column(
+        modifier =
+          Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+      ) {
+        Text(
         text = "Apps enabled here remain available while the Child phone is locked.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -203,7 +203,8 @@ fun AllowedAppsEditorScreen(
         Text("CANCEL")
       }
 
-      Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+      }
     }
   }
 }
