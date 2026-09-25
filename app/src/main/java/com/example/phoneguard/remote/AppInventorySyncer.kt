@@ -105,7 +105,7 @@ class AppInventorySyncer(context: Context) {
                 Base64.encodeToString(
                   output.toByteArray(),
                   Base64.NO_WRAP,
-                )
+                ).takeIf { it.length <= MAX_ICON_BASE64_LENGTH }
               }.getOrNull(),
           )
         }
@@ -120,5 +120,6 @@ class AppInventorySyncer(context: Context) {
   private companion object {
     const val TAG = "PhoneGuardAppInventory"
     const val ICON_SIZE_PX = 48
+    const val MAX_ICON_BASE64_LENGTH = 16_384
   }
 }
