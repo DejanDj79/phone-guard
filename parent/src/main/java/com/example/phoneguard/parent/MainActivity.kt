@@ -6,6 +6,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Surface
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.example.phoneguard.parent.auth.ParentSupabase
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.push.ParentMessagingService
@@ -26,6 +28,7 @@ class MainActivity : FragmentActivity() {
     ParentSupabase.client.handleDeeplinks(intent)
     selectRequestedDevice(intent)
     enableEdgeToEdge()
+    hideSystemNavigation()
     setContent {
       PhoneGuardParentTheme {
         Surface(
@@ -54,6 +57,14 @@ class MainActivity : FragmentActivity() {
     }
   }
 
+  override fun onWindowFocusChanged(hasFocus: Boolean) {
+    super.onWindowFocusChanged(hasFocus)
+
+    if (hasFocus) {
+      hideSystemNavigation()
+    }
+  }
+
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     setIntent(intent)
@@ -61,6 +72,14 @@ class MainActivity : FragmentActivity() {
 
     if (selectRequestedDevice(intent)) {
       recreate()
+    }
+  }
+
+  private fun hideSystemNavigation() {
+    WindowInsetsControllerCompat(window, window.decorView).apply {
+      hide(WindowInsetsCompat.Type.navigationBars())
+      systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
   }
 
