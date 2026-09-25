@@ -131,7 +131,8 @@ private fun ParentNotificationOnboardingScreen(
           }
         },
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("ENABLE NOTIFICATIONS")
       }
 
@@ -140,7 +141,8 @@ private fun ParentNotificationOnboardingScreen(
       OutlinedButton(
         onClick = onComplete,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("NOT NOW")
       }
     }
