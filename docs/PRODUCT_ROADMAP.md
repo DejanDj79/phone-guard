@@ -346,3 +346,7 @@ Before publication we still need to decide:
 - Parent background now uses a center-lit horizontal gradient rather than a vertical one: darker `#DEDEDA` edges, a lighter `#F3F3F0` center, and intermediate `#E7E7E3` stops. Main and detail headers are transparent so the same root gradient continues behind Back/account controls.
 
 - Bottom navigation now has exactly one visible rounded surface with shadow; the Scaffold/outer area remains transparent so there is no second gray strip behind the shadow. Icons remain label-free, with orange used only for the selected circular destination.
+
+- Top headers now retain the root gradient while adding a thin darker outline and rounded lower corners so their shape remains visible without introducing a separate fill layer.
+
+- Bottom navigation is now a true overlay instead of a Scaffold bottomBar, so no reserved background strip sits behind its shadow. Main scroll content keeps internal bottom breathing room only. The selected orange circle is a single shared indicator that slides between icons using a spring/bounce animation.
