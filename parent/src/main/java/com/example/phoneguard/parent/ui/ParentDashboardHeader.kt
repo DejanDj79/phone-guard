@@ -271,7 +271,7 @@ private fun ParentFloatingBottomNavigation(
           .fillMaxWidth()
           .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-      val itemWidth = maxWidth / parentBottomSections.size
+      val itemWidth = maxWidth / parentBottomSections.size.toFloat()
       val indicatorTarget =
         (itemWidth * selectedSection.toFloat()) +
           ((itemWidth - 44.dp) / 2f)
