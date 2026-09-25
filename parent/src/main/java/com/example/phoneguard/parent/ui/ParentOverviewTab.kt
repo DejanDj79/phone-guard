@@ -41,6 +41,7 @@ internal fun ParentOverviewTab(
   onUnlock: () -> Unit,
   onAddBonusTime: () -> Unit,
   onTestConnection: () -> Unit,
+  onOpenDevice: () -> Unit,
   onAppUsageViewChange: (Int) -> Unit,
 ) {
   pendingTimeRequest?.let { request ->
@@ -105,13 +106,151 @@ internal fun ParentOverviewTab(
     )
   }
 
+  val presence = devicePresenceState(device.lastSeenAt)
+  val protection = device.protectionStatus
+  val protectionKnown =
+    listOf(
+      protection.accessibilityEnabled,
+      protection.preciseTimingEnabled,
+      protection.batteryUnrestricted,
+    ).all { it != null }
+  val protectionComplete =
+    protectionKnown &&
+      protection.accessibilityEnabled == true &&
+      protection.preciseTimingEnabled == true &&
+      protection.batteryUnrestricted == true
+
   ElevatedCard(modifier = Modifier.fillMaxWidth()) {
     Column(
       modifier = Modifier.padding(20.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Text(
-        text = "Quick actions",
+        text = "Today",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+      )
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "Screen time",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+          Text(
+            text = formatUsageSeconds(device.dailyScreenTime.usedSeconds),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+          )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "Daily limit",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+          Text(
+            text =
+              device.dailyScreenTime.limitMinutes
+                ?.let(::formatDurationMinutes)
+                ?: "Not set",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+          )
+        }
+      }
+
+      Text(
+        text = deviceStateLabel(device),
+        style = MaterialTheme.typography.bodyLarge,
+        fontWeight = FontWeight.SemiBold,
+      )
+
+      Text(
+        text = devicePresenceSummary(device.lastSeenAt),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+
+      if (
+        device.dailyScreenTime.limitMinutes != null &&
+        device.dailyScreenTime.remainingMinutes != null
+      ) {
+        Text(
+          text =
+            if (device.dailyScreenTime.limitReached) {
+              "Daily screen time limit reached."
+            } else {
+              formatDurationMinutes(device.dailyScreenTime.remainingMinutes) +
+                " remaining today."
+            },
+          style = MaterialTheme.typography.bodyMedium,
+          color =
+            if (device.dailyScreenTime.limitReached) {
+              MaterialTheme.colorScheme.error
+            } else {
+              MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
+      }
+    }
+  }
+
+  if (
+    presence == DevicePresenceState.POSSIBLE_SHUTDOWN ||
+    (protectionKnown && !protectionComplete)
+  ) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        Text(
+          text = "Needs attention",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+          color = MaterialTheme.colorScheme.error,
+        )
+
+        Text(
+          text =
+            when {
+              presence == DevicePresenceState.POSSIBLE_SHUTDOWN ->
+                "PhoneGuard has not checked in for 30+ minutes. The Child phone may be offline or powered off."
+              protection.accessibilityEnabled == false ->
+                "Screen protection is disabled on the Child phone."
+              protection.batteryUnrestricted == false ->
+                "Background protection is restricted by Android battery settings."
+              protection.preciseTimingEnabled == false ->
+                "Precise timing is not allowed on the Child phone."
+              else ->
+                "One or more protection checks need attention."
+            },
+          style = MaterialTheme.typography.bodyMedium,
+        )
+
+        OutlinedButton(
+          onClick = onOpenDevice,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("VIEW DEVICE STATUS")
+        }
+      }
+    }
+  }
+
+  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    Column(
+      modifier = Modifier.padding(20.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Text(
+        text = "Quick controls",
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
       )
@@ -121,27 +260,23 @@ internal fun ParentOverviewTab(
         device.state == DeviceAccessState.ALLOWED ||
           device.state == DeviceAccessState.TEMPORARILY_ALLOWED
 
-      Button(
-        onClick = onLock,
-        enabled = !commandInProgress && !connectionTestInProgress && !isLocked,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text(if (isLocked) "LOCKED" else "LOCK NOW")
+      if (isLocked) {
+        Button(
+          onClick = onUnlock,
+          enabled = !commandInProgress && !connectionTestInProgress,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("UNLOCK")
+        }
+      } else {
+        Button(
+          onClick = onLock,
+          enabled = !commandInProgress && !connectionTestInProgress,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("LOCK NOW")
+        }
       }
-
-      OutlinedButton(
-        onClick = onUnlock,
-        enabled = !commandInProgress && !connectionTestInProgress && !isUnlocked,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text(if (isUnlocked) "UNLOCKED" else "UNLOCK")
-      }
-
-      Text(
-        text = "Bonus time",
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
 
       if (
         device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
@@ -149,7 +284,7 @@ internal fun ParentOverviewTab(
       ) {
         Text(
           text =
-            "Remaining: " +
+            "Bonus time remaining: " +
               device.temporaryAccessMinutesRemaining +
               " min",
           style = MaterialTheme.typography.bodyMedium,
@@ -162,8 +297,48 @@ internal fun ParentOverviewTab(
         enabled = !commandInProgress && !connectionTestInProgress,
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text("ADD TIME")
+        Text("ADD BONUS TIME")
       }
+
+      commandProgressMessage?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+
+      commandNotice?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+    }
+  }
+
+  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    Column(
+      modifier = Modifier.padding(20.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Text(
+        text = "Connection",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+      )
+
+      Text(
+        text =
+          if (presence == DevicePresenceState.ONLINE) {
+            "PhoneGuard is checking in normally."
+          } else {
+            devicePresenceSummary(device.lastSeenAt)
+          },
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
 
       OutlinedButton(
         onClick = onTestConnection,
@@ -192,35 +367,6 @@ internal fun ParentOverviewTab(
           text = message,
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.error,
-        )
-      }
-
-      if (
-        devicePresenceState(device.lastSeenAt) ==
-          DevicePresenceState.POSSIBLE_SHUTDOWN &&
-        commandProgressMessage == null &&
-        commandNotice == null
-      ) {
-        Text(
-          text = "PhoneGuard has not checked in for 30+ minutes. Commands will wait for its next check-in.",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-
-      commandProgressMessage?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-
-      commandNotice?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
     }
