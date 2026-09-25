@@ -68,12 +68,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private val lastProtectionEventAt = mutableMapOf<String, Long>()
   private var phoneGuardAppInfoActive = false
   private var appInfoDialogGraceUntil = 0L
-  private val protectionStatusRefreshRunnable =
-    Runnable {
-      if (::heartbeatSender.isInitialized) {
-        sendHeartbeat()
-      }
-    }
+  private var lastProtectionStatusWatchAt = 0L
 
   private val networkCallback =
     object : ConnectivityManager.NetworkCallback() {
@@ -145,7 +140,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     ) {
       val protectionPackage = event.packageName?.toString().orEmpty()
       if (isSupportedSettingsPackage(protectionPackage)) {
-        scheduleProtectionStatusRefresh()
+        scheduleProtectionStatusWatch()
       }
     }
 
@@ -629,7 +624,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   override fun onDestroy() {
     mainHandler.removeCallbacks(heartbeatRunnable)
-    mainHandler.removeCallbacks(protectionStatusRefreshRunnable)
     if (::dailyUsageTracker.isInitialized) {
       dailyUsageTracker.stop()
     }
@@ -659,12 +653,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }.start()
   }
 
-  private fun scheduleProtectionStatusRefresh() {
-    mainHandler.removeCallbacks(protectionStatusRefreshRunnable)
-    mainHandler.postDelayed(
-      protectionStatusRefreshRunnable,
-      PROTECTION_STATUS_REFRESH_DELAY_MS,
-    )
+  private fun scheduleProtectionStatusWatch() {
+    val now = System.currentTimeMillis()
+    if (now - lastProtectionStatusWatchAt < PROTECTION_STATUS_WATCH_DEBOUNCE_MS) {
+      return
+    }
+
+    lastProtectionStatusWatchAt = now
+    alarmScheduler.scheduleProtectionStatusWatch()
   }
 
   private fun refreshOverlayOnMainThread() {
@@ -1194,7 +1190,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private companion object {
     const val TAG = "PhoneGuardAccessibility"
     const val APP_INFO_DIALOG_GRACE_MS = 10_000L
-    const val PROTECTION_STATUS_REFRESH_DELAY_MS = 750L
+    const val PROTECTION_STATUS_WATCH_DEBOUNCE_MS = 2_000L
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
