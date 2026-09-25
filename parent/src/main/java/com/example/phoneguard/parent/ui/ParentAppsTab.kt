@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -174,7 +174,7 @@ internal fun ParentAppsTab(
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
       )
 
-      Button(
+      OutlinedButton(
         onClick = onManageAllowedApps,
         enabled =
           !allowedAppsLoading &&
