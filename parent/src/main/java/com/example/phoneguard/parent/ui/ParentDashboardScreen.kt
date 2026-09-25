@@ -151,6 +151,8 @@ fun ParentDashboardScreen(
 
   if (uiState.showPairDevice || uiState.pairedDevice == null) {
     PairDeviceScreen(
+      parentEmail =
+        ParentSupabase.client.auth.currentUserOrNull()?.email,
       modifier = modifier,
       onSwitchAccount = {
         runCatching {
