@@ -342,3 +342,7 @@ Before publication we still need to decide:
 - Warm Modern refinement: default actions are outline-only with neutral graphite text/borders; orange `#E83E1D` is reserved for active/selected states such as selected schedule day/time target, selected usage filter, checked switches, selected relock option and selected bottom-nav destination.
 
 - The floating bottom navigation base is transparent and contributes only a floating shadow; only the four circular icon buttons are visible. The background gradient was darkened slightly to `#F2F2EF → #E4E4E0` after physical feedback.
+
+- Parent background now uses a center-lit horizontal gradient rather than a vertical one: darker `#DEDEDA` edges, a lighter `#F3F3F0` center, and intermediate `#E7E7E3` stops. Main and detail headers are transparent so the same root gradient continues behind Back/account controls.
+
+- Bottom navigation now has exactly one visible rounded surface with shadow; the Scaffold/outer area remains transparent so there is no second gray strip behind the shadow. Icons remain label-free, with orange used only for the selected circular destination.
