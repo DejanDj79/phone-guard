@@ -121,7 +121,7 @@ private fun ParentNotificationOnboardingScreen(
 
       Spacer(modifier = Modifier.height(28.dp))
 
-      Button(
+      OutlinedButton(
         onClick = {
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
