@@ -1395,6 +1395,7 @@ fun ParentDashboardScreen(
   }
 }
 
+@Preview(showBackground = true)
 @Composable
 private fun ParentDashboardPreview() {
   MaterialTheme {
