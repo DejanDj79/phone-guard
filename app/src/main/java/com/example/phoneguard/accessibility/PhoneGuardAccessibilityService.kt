@@ -68,6 +68,12 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private val lastProtectionEventAt = mutableMapOf<String, Long>()
   private var phoneGuardAppInfoActive = false
   private var appInfoDialogGraceUntil = 0L
+  private val protectionStatusRefreshRunnable =
+    Runnable {
+      if (::heartbeatSender.isInitialized) {
+        sendHeartbeat()
+      }
+    }
 
   private val networkCallback =
     object : ConnectivityManager.NetworkCallback() {
@@ -132,6 +138,16 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     if (!::settingsStore.isInitialized || event == null) return
+
+    if (
+      event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+      event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+    ) {
+      val protectionPackage = event.packageName?.toString().orEmpty()
+      if (isSupportedSettingsPackage(protectionPackage)) {
+        scheduleProtectionStatusRefresh()
+      }
+    }
 
     if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
       val eventPackage = event.packageName?.toString()?.trim()
@@ -613,6 +629,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   override fun onDestroy() {
     mainHandler.removeCallbacks(heartbeatRunnable)
+    mainHandler.removeCallbacks(protectionStatusRefreshRunnable)
     if (::dailyUsageTracker.isInitialized) {
       dailyUsageTracker.stop()
     }
@@ -640,6 +657,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       AppInventorySyncer(applicationContext).sync()
       RemoteCommandSyncer(applicationContext).sync()
     }.start()
+  }
+
+  private fun scheduleProtectionStatusRefresh() {
+    mainHandler.removeCallbacks(protectionStatusRefreshRunnable)
+    mainHandler.postDelayed(
+      protectionStatusRefreshRunnable,
+      PROTECTION_STATUS_REFRESH_DELAY_MS,
+    )
   }
 
   private fun refreshOverlayOnMainThread() {
@@ -1169,6 +1194,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private companion object {
     const val TAG = "PhoneGuardAccessibility"
     const val APP_INFO_DIALOG_GRACE_MS = 10_000L
+    const val PROTECTION_STATUS_REFRESH_DELAY_MS = 750L
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
