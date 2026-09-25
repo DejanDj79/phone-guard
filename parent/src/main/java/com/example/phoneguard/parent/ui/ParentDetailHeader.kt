@@ -83,7 +83,7 @@ internal fun ParentDetailHeader(
             Icon(
               imageVector = Icons.Default.ArrowBack,
               contentDescription = "Back",
-              tint = ParentAccentColor,
+              tint = MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.size(19.dp),
             )
           }
