@@ -45,14 +45,18 @@ fun ParentPostAuthOnboardingGate(
   }
 
   val notificationsGranted =
-    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
       ContextCompat.checkSelfPermission(
         context,
         Manifest.permission.POST_NOTIFICATIONS,
       ) == PackageManager.PERMISSION_GRANTED
 
   LaunchedEffect(notificationsGranted) {
-    if (notificationsGranted && !notificationStepCompleted) {
+    if (
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+      notificationsGranted &&
+      !notificationStepCompleted
+    ) {
       store.completeNotificationStep()
       notificationStepCompleted = true
     }
