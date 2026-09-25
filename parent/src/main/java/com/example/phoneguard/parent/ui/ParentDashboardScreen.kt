@@ -1082,67 +1082,16 @@ fun ParentDashboardScreen(
         .padding(horizontal = 24.dp, vertical = 32.dp),
     verticalArrangement = Arrangement.spacedBy(20.dp),
   ) {
-    Text(
-      text = "PhoneGuard Parent",
-      style = MaterialTheme.typography.headlineMedium,
-      fontWeight = FontWeight.Bold,
+    ParentDashboardHeader(
+      device = device,
+      selectedTab = uiState.selectedTab,
+      actionsBusy =
+        uiState.commandInProgress ||
+          uiState.connectionTestInProgress ||
+          uiState.refreshInProgress,
+      onChangeDevice = { uiState.showDevices = true },
+      onTabSelected = { uiState.selectedTab = it },
     )
-
-    Text(
-      text = "Parental control",
-      style = MaterialTheme.typography.titleMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-      ) {
-        Text(
-          text = "Managing",
-          style = MaterialTheme.typography.labelMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Text(
-          text = device.displayName,
-          style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.SemiBold,
-        )
-
-        Text(
-          text =
-            devicePresenceSummary(device.lastSeenAt) +
-              " · " +
-              deviceStateLabel(device).removePrefix("● ").removePrefix("○ "),
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        OutlinedButton(
-          onClick = { uiState.showDevices = true },
-          enabled =
-            !uiState.commandInProgress &&
-              !uiState.connectionTestInProgress &&
-              !uiState.refreshInProgress,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("CHANGE DEVICE")
-        }
-      }
-    }
-
-    ScrollableTabRow(selectedTabIndex = uiState.selectedTab) {
-      listOf("Overview", "Schedule", "Apps", "Device", "Settings")
-        .forEachIndexed { index, label ->
-        Tab(
-          selected = uiState.selectedTab == index,
-          onClick = { uiState.selectedTab = index },
-          text = { Text(label) },
-        )
-      }
-    }
 
     if (uiState.selectedTab == 3) {
       ParentDeviceTab(
