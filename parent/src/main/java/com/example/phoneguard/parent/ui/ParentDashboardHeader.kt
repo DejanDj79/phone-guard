@@ -187,11 +187,13 @@ internal fun ParentDashboardShell(
             title = {
               Text(
                 text =
-                  parentDashboardSections
-                    .getOrNull(sectionIndex)
-                    ?.label
-                    ?: "PhoneGuard",
-                style = MaterialTheme.typography.titleLarge,
+                  (
+                    parentDashboardSections
+                      .getOrNull(sectionIndex)
+                      ?.label
+                      ?: "PhoneGuard"
+                  ).uppercase(),
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = headerContentColor,
               )
