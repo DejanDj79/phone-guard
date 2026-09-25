@@ -87,21 +87,21 @@ private val ParentTypography =
     titleMedium =
       TextStyle(
         fontFamily = ManropeFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
         lineHeight = 22.sp,
       ),
     bodyLarge =
       TextStyle(
         fontFamily = ManropeFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
       ),
     bodyMedium =
       TextStyle(
         fontFamily = ManropeFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 21.sp,
       ),
