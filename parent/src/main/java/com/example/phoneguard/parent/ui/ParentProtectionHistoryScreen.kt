@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -135,7 +136,7 @@ internal fun ParentProtectionHistoryScreen(
             OutlinedButton(
               onClick = { showClearConfirmation = true },
               enabled = !clearing,
-              modifier = Modifier.fillMaxWidth(),
+              modifier = Modifier.heightIn(min = 52.dp),
             ) {
               if (clearing) {
                 CircularProgressIndicator(
@@ -177,7 +178,8 @@ internal fun ParentProtectionHistoryScreen(
             onRequestClear()
           },
           enabled = !clearing,
-        ) {
+        modifier = Modifier.heightIn(min = 52.dp),
+      ) {
           Text("CLEAR")
         }
       },
@@ -185,7 +187,8 @@ internal fun ParentProtectionHistoryScreen(
         OutlinedButton(
           onClick = { showClearConfirmation = false },
           enabled = !clearing,
-        ) {
+        modifier = Modifier.heightIn(min = 52.dp),
+      ) {
           Text("CANCEL")
         }
       },
