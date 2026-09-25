@@ -5,7 +5,13 @@ import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.phoneguard.parent.auth.ParentSupabase
@@ -16,6 +22,8 @@ import com.example.phoneguard.parent.ui.ParentAuthGate
 import com.example.phoneguard.parent.ui.ParentDashboardScreen
 import com.example.phoneguard.parent.ui.ParentSecurityGate
 import com.example.phoneguard.parent.ui.ParentPostAuthOnboardingGate
+import com.example.phoneguard.parent.ui.ParentGradientBottom
+import com.example.phoneguard.parent.ui.ParentGradientTop
 import com.example.phoneguard.parent.ui.PhoneGuardParentTheme
 import com.google.firebase.FirebaseApp
 import io.github.jan.supabase.auth.auth
@@ -31,13 +39,29 @@ class MainActivity : FragmentActivity() {
     hideSystemNavigation()
     setContent {
       PhoneGuardParentTheme {
-        Surface(
-          color = androidx.compose.material3.MaterialTheme.colorScheme.background,
+        Box(
+          modifier =
+            Modifier
+              .fillMaxSize()
+              .background(
+                Brush.verticalGradient(
+                  colors =
+                    listOf(
+                      ParentGradientTop,
+                      ParentGradientBottom,
+                    ),
+                ),
+              ),
         ) {
-          ParentAuthGate {
-            ParentSecurityGate {
-              ParentPostAuthOnboardingGate {
-                ParentDashboardScreen()
+          Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Transparent,
+          ) {
+            ParentAuthGate {
+              ParentSecurityGate {
+                ParentPostAuthOnboardingGate {
+                  ParentDashboardScreen()
+                }
               }
             }
           }
