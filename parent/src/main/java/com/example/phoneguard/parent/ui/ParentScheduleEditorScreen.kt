@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -134,7 +135,7 @@ fun ParentScheduleEditorScreen(
             shape = RoundedCornerShape(14.dp),
             color =
               when {
-                selected -> MaterialTheme.colorScheme.primary
+                selected -> ParentAccentColor
                 row.isActive() -> MaterialTheme.colorScheme.primaryContainer
                 else -> MaterialTheme.colorScheme.surface
               },
@@ -151,7 +152,7 @@ fun ParentScheduleEditorScreen(
                 },
               color =
                 when {
-                  selected -> MaterialTheme.colorScheme.onPrimary
+                  selected -> Color.White
                   row.isActive() -> MaterialTheme.colorScheme.onPrimaryContainer
                   else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
@@ -217,6 +218,11 @@ fun ParentScheduleEditorScreen(
                 onClick = { editingStart = true },
                 enabled = !saving,
                 modifier = Modifier.weight(1f),
+                colors =
+                  ButtonDefaults.buttonColors(
+                    containerColor = ParentAccentColor,
+                    contentColor = Color.White,
+                  ),
               ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
@@ -253,6 +259,11 @@ fun ParentScheduleEditorScreen(
                 onClick = { editingStart = false },
                 enabled = !saving,
                 modifier = Modifier.weight(1f),
+                colors =
+                  ButtonDefaults.buttonColors(
+                    containerColor = ParentAccentColor,
+                    contentColor = Color.White,
+                  ),
               ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
@@ -371,7 +382,7 @@ fun ParentScheduleEditorScreen(
 
       Spacer(modifier = Modifier.height(4.dp))
 
-      Button(
+      OutlinedButton(
         onClick = {
           val parsedDays = mutableMapOf<ScheduleDay, RemoteDaySchedule>()
           var error: String? = null
@@ -415,7 +426,7 @@ fun ParentScheduleEditorScreen(
           CircularProgressIndicator(
             modifier = Modifier.size(18.dp),
             strokeWidth = 2.dp,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         } else {
           Text("SAVE SCHEDULE")
