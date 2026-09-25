@@ -607,7 +607,7 @@ fun ParentDashboardScreen(
           }
         }
 
-        delay(15_000)
+        delay(5_000)
       }
     }
   }
@@ -702,7 +702,7 @@ fun ParentDashboardScreen(
       }
 
       protectionHistoryLoading = false
-      delay(15_000)
+      delay(5_000)
     }
   }
 
