@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.example.phoneguard.core.AllowedAppsSnapshot
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.RemoteCommand
+import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.core.RemoteWeeklySchedule
 import com.example.phoneguard.parent.data.AppUsageDay
 import com.example.phoneguard.parent.data.PendingTimeRequest
@@ -24,6 +25,7 @@ internal class ParentDashboardUiState(
   var selectedTab by mutableStateOf(0)
 
   var commandInProgress by mutableStateOf(false)
+  var activeCommandType by mutableStateOf<RemoteCommandType?>(null)
   var commandProgressMessage by mutableStateOf<String?>(null)
   var commandNotice by mutableStateOf<String?>(null)
   var pendingCommandFeedback by mutableStateOf<RemoteCommand?>(null)
