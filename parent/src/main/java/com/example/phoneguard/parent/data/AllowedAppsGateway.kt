@@ -53,6 +53,7 @@ class HttpAllowedAppsGateway : AllowedAppsGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -142,6 +143,7 @@ class HttpAllowedAppsGateway : AllowedAppsGateway {
         readTimeout = 15_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
