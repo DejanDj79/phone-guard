@@ -16,6 +16,13 @@ class ProtectionStatusReceiver : BroadcastReceiver() {
 
     Thread {
       try {
+        if (
+          intent?.action ==
+            "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"
+        ) {
+          ScheduleAlarmScheduler(appContext).syncCurrentStateAndScheduleNext()
+        }
+
         ChildHeartbeatSender(appContext).send()
       } catch (error: Exception) {
         Log.w(TAG, "Protection status heartbeat failed", error)
