@@ -52,7 +52,7 @@ internal fun ParentScheduleTab(
   )
 
   Surface(
-    modifier = Modifier.heightIn(min = 52.dp),
+    modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(28.dp),
     color = MaterialTheme.colorScheme.secondaryContainer,
   ) {
@@ -121,7 +121,7 @@ internal fun ParentScheduleTab(
   val remainingMinutes = dailyScreenTime.remainingMinutes
 
   Surface(
-    modifier = Modifier.heightIn(min = 52.dp),
+    modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(28.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
@@ -163,13 +163,13 @@ internal fun ParentScheduleTab(
       }
 
       Row(
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         ScheduleMetric(
           label = "USED TODAY",
           value = formatUsageSeconds(dailyScreenTime.usedSeconds),
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
 
         ScheduleMetric(
@@ -181,7 +181,7 @@ internal fun ParentScheduleTab(
               remainingMinutes != null -> formatDurationMinutes(remainingMinutes)
               else -> "—"
             },
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
       }
 
