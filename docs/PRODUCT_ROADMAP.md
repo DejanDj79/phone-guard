@@ -10,6 +10,47 @@ PhoneGuard should have a useful free version that covers the core parental-contr
 
 The exact subscription / one-time-purchase model is **not decided yet**.
 
+
+## App roles, accounts and onboarding
+
+**Decision:** Parent and Child remain separate Android applications.
+
+### Parent
+
+- A Parent account is required before Parent controls are available.
+- Supported sign-in methods:
+  - Continue with Google
+  - Continue with email and password
+- Supabase Auth owns the Parent cloud session.
+- A local 4–6 digit Parent PIN and optional biometrics remain a second, device-local security layer.
+- Local Child pairing data is scoped to the authenticated Parent account.
+- Existing prototype pairing data is migrated to the first Parent account used after the auth upgrade.
+- Long term, the Parent account will own its Child-device relationships in the backend so account recovery can restore access on a replacement Parent phone.
+
+Initial Parent flow:
+
+1. Welcome
+2. Continue with Google or Continue with email
+3. Create/sign in to Parent account
+4. Create/unlock local Parent PIN
+5. Add or manage Child devices
+6. Parent dashboard
+
+### Child
+
+- Child devices do **not** have independent email/password or social-login accounts.
+- A Child device is enrolled through secure pairing with an authenticated Parent account.
+- Child setup continues into the protection/permissions wizard after pairing.
+
+Initial Child flow:
+
+1. Welcome
+2. Connect to Parent by pairing code / QR
+3. Grant required protection permissions
+4. Verify Parent connection
+5. Setup complete / Child dashboard
+
+
 ## Free version — current foundation
 
 The current implementation already includes the main foundation that should remain available in the base product:
@@ -186,3 +227,7 @@ Before publication we still need to decide:
 - **Per-app daily limits** were intentionally postponed and reserved as a Premium candidate.
 - **New app installed alerts** were intentionally postponed and reserved as a Premium candidate.
 - UI appearance will be redesigned later; current screens are functional prototypes.
+- Parent and Child will remain separate Android apps; there will be no Parent/Child role picker inside one APK.
+- Parent authentication is required and will support Google plus email/password through Supabase Auth.
+- Child devices will not have independent user accounts; they are enrolled through Parent pairing.
+- Parent onboarding/authentication is being implemented before the final Parent dashboard redesign.
