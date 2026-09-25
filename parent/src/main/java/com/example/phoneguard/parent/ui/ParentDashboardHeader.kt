@@ -64,6 +64,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import com.example.phoneguard.core.ChildDevice
 
 internal val parentDashboardSections =
@@ -453,6 +454,10 @@ private fun ParentAccountMenuButton(
     DropdownMenu(
       expanded = expanded,
       onDismissRequest = { onExpandedChange(false) },
+      properties =
+        PopupProperties(
+          focusable = false,
+        ),
     ) {
       Column(
         modifier =
