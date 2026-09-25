@@ -15,6 +15,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
@@ -32,7 +33,7 @@ fun DevicesScreen(
 ) {
   Surface(
     modifier = modifier.fillMaxSize(),
-    color = MaterialTheme.colorScheme.background,
+    color = Color.Transparent,
   ) {
     Column(
       modifier = Modifier.fillMaxSize(),
