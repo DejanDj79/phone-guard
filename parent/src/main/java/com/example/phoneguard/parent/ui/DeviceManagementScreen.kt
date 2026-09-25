@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -77,7 +78,7 @@ fun DeviceManagementScreen(
           label = { Text("Device name") },
           singleLine = true,
           supportingText = { Text("1–40 characters") },
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         )
 
         OutlinedButton(
@@ -86,7 +87,7 @@ fun DeviceManagementScreen(
             !busy &&
               normalizedName.isNotBlank() &&
               normalizedName != currentName,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text(if (renaming) "SAVING…" else "SAVE NAME")
         }
@@ -107,7 +108,7 @@ fun DeviceManagementScreen(
         OutlinedButton(
           onClick = { showUnpairConfirmation = true },
           enabled = !busy,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text("UNPAIR DEVICE")
         }
@@ -144,6 +145,7 @@ fun DeviceManagementScreen(
             onUnpair()
           },
           enabled = !unpairing,
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text(if (unpairing) "UNPAIRING…" else "UNPAIR")
         }
@@ -152,6 +154,7 @@ fun DeviceManagementScreen(
         OutlinedButton(
           onClick = { showUnpairConfirmation = false },
           enabled = !unpairing,
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text("CANCEL")
         }
