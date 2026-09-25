@@ -85,10 +85,17 @@ sealed interface ChildDailyLimitResult {
   ) : ChildDailyLimitResult
 }
 
+data class ChildAppUsageSession(
+  val startedAtMillis: Long,
+  val endedAtMillis: Long,
+  val seconds: Int,
+)
+
 data class ChildAppUsageEntry(
   val packageName: String,
   val label: String,
   val seconds: Int,
+  val sessions: List<ChildAppUsageSession> = emptyList(),
 )
 
 sealed interface ChildHeartbeatResult {
@@ -778,11 +785,22 @@ class ChildBackendClient {
     return try {
       val appUsageJson = JSONArray()
       appUsageEntries.forEach { entry ->
+        val sessionsJson = JSONArray()
+        entry.sessions.forEach { session ->
+          sessionsJson.put(
+            JSONObject()
+              .put("startedAtMillis", session.startedAtMillis)
+              .put("endedAtMillis", session.endedAtMillis)
+              .put("seconds", session.seconds),
+          )
+        }
+
         appUsageJson.put(
           JSONObject()
             .put("packageName", entry.packageName)
             .put("label", entry.label)
-            .put("seconds", entry.seconds),
+            .put("seconds", entry.seconds)
+            .put("sessions", sessionsJson),
         )
       }
 
