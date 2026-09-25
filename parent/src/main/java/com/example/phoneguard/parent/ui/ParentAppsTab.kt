@@ -59,7 +59,7 @@ internal fun ParentAppsTab(
   )
 
   Surface(
-    modifier = Modifier.heightIn(min = 52.dp),
+    modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(28.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
