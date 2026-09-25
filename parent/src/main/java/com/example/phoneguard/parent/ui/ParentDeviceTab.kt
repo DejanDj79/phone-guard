@@ -44,12 +44,11 @@ internal fun ParentDeviceTab(
   protectionHistory: List<ProtectionHistoryEvent>,
   protectionHistoryLoading: Boolean,
   protectionHistoryError: String?,
-  showAllProtectionHistory: Boolean,
   protectionHistoryClearing: Boolean,
   onShowDevices: () -> Unit,
   onRefreshStatus: () -> Unit,
   onManageDevice: () -> Unit,
-  onToggleProtectionHistory: () -> Unit,
+  onOpenProtectionHistory: () -> Unit,
   onRequestClearProtectionHistory: () -> Unit,
 ) {
   val actionsBusy =
@@ -322,11 +321,7 @@ internal fun ParentDeviceTab(
 
         else -> {
           val visibleEvents =
-            if (showAllProtectionHistory) {
-              protectionHistory
-            } else {
-              protectionHistory.take(PROTECTION_HISTORY_PREVIEW_COUNT)
-            }
+            protectionHistory.take(PROTECTION_HISTORY_PREVIEW_COUNT)
 
           visibleEvents.forEachIndexed { index, event ->
             if (index > 0) {
@@ -339,16 +334,10 @@ internal fun ParentDeviceTab(
 
           if (protectionHistory.size > PROTECTION_HISTORY_PREVIEW_COUNT) {
             TextButton(
-              onClick = onToggleProtectionHistory,
+              onClick = onOpenProtectionHistory,
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text(
-                if (showAllProtectionHistory) {
-                  "SHOW LESS"
-                } else {
-                  "SHOW ALL (" + protectionHistory.size + ")"
-                },
-              )
+              Text("VIEW FULL HISTORY (" + protectionHistory.size + ")")
             }
           }
         }
@@ -487,7 +476,7 @@ private fun ProtectionStatusTile(
 }
 
 @Composable
-private fun ProtectionHistoryRow(
+internal fun ProtectionHistoryRow(
   event: ProtectionHistoryEvent,
 ) {
   Row(
