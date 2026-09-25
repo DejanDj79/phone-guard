@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
 
+private const val PROTECTION_HISTORY_PREVIEW_COUNT = 5
+
 @Composable
 internal fun ParentDeviceTab(
   device: ChildDevice,
