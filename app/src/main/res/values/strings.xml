@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PhoneGuard</string>
+    <string name="accessibility_service_name">PhoneGuard protection</string>
+    <string name="accessibility_service_description">Keeps the PhoneGuard lock screen above other apps while parental protection is active.</string>
 </resources>

@@ -1,0 +1,394 @@
+import { withSupabase } from "npm:@supabase/server@1.7.1";
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const VALID_COMMANDS = new Set([
+  "LOCK",
+  "UNLOCK",
+  "BONUS_TIME",
+  "SYNC_SCHEDULE",
+  "SYNC_ALLOWED_APPS",
+  "SYNC_DAILY_LIMIT",
+]);
+const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
+const DEFAULT_TOKEN_URI = "https://oauth2.googleapis.com/token";
+
+type ServiceAccount = {
+  project_id: string;
+  client_email: string;
+  private_key: string;
+  token_uri?: string;
+};
+
+function decodeBase64Utf8(value: string): string {
+  const binary = atob(value.trim());
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function loadFirebaseServiceAccount(): ServiceAccount {
+  const encoded = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_B64");
+  const raw = encoded
+    ? decodeBase64Utf8(encoded)
+    : Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+
+  if (!raw) {
+    throw new Error("firebase_not_configured");
+  }
+
+  const serviceAccount = JSON.parse(raw) as ServiceAccount;
+
+  if (
+    !serviceAccount.project_id ||
+    !serviceAccount.client_email ||
+    !serviceAccount.private_key
+  ) {
+    throw new Error("firebase_credentials_invalid");
+  }
+
+  return serviceAccount;
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function base64UrlBytes(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/g, "");
+}
+
+function base64UrlJson(value: unknown): string {
+  return base64UrlBytes(
+    new TextEncoder().encode(JSON.stringify(value)),
+  );
+}
+
+function pemToPkcs8Bytes(pem: string): Uint8Array {
+  const normalizedPem = pem
+    .replaceAll("\\r\\n", "\n")
+    .replaceAll("\\n", "\n")
+    .replaceAll("\\r", "\n");
+
+  const beginMarker = "-----BEGIN PRIVATE KEY-----";
+  const endMarker = "-----END PRIVATE KEY-----";
+  const begin = normalizedPem.indexOf(beginMarker);
+  const end = normalizedPem.indexOf(endMarker);
+
+  if (begin < 0 || end <= begin) {
+    throw new Error("firebase_private_key_pem_invalid");
+  }
+
+  const body = normalizedPem.slice(
+    begin + beginMarker.length,
+    end,
+  );
+
+  const base64 = body.replace(/[^A-Za-z0-9+/=]/g, "");
+
+  if (!base64 || base64.length % 4 !== 0) {
+    throw new Error("firebase_private_key_base64_invalid");
+  }
+
+  const binary = atob(base64);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+async function createServiceAccountJwt(
+  serviceAccount: ServiceAccount,
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const tokenUri = serviceAccount.token_uri || DEFAULT_TOKEN_URI;
+
+  const header = base64UrlJson({
+    alg: "RS256",
+    typ: "JWT",
+  });
+
+  const payload = base64UrlJson({
+    iss: serviceAccount.client_email,
+    scope: FCM_SCOPE,
+    aud: tokenUri,
+    iat: now,
+    exp: now + 3600,
+  });
+
+  const unsignedToken = header + "." + payload;
+
+  const privateKey = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToPkcs8Bytes(serviceAccount.private_key),
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"],
+  );
+
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    privateKey,
+    new TextEncoder().encode(unsignedToken),
+  );
+
+  return unsignedToken + "." + base64UrlBytes(new Uint8Array(signature));
+}
+
+async function getGoogleAccessToken(
+  serviceAccount: ServiceAccount,
+): Promise<string> {
+  const tokenUri = serviceAccount.token_uri || DEFAULT_TOKEN_URI;
+  const assertion = await createServiceAccountJwt(serviceAccount);
+
+  const response = await fetch(tokenUri, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+
+  const body = await response.json();
+
+  if (!response.ok || typeof body.access_token !== "string") {
+    throw new Error("firebase_oauth_failed");
+  }
+
+  return body.access_token;
+}
+
+function json(body: unknown, status = 200): Response {
+  return Response.json(body, { status });
+}
+
+export default {
+  fetch: withSupabase({ auth: "none" }, async (req, ctx) => {
+    if (req.method !== "POST") {
+      return json({ error: "method_not_allowed" }, 405);
+    }
+
+    let payload: Record<string, unknown>;
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "invalid_json" }, 400);
+    }
+
+    const deviceId =
+      typeof payload.deviceId === "string" ? payload.deviceId.trim() : "";
+    const controlToken =
+      typeof payload.controlToken === "string" ? payload.controlToken : "";
+    const command =
+      typeof payload.command === "string"
+        ? payload.command.trim().toUpperCase()
+        : "";
+    const bonusMinutes =
+      typeof payload.bonusMinutes === "number"
+        ? Math.trunc(payload.bonusMinutes)
+        : null;
+
+    if (!UUID_PATTERN.test(deviceId)) {
+      return json({ error: "invalid_device_id" }, 400);
+    }
+    if (controlToken.length < 32 || controlToken.length > 256) {
+      return json({ error: "invalid_control_token" }, 400);
+    }
+    if (!VALID_COMMANDS.has(command)) {
+      return json({ error: "invalid_command" }, 400);
+    }
+    if (
+      command === "BONUS_TIME" &&
+      (bonusMinutes === null || bonusMinutes < 1 || bonusMinutes > 1440)
+    ) {
+      return json({ error: "invalid_bonus_minutes" }, 400);
+    }
+    if (command !== "BONUS_TIME" && bonusMinutes !== null) {
+      return json({ error: "unexpected_bonus_minutes" }, 400);
+    }
+
+    const controlTokenHash = await sha256Hex(controlToken);
+
+    const { data: device, error: deviceError } = await ctx.supabaseAdmin
+      .from("child_devices")
+      .select("device_id, display_name, fcm_token, access_state, temporary_allow_until")
+      .eq("device_id", deviceId)
+      .eq("control_token_hash", controlTokenHash)
+      .maybeSingle();
+
+    if (deviceError) {
+      return json({ error: "database_error" }, 500);
+    }
+    if (!device) {
+      return json({ error: "device_auth_failed" }, 403);
+    }
+    if (!device.fcm_token) {
+      return json({ error: "device_has_no_fcm_token" }, 409);
+    }
+
+    const { data: commandRow, error: commandInsertError } =
+      await ctx.supabaseAdmin
+        .from("device_commands")
+        .insert({
+          device_id: deviceId,
+          command,
+          bonus_minutes: command === "BONUS_TIME" ? bonusMinutes : null,
+          status: "PENDING",
+        })
+        .select("command_id")
+        .single();
+
+    if (commandInsertError || !commandRow) {
+      return json({ error: "command_create_failed" }, 500);
+    }
+
+    const commandId = commandRow.command_id as string;
+
+    let serviceAccount: ServiceAccount;
+    try {
+      serviceAccount = loadFirebaseServiceAccount();
+    } catch (error) {
+      const code =
+        error instanceof Error ? error.message : "firebase_credentials_invalid";
+
+      return json(
+        {
+          error:
+            code === "firebase_not_configured"
+              ? "firebase_not_configured"
+              : "firebase_credentials_invalid",
+        },
+        code === "firebase_not_configured" ? 503 : 500,
+      );
+    }
+
+    let accessToken: string;
+    try {
+      accessToken = await getGoogleAccessToken(serviceAccount);
+    } catch {
+      return json({ error: "firebase_oauth_failed" }, 502);
+    }
+
+    const data: Record<string, string> = {
+      command,
+      command_id: commandId,
+    };
+    if (command === "BONUS_TIME") {
+      data.bonus_minutes = String(bonusMinutes);
+    }
+
+    const fcmResponse = await fetch(
+      "https://fcm.googleapis.com/v1/projects/" +
+        encodeURIComponent(serviceAccount.project_id) +
+        "/messages:send",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + accessToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: {
+            token: device.fcm_token,
+            data,
+            android: {
+              priority: "high",
+              ttl: "60s",
+              collapse_key: "phoneguard-control",
+            },
+          },
+        }),
+      },
+    );
+
+    const fcmBody = await fcmResponse.text();
+
+    if (!fcmResponse.ok) {
+      await ctx.supabaseAdmin
+        .from("device_commands")
+        .update({
+          status: "FAILED",
+          error_code: "fcm_send_failed",
+        })
+        .eq("command_id", commandId);
+
+      return json(
+        {
+          error: "fcm_send_failed",
+          status: fcmResponse.status,
+          details: fcmBody.slice(0, 500),
+        },
+        502,
+      );
+    }
+
+    const now = new Date();
+
+    const { error: commandSentError } = await ctx.supabaseAdmin
+      .from("device_commands")
+      .update({
+        status: "SENT",
+        sent_at: now.toISOString(),
+        error_code: null,
+      })
+      .eq("command_id", commandId);
+
+    if (commandSentError) {
+      return json({ error: "command_status_update_failed" }, 500);
+    }
+    let accessState =
+      typeof device.access_state === "string" ? device.access_state : "ALLOWED";
+    let temporaryAllowUntil =
+      typeof device.temporary_allow_until === "string"
+        ? device.temporary_allow_until
+        : null;
+
+    if (command === "LOCK") {
+      accessState = "LOCKED";
+      temporaryAllowUntil = null;
+    } else if (command === "UNLOCK") {
+      accessState = "ALLOWED";
+      temporaryAllowUntil = null;
+    } else if (command === "BONUS_TIME") {
+      accessState = "TEMPORARILY_ALLOWED";
+      temporaryAllowUntil =
+        new Date(
+          now.getTime() + (bonusMinutes ?? 0) * 60_000,
+        ).toISOString();
+    }
+
+    return json({
+      ok: true,
+      commandId,
+      deliveryStatus: "SENT",
+      device: {
+        deviceId: device.device_id,
+        displayName: device.display_name,
+        state: accessState,
+        temporaryAccessMinutesRemaining:
+          accessState === "TEMPORARILY_ALLOWED" &&
+            temporaryAllowUntil !== null
+            ? Math.max(
+                0,
+                Math.ceil(
+                  (new Date(temporaryAllowUntil).getTime() - Date.now()) /
+                    60_000,
+                ),
+              )
+            : null,
+      },
+    });
+  }),
+};

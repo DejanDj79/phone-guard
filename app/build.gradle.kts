@@ -2,7 +2,10 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.google.services)
 }
+
+apply(from = rootProject.file("gradle/phoneguard-signing.gradle"))
 
 android {
     namespace = "com.example.phoneguard"
@@ -44,6 +47,9 @@ kotlin {
 }
 
 dependencies {
+  implementation(project(":core"))
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.messaging)
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
   androidTestImplementation(composeBom)
