@@ -108,6 +108,7 @@ fun ParentDashboardScreen(
     uiState.commandProgressMessage = null
     uiState.pendingCommandFeedback = null
     uiState.connectionTestInProgress = false
+    uiState.connectionTestSucceeded = null
     uiState.connectionTestMessage = null
     uiState.connectionTestError = null
     uiState.scheduleEditorSchedule = null
@@ -944,17 +945,35 @@ fun ParentDashboardScreen(
   }
 
   fun testConnection() {
-    if (uiState.connectionTestInProgress || uiState.commandInProgress) return
+    if (
+      uiState.connectionTestInProgress ||
+      uiState.commandInProgress ||
+      uiState.connectionTestSucceeded != null
+    ) {
+      return
+    }
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
+      uiState.connectionTestMessage = null
       uiState.connectionTestError =
         "Control token is missing. Re-pairing is required."
+      uiState.connectionTestSucceeded = false
+
+      scope.launch {
+        delay(3_000)
+        if (!uiState.connectionTestInProgress) {
+          uiState.connectionTestSucceeded = null
+          uiState.connectionTestMessage = null
+          uiState.connectionTestError = null
+        }
+      }
       return
     }
 
     scope.launch {
       uiState.connectionTestInProgress = true
+      uiState.connectionTestSucceeded = null
       uiState.connectionTestMessage = "Testing Parent → backend → Child connection…"
       uiState.connectionTestError = null
 
@@ -1007,28 +1026,35 @@ fun ParentDashboardScreen(
               }
 
               is CommandDeliveryResult.Error -> {
+                uiState.connectionTestMessage = null
                 uiState.connectionTestError = statusResult.message
+                uiState.connectionTestSucceeded = false
                 break
               }
             }
           }
 
-          if (uiState.connectionTestError == null) {
+          if (uiState.connectionTestSucceeded == null) {
             when (deliveryStatus) {
               "APPLIED" -> {
                 uiState.connectionTestMessage =
-                  "✓ Connection OK — Child received and confirmed the test."
+                  "Connection OK — Child received and confirmed the test."
+                uiState.connectionTestError = null
+                uiState.connectionTestSucceeded = true
               }
 
               "FAILED" -> {
                 uiState.connectionTestMessage = null
                 uiState.connectionTestError =
                   "Child received the test, but could not complete it."
+                uiState.connectionTestSucceeded = false
               }
 
               else -> {
-                uiState.connectionTestMessage =
-                  "Backend accepted the test, but Child has not confirmed it yet."
+                uiState.connectionTestMessage = null
+                uiState.connectionTestError =
+                  "Backend accepted the test, but Child did not confirm it in time."
+                uiState.connectionTestSucceeded = false
               }
             }
           }
@@ -1037,10 +1063,18 @@ fun ParentDashboardScreen(
         is CommandResult.Error -> {
           uiState.connectionTestMessage = null
           uiState.connectionTestError = result.message
+          uiState.connectionTestSucceeded = false
         }
       }
 
       uiState.connectionTestInProgress = false
+
+      delay(3_000)
+      if (!uiState.connectionTestInProgress) {
+        uiState.connectionTestSucceeded = null
+        uiState.connectionTestMessage = null
+        uiState.connectionTestError = null
+      }
     }
   }
 
@@ -1164,6 +1198,9 @@ fun ParentDashboardScreen(
         uiState.connectionTestInProgress ||
         uiState.refreshInProgress,
     parentEmail = ParentSupabase.client.auth.currentUserOrNull()?.email,
+    connectionTestInProgress = uiState.connectionTestInProgress,
+    connectionTestSucceeded = uiState.connectionTestSucceeded,
+    onTestConnection = { testConnection() },
     onChangeDevice = { uiState.showDevices = true },
     onSectionSelected = { uiState.selectedTab = it },
     onSignOut = {
@@ -1295,8 +1332,6 @@ fun ParentDashboardScreen(
         commandInProgress = uiState.commandInProgress,
         activeCommandType = uiState.activeCommandType,
         connectionTestInProgress = uiState.connectionTestInProgress,
-        connectionTestMessage = uiState.connectionTestMessage,
-        connectionTestError = uiState.connectionTestError,
         appUsageDays = uiState.appUsageDays,
         appInventorySnapshot = uiState.allowedAppsSnapshot,
         appUsageLoading = uiState.appUsageLoading,
@@ -1308,7 +1343,6 @@ fun ParentDashboardScreen(
         onLock = { sendCommand(RemoteCommand.lock()) },
         onUnlock = { sendCommand(RemoteCommand.unlock()) },
         onAddBonusTime = { uiState.showBonusTimePicker = true },
-        onTestConnection = { testConnection() },
         onOpenDevice = { uiState.selectedTab = 3 },
         onAppUsageViewChange = { uiState.appUsageView = it },
       )
