@@ -189,7 +189,7 @@ Home is the main command center and should prioritize only information that matt
 - [x] Child five-step setup wizard
 - [x] Clarified Child Change Parent flow
 - [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting physical UI review
-- [ ] Parent Home final minimalist redesign — first modern pass implemented, awaiting physical UI review
+- [ ] Parent Home final minimalist redesign — second pastel/minimal pass implemented after physical feedback; awaiting review
 - [ ] Schedule screen redesign
 - [ ] Apps screen redesign
 - [ ] Device / protection screen redesign
@@ -303,3 +303,5 @@ Before publication we still need to decide:
 - Parent onboarding/authentication is being implemented before the final Parent dashboard redesign.
 - Parent top tabs will be removed; the approved navigation direction is a hamburger drawer plus a Parent account/avatar action in the top app bar.
 - `docs/PRODUCT_ROADMAP.md` is the persistent source of truth for UI phases and should be updated as each phase is completed.
+- First physical review of the new Parent shell confirmed the navigation direction is better, but the Home screen still felt too repetitive and admin-like.
+- Follow-up design requirements: centered page title; no Child subtitle in the top bar; Child name and last-seen aligned in the hero; avoid duplicate Available/Online messaging; replace command-status text with inline button progress indicators; use a warm pastel-yellow background/palette; use a softer rounded display typeface while keeping small labels neutral.
