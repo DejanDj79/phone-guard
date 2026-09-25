@@ -1201,6 +1201,7 @@ fun ParentDashboardScreen(
         onUnlock = { sendCommand(RemoteCommand.unlock()) },
         onAddBonusTime = { uiState.showBonusTimePicker = true },
         onTestConnection = { testConnection() },
+        onOpenDevice = { uiState.selectedTab = 3 },
         onAppUsageViewChange = { uiState.appUsageView = it },
       )
     }
