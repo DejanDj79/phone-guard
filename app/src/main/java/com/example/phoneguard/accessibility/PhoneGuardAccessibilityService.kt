@@ -149,7 +149,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           isAppInfoClass(
             eventPackage = eventPackage,
             className = className,
-          )
+          ) ||
+            isAppInfoContent(
+              eventPackage = eventPackage,
+              normalizedText = activeWindowText().lowercase(),
+            )
 
         if (!isAppInfoScreen && !isFollowUpUninstallSurface) {
           phoneGuardAppInfoActive = false
@@ -482,16 +486,66 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
     }
 
-    return if (
+    val isAppInfoScreen =
       isAppInfoClass(
         eventPackage = eventPackage,
         className = className,
-      )
-    ) {
+      ) ||
+        isAppInfoContent(
+          eventPackage = eventPackage,
+          normalizedText = normalizedText,
+        )
+
+    return if (isAppInfoScreen) {
       PROTECTION_EVENT_APP_INFO_OPENED
     } else {
       null
     }
+  }
+
+  private fun isAppInfoContent(
+    eventPackage: String,
+    normalizedText: String,
+  ): Boolean {
+    val supportedSettingsPackage =
+      eventPackage == "com.android.settings" ||
+        eventPackage == "com.miui.securitycenter"
+
+    if (!supportedSettingsPackage) return false
+
+    val hasForceStop =
+      normalizedText.contains("force stop") ||
+        normalizedText.contains("force-stop") ||
+        normalizedText.contains("prisilno zaust") ||
+        normalizedText.contains("prinudno zaust")
+
+    val hasUninstall =
+      normalizedText.contains("uninstall") ||
+        normalizedText.contains("deinstall") ||
+        normalizedText.contains("deinstal") ||
+        normalizedText.contains("remove app") ||
+        normalizedText.contains("ukloni aplikaciju") ||
+        normalizedText.contains("obriši aplikaciju") ||
+        normalizedText.contains("obrisi aplikaciju")
+
+    val secondaryMarkers =
+      listOf(
+        normalizedText.contains("storage") ||
+          normalizedText.contains("skladi") ||
+          normalizedText.contains("memorij"),
+        normalizedText.contains("permission") ||
+          normalizedText.contains("dozvol"),
+        normalizedText.contains("battery") ||
+          normalizedText.contains("baterij"),
+        normalizedText.contains("data usage") ||
+          normalizedText.contains("mobile data") ||
+          normalizedText.contains("upotreba podataka"),
+        normalizedText.contains("notification") ||
+          normalizedText.contains("obavešten") ||
+          normalizedText.contains("obavesten"),
+      ).count { it }
+
+    return (hasForceStop || hasUninstall) && secondaryMarkers >= 1
   }
 
   private fun isAppInfoClass(
