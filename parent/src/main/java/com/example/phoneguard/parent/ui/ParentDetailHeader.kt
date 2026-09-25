@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-internal val ParentSectionHeaderColor = Color(0xFF9A71FC)
+internal val ParentSectionHeaderColor = Color(0xFF2F4FA3)
 
 @Composable
 internal fun ParentDetailHeader(
