@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,11 +22,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.DeviceAccessState
+import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.parent.data.AppUsageDay
 import com.example.phoneguard.parent.data.PendingTimeRequest
 
@@ -36,8 +41,7 @@ internal fun ParentOverviewTab(
   timeRequestNotice: String?,
   timeRequestError: String?,
   commandInProgress: Boolean,
-  commandProgressMessage: String?,
-  commandNotice: String?,
+  activeCommandType: RemoteCommandType?,
   connectionTestInProgress: Boolean,
   connectionTestMessage: String?,
   connectionTestError: String?,
@@ -103,13 +107,15 @@ internal fun ParentOverviewTab(
             enabled = !timeRequestResponding,
             modifier = Modifier.weight(1f),
           ) {
-            Text(
-              if (timeRequestResponding) {
-                "WAIT…"
-              } else {
-                "APPROVE"
-              },
-            )
+            if (timeRequestResponding) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onPrimary,
+              )
+            } else {
+              Text("APPROVE")
+            }
           }
 
           OutlinedButton(
@@ -127,7 +133,7 @@ internal fun ParentOverviewTab(
   timeRequestNotice?.let { message ->
     Text(
       text = message,
-      style = MaterialTheme.typography.bodyMedium,
+      style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   }
@@ -135,60 +141,82 @@ internal fun ParentOverviewTab(
   timeRequestError?.let { message ->
     Text(
       text = message,
-      style = MaterialTheme.typography.bodyMedium,
+      style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.error,
     )
   }
 
   val isLocked = device.state == DeviceAccessState.LOCKED
-  val stateTitle =
-    when (device.state) {
-      DeviceAccessState.ALLOWED -> "Phone is available"
-      DeviceAccessState.LOCKED -> "Phone is locked"
-      DeviceAccessState.TEMPORARILY_ALLOWED -> "Bonus time is active"
-      DeviceAccessState.OFFLINE -> "Status unavailable"
-    }
+  val mainCommandLoading =
+    commandInProgress &&
+      (
+        activeCommandType == RemoteCommandType.LOCK ||
+          activeCommandType == RemoteCommandType.UNLOCK
+      )
+  val bonusLoading =
+    commandInProgress &&
+      activeCommandType == RemoteCommandType.BONUS_TIME
 
   Surface(
     modifier = Modifier.fillMaxWidth(),
-    shape = RoundedCornerShape(28.dp),
+    shape = RoundedCornerShape(30.dp),
     color = MaterialTheme.colorScheme.secondaryContainer,
   ) {
     Column(
-      modifier = Modifier.padding(24.dp),
-      verticalArrangement = Arrangement.spacedBy(14.dp),
+      modifier = Modifier.padding(22.dp),
+      verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-      Text(
-        text = device.displayName,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSecondaryContainer,
-      )
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top,
+      ) {
+        Text(
+          text = device.displayName,
+          style = MaterialTheme.typography.headlineSmall,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.onSecondaryContainer,
+          modifier = Modifier.weight(1f),
+        )
 
-      Text(
-        text = stateTitle,
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSecondaryContainer,
-      )
-
-      Text(
-        text = devicePresenceSummary(device.lastSeenAt),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSecondaryContainer,
-      )
+        Column(
+          horizontalAlignment = Alignment.End,
+          modifier = Modifier.weight(1f),
+        ) {
+          Text(
+            text = "LAST SEEN",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.68f),
+          )
+          Text(
+            text =
+              formatLastSeen(device.lastSeenAt)
+                .removePrefix("Last seen: "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            textAlign = TextAlign.End,
+          )
+        }
+      }
 
       if (
         device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
         device.temporaryAccessMinutesRemaining != null
       ) {
-        Text(
-          text =
-            device.temporaryAccessMinutesRemaining.toString() +
-              " min bonus time remaining",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-          color = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
+        Surface(
+          shape = RoundedCornerShape(50),
+          color = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f),
+        ) {
+          Text(
+            text =
+              "Bonus time · " +
+                device.temporaryAccessMinutesRemaining +
+                " min",
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+          )
+        }
       }
 
       Row(
@@ -200,22 +228,30 @@ internal fun ParentOverviewTab(
           enabled = !commandInProgress && !connectionTestInProgress,
           modifier = Modifier.weight(1f),
         ) {
-          Icon(
-            imageVector =
+          if (mainCommandLoading) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(19.dp),
+              strokeWidth = 2.dp,
+              color = MaterialTheme.colorScheme.onPrimary,
+            )
+          } else {
+            Icon(
+              imageVector =
+                if (isLocked) {
+                  Icons.Default.LockOpen
+                } else {
+                  Icons.Default.Lock
+                },
+              contentDescription = null,
+            )
+            Text(
               if (isLocked) {
-                Icons.Default.LockOpen
+                "  UNLOCK"
               } else {
-                Icons.Default.Lock
+                "  LOCK"
               },
-            contentDescription = null,
-          )
-          Text(
-            if (isLocked) {
-              " UNLOCK"
-            } else {
-              " LOCK NOW"
-            },
-          )
+            )
+          }
         }
 
         OutlinedButton(
@@ -223,28 +259,20 @@ internal fun ParentOverviewTab(
           enabled = !commandInProgress && !connectionTestInProgress,
           modifier = Modifier.weight(1f),
         ) {
-          Icon(
-            imageVector = Icons.Default.AddCircle,
-            contentDescription = null,
-          )
-          Text(" BONUS")
+          if (bonusLoading) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(19.dp),
+              strokeWidth = 2.dp,
+              color = MaterialTheme.colorScheme.primary,
+            )
+          } else {
+            Icon(
+              imageVector = Icons.Default.AddCircle,
+              contentDescription = null,
+            )
+            Text("  BONUS")
+          }
         }
-      }
-
-      commandProgressMessage?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
-      }
-
-      commandNotice?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
       }
     }
   }
@@ -267,13 +295,13 @@ internal fun ParentOverviewTab(
     horizontalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     HomeMetric(
-      label = "Screen time",
+      label = "SCREEN TIME",
       value = formatUsageSeconds(device.dailyScreenTime.usedSeconds),
       modifier = Modifier.weight(1f),
     )
 
     HomeMetric(
-      label = "Remaining",
+      label = "REMAINING",
       value = remainingLabel,
       modifier = Modifier.weight(1f),
     )
@@ -294,6 +322,7 @@ internal fun ParentOverviewTab(
       ) {
         Row(
           horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalAlignment = Alignment.CenterVertically,
         ) {
           Icon(
             imageVector = Icons.Default.Warning,
@@ -312,7 +341,7 @@ internal fun ParentOverviewTab(
           text =
             when {
               presence == DevicePresenceState.POSSIBLE_SHUTDOWN ->
-                "PhoneGuard has not checked in for 30+ minutes. The Child phone may be offline or powered off."
+                "PhoneGuard has not checked in for 30+ minutes."
               protection.accessibilityEnabled == false ->
                 "Screen protection is disabled on the Child phone."
               protection.batteryUnrestricted == false ->
@@ -355,7 +384,7 @@ internal fun ParentOverviewTab(
   Surface(
     modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(24.dp),
-    tonalElevation = 1.dp,
+    color = MaterialTheme.colorScheme.surface,
   ) {
     Column(
       modifier = Modifier.padding(18.dp),
@@ -426,39 +455,19 @@ internal fun ParentOverviewTab(
     }
   }
 
-  Row(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.SpaceBetween,
+  TextButton(
+    onClick = onTestConnection,
+    enabled = !commandInProgress && !connectionTestInProgress,
+    modifier = Modifier.align(Alignment.End),
   ) {
-    Column(modifier = Modifier.weight(1f)) {
-      Text(
-        text = "Connection",
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.SemiBold,
+    if (connectionTestInProgress) {
+      CircularProgressIndicator(
+        modifier = Modifier.size(16.dp),
+        strokeWidth = 2.dp,
       )
-      Text(
-        text =
-          if (presence == DevicePresenceState.ONLINE) {
-            "Child is checking in normally."
-          } else {
-            devicePresenceSummary(device.lastSeenAt)
-          },
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-    }
-
-    TextButton(
-      onClick = onTestConnection,
-      enabled = !commandInProgress && !connectionTestInProgress,
-    ) {
-      Text(
-        if (connectionTestInProgress) {
-          "TESTING…"
-        } else {
-          "TEST"
-        },
-      )
+      Text("  TESTING CONNECTION")
+    } else {
+      Text("TEST CONNECTION")
     }
   }
 
@@ -467,6 +476,8 @@ internal fun ParentOverviewTab(
       text = message,
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
+      modifier = Modifier.fillMaxWidth(),
+      textAlign = TextAlign.End,
     )
   }
 
@@ -475,6 +486,8 @@ internal fun ParentOverviewTab(
       text = message,
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.error,
+      modifier = Modifier.fillMaxWidth(),
+      textAlign = TextAlign.End,
     )
   }
 }
@@ -488,20 +501,20 @@ private fun HomeMetric(
   Surface(
     modifier = modifier,
     shape = RoundedCornerShape(20.dp),
-    tonalElevation = 1.dp,
+    color = MaterialTheme.colorScheme.surface,
   ) {
     Column(
       modifier = Modifier.padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(4.dp),
+      verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
       Text(
         text = label,
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
       Text(
         text = value,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.SemiBold,
       )
     }
