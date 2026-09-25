@@ -153,6 +153,7 @@ fun ParentDashboardScreen(
   if (uiState.showPairDevice || uiState.pairedDevice == null) {
     BackHandler(enabled = uiState.pairedDevices.isNotEmpty()) {
       uiState.showPairDevice = false
+      uiState.showDevices = true
     }
 
     PairDeviceScreen(
@@ -214,7 +215,10 @@ fun ParentDashboardScreen(
       },
       onCancel =
         if (uiState.pairedDevices.isNotEmpty()) {
-          { uiState.showPairDevice = false }
+          {
+            uiState.showPairDevice = false
+            uiState.showDevices = true
+          }
         } else {
           null
         },
