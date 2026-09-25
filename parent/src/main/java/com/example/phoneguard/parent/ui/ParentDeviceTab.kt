@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -338,7 +339,7 @@ internal fun ParentDeviceTab(
           if (protectionHistory.size > DEVICE_HISTORY_PREVIEW_COUNT) {
             TextButton(
               onClick = onOpenProtectionHistory,
-              modifier = Modifier.heightIn(min = 52.dp),
+              modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
               Text("VIEW FULL HISTORY (" + protectionHistory.size + ")")
@@ -351,7 +352,7 @@ internal fun ParentDeviceTab(
         TextButton(
           onClick = onRequestClearProtectionHistory,
           enabled = !protectionHistoryClearing,
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
           if (protectionHistoryClearing) {
