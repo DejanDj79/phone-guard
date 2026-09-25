@@ -107,127 +107,67 @@ fun ParentDashboardScreen(
   val protectionHistoryGateway = remember { HttpProtectionHistoryGateway() }
   val scope = rememberCoroutineScope()
 
-  var pairedDevice by remember {
-    mutableStateOf(settingsStore.loadPairedDevice())
-  }
-  var pairedDevices by remember {
-    mutableStateOf(settingsStore.loadPairedDevices())
-  }
-  var showPairDevice by remember {
-    mutableStateOf(pairedDevice == null)
-  }
-  var showDevices by remember { mutableStateOf(false) }
-  var selectedTab by remember { mutableStateOf(0) }
-  var commandInProgress by remember { mutableStateOf(false) }
-  var commandProgressMessage by remember { mutableStateOf<String?>(null) }
-  var commandNotice by remember { mutableStateOf<String?>(null) }
-  var pendingCommandFeedback by remember { mutableStateOf<RemoteCommand?>(null) }
-  var commandError by remember { mutableStateOf<String?>(null) }
-  var refreshInProgress by remember { mutableStateOf(false) }
-  var connectionTestInProgress by remember { mutableStateOf(false) }
-  var connectionTestMessage by remember { mutableStateOf<String?>(null) }
-  var connectionTestError by remember { mutableStateOf<String?>(null) }
-  var showBonusTimePicker by remember { mutableStateOf(false) }
-  var selectedBonusMinutes by remember { mutableStateOf(15) }
-  var scheduleEditorSchedule by remember {
-    mutableStateOf<RemoteWeeklySchedule?>(null)
-  }
-  var scheduleLoading by remember { mutableStateOf(false) }
-  var scheduleSaving by remember { mutableStateOf(false) }
-  var scheduleError by remember { mutableStateOf<String?>(null) }
-  var scheduleNotice by remember { mutableStateOf<String?>(null) }
-  var allowedAppsEditorSnapshot by remember {
-    mutableStateOf<AllowedAppsSnapshot?>(null)
-  }
-  var allowedAppsLoading by remember { mutableStateOf(false) }
-  var allowedAppsSaving by remember { mutableStateOf(false) }
-  var allowedAppsError by remember { mutableStateOf<String?>(null) }
-  var allowedAppsNotice by remember { mutableStateOf<String?>(null) }
-  var showDeviceManagement by remember { mutableStateOf(false) }
-  var deviceRenaming by remember { mutableStateOf(false) }
-  var deviceUnpairing by remember { mutableStateOf(false) }
-  var deviceManagementError by remember { mutableStateOf<String?>(null) }
-  var pendingTimeRequest by remember {
-    mutableStateOf<PendingTimeRequest?>(null)
-  }
-  var timeRequestResponding by remember { mutableStateOf(false) }
-  var timeRequestError by remember { mutableStateOf<String?>(null) }
-  var timeRequestNotice by remember { mutableStateOf<String?>(null) }
-  var showDailyLimitPicker by remember { mutableStateOf(false) }
-  var selectedDailyLimitMinutes by remember {
-    mutableStateOf(pairedDevice?.dailyScreenTime?.limitMinutes ?: 120)
-  }
-  var dailyLimitSaving by remember { mutableStateOf(false) }
-  var dailyLimitError by remember { mutableStateOf<String?>(null) }
-  var dailyLimitNotice by remember { mutableStateOf<String?>(null) }
-  var protectionHistory by remember {
-    mutableStateOf<List<ProtectionHistoryEvent>>(emptyList())
-  }
-  var protectionHistoryLoading by remember { mutableStateOf(false) }
-  var protectionHistoryError by remember { mutableStateOf<String?>(null) }
-  var showAllProtectionHistory by remember { mutableStateOf(false) }
-  var protectionHistoryClearing by remember { mutableStateOf(false) }
-  var showClearProtectionHistoryConfirm by remember { mutableStateOf(false) }
-  var appUsageDays by remember {
-    mutableStateOf<List<AppUsageDay>>(emptyList())
-  }
-  var appUsageLoading by remember { mutableStateOf(false) }
-  var appUsageError by remember { mutableStateOf<String?>(null) }
-  var appUsageView by remember { mutableStateOf(APP_USAGE_VIEW_TODAY) }
+  val uiState =
+    remember(settingsStore) {
+      ParentDashboardUiState(
+        initialPairedDevice = settingsStore.loadPairedDevice(),
+        initialPairedDevices = settingsStore.loadPairedDevices(),
+      )
+    }
 
   fun removeInvalidPairing(
     deviceId: String,
     displayName: String,
   ) {
     settingsStore.removePairing(deviceId)
-    pairedDevices = settingsStore.loadPairedDevices()
-    pairedDevice = settingsStore.loadPairedDevice()
-    commandProgressMessage = null
-    pendingCommandFeedback = null
-    connectionTestInProgress = false
-    connectionTestMessage = null
-    connectionTestError = null
-    scheduleEditorSchedule = null
-    scheduleError = null
-    scheduleNotice = null
-    allowedAppsEditorSnapshot = null
-    allowedAppsError = null
-    allowedAppsNotice = null
-    showBonusTimePicker = false
-    showDeviceManagement = false
-    deviceManagementError = null
-    pendingTimeRequest = null
-    timeRequestError = null
-    timeRequestNotice = null
-    showDailyLimitPicker = false
-    dailyLimitError = null
-    dailyLimitNotice = null
-    protectionHistory = emptyList()
-    protectionHistoryLoading = false
-    protectionHistoryError = null
-    showAllProtectionHistory = false
-    protectionHistoryClearing = false
-    showClearProtectionHistoryConfirm = false
-    appUsageDays = emptyList()
-    appUsageLoading = false
-    appUsageError = null
-    appUsageView = APP_USAGE_VIEW_TODAY
-    showDevices = false
-    selectedTab = 0
+    uiState.pairedDevices = settingsStore.loadPairedDevices()
+    uiState.pairedDevice = settingsStore.loadPairedDevice()
+    uiState.commandProgressMessage = null
+    uiState.pendingCommandFeedback = null
+    uiState.connectionTestInProgress = false
+    uiState.connectionTestMessage = null
+    uiState.connectionTestError = null
+    uiState.scheduleEditorSchedule = null
+    uiState.scheduleError = null
+    uiState.scheduleNotice = null
+    uiState.allowedAppsEditorSnapshot = null
+    uiState.allowedAppsError = null
+    uiState.allowedAppsNotice = null
+    uiState.showBonusTimePicker = false
+    uiState.showDeviceManagement = false
+    uiState.deviceManagementError = null
+    uiState.pendingTimeRequest = null
+    uiState.timeRequestError = null
+    uiState.timeRequestNotice = null
+    uiState.showDailyLimitPicker = false
+    uiState.dailyLimitError = null
+    uiState.dailyLimitNotice = null
+    uiState.protectionHistory = emptyList()
+    uiState.protectionHistoryLoading = false
+    uiState.protectionHistoryError = null
+    uiState.showAllProtectionHistory = false
+    uiState.protectionHistoryClearing = false
+    uiState.showClearProtectionHistoryConfirm = false
+    uiState.appUsageDays = emptyList()
+    uiState.appUsageLoading = false
+    uiState.appUsageError = null
+    uiState.appUsageView = APP_USAGE_VIEW_TODAY
+    uiState.showDevices = false
+    uiState.selectedTab = 0
 
-    if (pairedDevice == null) {
-      commandNotice = null
-      commandError = null
-      showPairDevice = true
+    if (uiState.pairedDevice == null) {
+      uiState.commandNotice = null
+      uiState.commandError = null
+      uiState.showPairDevice = true
     } else {
-      commandNotice =
+      uiState.commandNotice =
         displayName + " was removed because its Parent pairing is no longer valid."
-      commandError = null
-      showPairDevice = false
+      uiState.commandError = null
+      uiState.showPairDevice = false
     }
   }
 
-  if (showPairDevice || pairedDevice == null) {
+  if (uiState.showPairDevice || uiState.pairedDevice == null) {
     PairDeviceScreen(
       modifier = modifier,
       onPair = { rawCode ->
@@ -257,11 +197,11 @@ fun ParentDashboardScreen(
                 controlToken = token,
               )
               settingsStore.selectDevice(result.device.deviceId)
-              pairedDevices = settingsStore.loadPairedDevices()
-              pairedDevice = result.device
+              uiState.pairedDevices = settingsStore.loadPairedDevices()
+              uiState.pairedDevice = result.device
               ParentPushRegistrar(context.applicationContext)
                 .registerCurrentToken()
-              showPairDevice = false
+              uiState.showPairDevice = false
               result
             }
           } else {
@@ -270,8 +210,8 @@ fun ParentDashboardScreen(
         }
       },
       onCancel =
-        if (pairedDevices.isNotEmpty()) {
-          { showPairDevice = false }
+        if (uiState.pairedDevices.isNotEmpty()) {
+          { uiState.showPairDevice = false }
         } else {
           null
         },
@@ -279,90 +219,90 @@ fun ParentDashboardScreen(
     return
   }
 
-  val device = pairedDevice!!
+  val device = uiState.pairedDevice!!
 
-  if (showDevices) {
+  if (uiState.showDevices) {
     DevicesScreen(
-      devices = pairedDevices,
+      devices = uiState.pairedDevices,
       selectedDeviceId = device.deviceId,
       busy =
-        commandInProgress ||
-          connectionTestInProgress ||
-          refreshInProgress ||
-          scheduleLoading ||
-          scheduleSaving ||
-          allowedAppsLoading ||
-          allowedAppsSaving ||
-          dailyLimitSaving ||
-          deviceRenaming ||
-          deviceUnpairing,
+        uiState.commandInProgress ||
+          uiState.connectionTestInProgress ||
+          uiState.refreshInProgress ||
+          uiState.scheduleLoading ||
+          uiState.scheduleSaving ||
+          uiState.allowedAppsLoading ||
+          uiState.allowedAppsSaving ||
+          uiState.dailyLimitSaving ||
+          uiState.deviceRenaming ||
+          uiState.deviceUnpairing,
       onSelectDevice = { selected ->
         if (settingsStore.selectDevice(selected.deviceId)) {
-          pairedDevice = settingsStore.loadPairedDevice()
-          commandNotice = null
-          commandProgressMessage = null
-          commandError = null
-          pendingCommandFeedback = null
-          connectionTestInProgress = false
-          connectionTestMessage = null
-          connectionTestError = null
-          scheduleEditorSchedule = null
-          scheduleError = null
-          scheduleNotice = null
-          allowedAppsEditorSnapshot = null
-          allowedAppsError = null
-          allowedAppsNotice = null
-          showBonusTimePicker = false
-          showDeviceManagement = false
-          deviceManagementError = null
-          pendingTimeRequest = null
-          timeRequestError = null
-          timeRequestNotice = null
-          showDailyLimitPicker = false
-          selectedDailyLimitMinutes =
-            pairedDevice?.dailyScreenTime?.limitMinutes ?: 120
-          dailyLimitError = null
-          dailyLimitNotice = null
-          protectionHistory = emptyList()
-          protectionHistoryLoading = false
-          protectionHistoryError = null
-          showAllProtectionHistory = false
-          protectionHistoryClearing = false
-          showClearProtectionHistoryConfirm = false
-          appUsageDays = emptyList()
-          appUsageLoading = false
-          appUsageError = null
-          appUsageView = APP_USAGE_VIEW_TODAY
-          showDevices = false
-          selectedTab = 0
+          uiState.pairedDevice = settingsStore.loadPairedDevice()
+          uiState.commandNotice = null
+          uiState.commandProgressMessage = null
+          uiState.commandError = null
+          uiState.pendingCommandFeedback = null
+          uiState.connectionTestInProgress = false
+          uiState.connectionTestMessage = null
+          uiState.connectionTestError = null
+          uiState.scheduleEditorSchedule = null
+          uiState.scheduleError = null
+          uiState.scheduleNotice = null
+          uiState.allowedAppsEditorSnapshot = null
+          uiState.allowedAppsError = null
+          uiState.allowedAppsNotice = null
+          uiState.showBonusTimePicker = false
+          uiState.showDeviceManagement = false
+          uiState.deviceManagementError = null
+          uiState.pendingTimeRequest = null
+          uiState.timeRequestError = null
+          uiState.timeRequestNotice = null
+          uiState.showDailyLimitPicker = false
+          uiState.selectedDailyLimitMinutes =
+            uiState.pairedDevice?.dailyScreenTime?.limitMinutes ?: 120
+          uiState.dailyLimitError = null
+          uiState.dailyLimitNotice = null
+          uiState.protectionHistory = emptyList()
+          uiState.protectionHistoryLoading = false
+          uiState.protectionHistoryError = null
+          uiState.showAllProtectionHistory = false
+          uiState.protectionHistoryClearing = false
+          uiState.showClearProtectionHistoryConfirm = false
+          uiState.appUsageDays = emptyList()
+          uiState.appUsageLoading = false
+          uiState.appUsageError = null
+          uiState.appUsageView = APP_USAGE_VIEW_TODAY
+          uiState.showDevices = false
+          uiState.selectedTab = 0
         }
       },
       onAddDevice = {
-        showDevices = false
-        showPairDevice = true
+        uiState.showDevices = false
+        uiState.showPairDevice = true
       },
-      onBack = { showDevices = false },
+      onBack = { uiState.showDevices = false },
       modifier = modifier,
     )
     return
   }
 
-  if (showDeviceManagement) {
+  if (uiState.showDeviceManagement) {
     DeviceManagementScreen(
       currentName = device.displayName,
-      renaming = deviceRenaming,
-      unpairing = deviceUnpairing,
-      errorMessage = deviceManagementError,
+      renaming = uiState.deviceRenaming,
+      unpairing = uiState.deviceUnpairing,
+      errorMessage = uiState.deviceManagementError,
       onRename = { displayName ->
-        if (!deviceRenaming && !deviceUnpairing) {
+        if (!uiState.deviceRenaming && !uiState.deviceUnpairing) {
           val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
-            deviceManagementError =
+            uiState.deviceManagementError =
               "Control token is missing. Re-pairing is required."
           } else {
             scope.launch {
-              deviceRenaming = true
-              deviceManagementError = null
+              uiState.deviceRenaming = true
+              uiState.deviceManagementError = null
 
               when (
                 val result =
@@ -377,36 +317,36 @@ fun ParentDashboardScreen(
                 is RenameDeviceResult.Success -> {
                   val updatedDevice =
                     device.copy(displayName = result.displayName)
-                  pairedDevice = updatedDevice
+                  uiState.pairedDevice = updatedDevice
                   settingsStore.savePairing(
                     device = updatedDevice,
                     controlToken = controlToken,
                   )
-                  pairedDevices = settingsStore.loadPairedDevices()
-                  showDeviceManagement = false
-                  commandNotice = "Device renamed to " + result.displayName + "."
+                  uiState.pairedDevices = settingsStore.loadPairedDevices()
+                  uiState.showDeviceManagement = false
+                  uiState.commandNotice = "Device renamed to " + result.displayName + "."
                 }
 
                 is RenameDeviceResult.Error -> {
-                  deviceManagementError = result.message
+                  uiState.deviceManagementError = result.message
                 }
               }
 
-              deviceRenaming = false
+              uiState.deviceRenaming = false
             }
           }
         }
       },
       onUnpair = {
-        if (!deviceRenaming && !deviceUnpairing) {
+        if (!uiState.deviceRenaming && !uiState.deviceUnpairing) {
           val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
-            deviceManagementError =
+            uiState.deviceManagementError =
               "Control token is missing. Re-pairing is required."
           } else {
             scope.launch {
-              deviceUnpairing = true
-              deviceManagementError = null
+              uiState.deviceUnpairing = true
+              uiState.deviceManagementError = null
 
               when (
                 val result =
@@ -419,28 +359,28 @@ fun ParentDashboardScreen(
               ) {
                 UnpairDeviceResult.Success -> {
                   settingsStore.removePairing(device.deviceId)
-                  pairedDevices = settingsStore.loadPairedDevices()
-                  pairedDevice = settingsStore.loadPairedDevice()
-                  showPairDevice = pairedDevice == null
-                  showDeviceManagement = false
-                  commandNotice = null
-                  pendingCommandFeedback = null
+                  uiState.pairedDevices = settingsStore.loadPairedDevices()
+                  uiState.pairedDevice = settingsStore.loadPairedDevice()
+                  uiState.showPairDevice = uiState.pairedDevice == null
+                  uiState.showDeviceManagement = false
+                  uiState.commandNotice = null
+                  uiState.pendingCommandFeedback = null
                 }
 
                 is UnpairDeviceResult.Error -> {
-                  deviceManagementError = result.message
+                  uiState.deviceManagementError = result.message
                 }
               }
 
-              deviceUnpairing = false
+              uiState.deviceUnpairing = false
             }
           }
         }
       },
       onBack = {
-        if (!deviceRenaming && !deviceUnpairing) {
-          showDeviceManagement = false
-          deviceManagementError = null
+        if (!uiState.deviceRenaming && !uiState.deviceUnpairing) {
+          uiState.showDeviceManagement = false
+          uiState.deviceManagementError = null
         }
       },
       modifier = modifier,
@@ -448,21 +388,21 @@ fun ParentDashboardScreen(
     return
   }
 
-  allowedAppsEditorSnapshot?.let { snapshot ->
+  uiState.allowedAppsEditorSnapshot?.let { snapshot ->
     AllowedAppsEditorScreen(
       snapshot = snapshot,
-      saving = allowedAppsSaving,
-      saveError = allowedAppsError,
+      saving = uiState.allowedAppsSaving,
+      saveError = uiState.allowedAppsError,
       onSave = { allowedPackages ->
-        if (!allowedAppsSaving) {
+        if (!uiState.allowedAppsSaving) {
           val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
-            allowedAppsError =
+            uiState.allowedAppsError =
               "Control token is missing. Re-pairing is required."
           } else {
             scope.launch {
-              allowedAppsSaving = true
-              allowedAppsError = null
+              uiState.allowedAppsSaving = true
+              uiState.allowedAppsError = null
 
               when (
                 val result =
@@ -476,8 +416,8 @@ fun ParentDashboardScreen(
                   }
               ) {
                 is AllowedAppsSaveResult.Success -> {
-                  allowedAppsEditorSnapshot = null
-                  allowedAppsNotice =
+                  uiState.allowedAppsEditorSnapshot = null
+                  uiState.allowedAppsNotice =
                     if (device.isOnline) {
                       "Allowed apps saved and sent to the Child device."
                     } else {
@@ -486,19 +426,19 @@ fun ParentDashboardScreen(
                 }
 
                 is AllowedAppsSaveResult.Error -> {
-                  allowedAppsError = result.message
+                  uiState.allowedAppsError = result.message
                 }
               }
 
-              allowedAppsSaving = false
+              uiState.allowedAppsSaving = false
             }
           }
         }
       },
       onCancel = {
-        if (!allowedAppsSaving) {
-          allowedAppsEditorSnapshot = null
-          allowedAppsError = null
+        if (!uiState.allowedAppsSaving) {
+          uiState.allowedAppsEditorSnapshot = null
+          uiState.allowedAppsError = null
         }
       },
       modifier = modifier,
@@ -506,21 +446,21 @@ fun ParentDashboardScreen(
     return
   }
 
-  scheduleEditorSchedule?.let { schedule ->
+  uiState.scheduleEditorSchedule?.let { schedule ->
     ParentScheduleEditorScreen(
       schedule = schedule,
-      saving = scheduleSaving,
-      saveError = scheduleError,
+      saving = uiState.scheduleSaving,
+      saveError = uiState.scheduleError,
       onSave = { updatedSchedule ->
-        if (!scheduleSaving) {
+        if (!uiState.scheduleSaving) {
           val controlToken = settingsStore.controlToken(device.deviceId)
           if (controlToken.isNullOrBlank()) {
-            scheduleError =
+            uiState.scheduleError =
               "Control token is missing. Re-pairing is required."
           } else {
             scope.launch {
-              scheduleSaving = true
-              scheduleError = null
+              uiState.scheduleSaving = true
+              uiState.scheduleError = null
 
               when (
                 val result =
@@ -533,8 +473,8 @@ fun ParentDashboardScreen(
                   }
               ) {
                 is ScheduleSaveResult.Success -> {
-                  scheduleEditorSchedule = null
-                  scheduleNotice =
+                  uiState.scheduleEditorSchedule = null
+                  uiState.scheduleNotice =
                     if (device.isOnline) {
                       "Schedule saved and sent to the Child device."
                     } else {
@@ -543,19 +483,19 @@ fun ParentDashboardScreen(
                 }
 
                 is ScheduleSaveResult.Error -> {
-                  scheduleError = result.message
+                  uiState.scheduleError = result.message
                 }
               }
 
-              scheduleSaving = false
+              uiState.scheduleSaving = false
             }
           }
         }
       },
       onCancel = {
-        if (!scheduleSaving) {
-          scheduleEditorSchedule = null
-          scheduleError = null
+        if (!uiState.scheduleSaving) {
+          uiState.scheduleEditorSchedule = null
+          uiState.scheduleError = null
         }
       },
       modifier = modifier,
@@ -566,7 +506,7 @@ fun ParentDashboardScreen(
   LaunchedEffect(device.deviceId) {
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      commandError = "Control token is missing. Re-pairing is required."
+      uiState.commandError = "Control token is missing. Re-pairing is required."
     } else {
       while (true) {
         when (
@@ -579,17 +519,17 @@ fun ParentDashboardScreen(
             }
         ) {
           is DeviceStatusResult.Success -> {
-            pairedDevice = statusResult.device
+            uiState.pairedDevice = statusResult.device
             settingsStore.savePairing(
               device = statusResult.device,
               controlToken = controlToken,
             )
-            pairedDevices = settingsStore.loadPairedDevices()
+            uiState.pairedDevices = settingsStore.loadPairedDevices()
 
-            pendingCommandFeedback?.let { pendingCommand ->
+            uiState.pendingCommandFeedback?.let { pendingCommand ->
               if (commandMatchesDeviceState(pendingCommand, statusResult.device)) {
-                commandNotice = commandAppliedLabel(pendingCommand)
-                pendingCommandFeedback = null
+                uiState.commandNotice = commandAppliedLabel(pendingCommand)
+                uiState.pendingCommandFeedback = null
               }
             }
           }
@@ -602,7 +542,7 @@ fun ParentDashboardScreen(
               )
               return@LaunchedEffect
             } else {
-              commandError = statusResult.message
+              uiState.commandError = statusResult.message
             }
           }
         }
@@ -612,19 +552,19 @@ fun ParentDashboardScreen(
     }
   }
 
-  LaunchedEffect(device.deviceId, selectedTab, "app-usage-poll") {
-    if (selectedTab != 0) return@LaunchedEffect
+  LaunchedEffect(device.deviceId, uiState.selectedTab, "app-usage-poll") {
+    if (uiState.selectedTab != 0) return@LaunchedEffect
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      appUsageError =
+      uiState.appUsageError =
         "Control token is missing. Re-pairing is required."
       return@LaunchedEffect
     }
 
     while (true) {
-      if (appUsageDays.isEmpty()) {
-        appUsageLoading = true
+      if (uiState.appUsageDays.isEmpty()) {
+        uiState.appUsageLoading = true
       }
 
       when (
@@ -637,8 +577,8 @@ fun ParentDashboardScreen(
           }
       ) {
         is AppUsageResult.Success -> {
-          appUsageDays = result.days
-          appUsageError = null
+          uiState.appUsageDays = result.days
+          uiState.appUsageError = null
         }
 
         is AppUsageResult.Error -> {
@@ -649,29 +589,29 @@ fun ParentDashboardScreen(
             )
             return@LaunchedEffect
           } else {
-            appUsageError = result.message
+            uiState.appUsageError = result.message
           }
         }
       }
 
-      appUsageLoading = false
+      uiState.appUsageLoading = false
       delay(30_000)
     }
   }
 
-  LaunchedEffect(device.deviceId, selectedTab, "protection-history-poll") {
-    if (selectedTab != 3) return@LaunchedEffect
+  LaunchedEffect(device.deviceId, uiState.selectedTab, "protection-history-poll") {
+    if (uiState.selectedTab != 3) return@LaunchedEffect
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      protectionHistoryError =
+      uiState.protectionHistoryError =
         "Control token is missing. Re-pairing is required."
       return@LaunchedEffect
     }
 
     while (true) {
-      if (protectionHistory.isEmpty()) {
-        protectionHistoryLoading = true
+      if (uiState.protectionHistory.isEmpty()) {
+        uiState.protectionHistoryLoading = true
       }
 
       when (
@@ -684,8 +624,8 @@ fun ParentDashboardScreen(
           }
       ) {
         is ProtectionHistoryResult.Success -> {
-          protectionHistory = result.events
-          protectionHistoryError = null
+          uiState.protectionHistory = result.events
+          uiState.protectionHistoryError = null
         }
 
         is ProtectionHistoryResult.Error -> {
@@ -696,12 +636,12 @@ fun ParentDashboardScreen(
             )
             return@LaunchedEffect
           } else {
-            protectionHistoryError = result.message
+            uiState.protectionHistoryError = result.message
           }
         }
       }
 
-      protectionHistoryLoading = false
+      uiState.protectionHistoryLoading = false
       delay(5_000)
     }
   }
@@ -720,9 +660,9 @@ fun ParentDashboardScreen(
             }
         ) {
           is TimeRequestFetchResult.Success -> {
-            pendingTimeRequest = result.request
+            uiState.pendingTimeRequest = result.request
             if (result.request == null) {
-              timeRequestError = null
+              uiState.timeRequestError = null
             }
           }
 
@@ -734,7 +674,7 @@ fun ParentDashboardScreen(
               )
               return@LaunchedEffect
             } else {
-              timeRequestError = result.message
+              uiState.timeRequestError = result.message
             }
           }
         }
@@ -748,18 +688,18 @@ fun ParentDashboardScreen(
     request: PendingTimeRequest,
     approve: Boolean,
   ) {
-    if (timeRequestResponding) return
+    if (uiState.timeRequestResponding) return
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      timeRequestError = "Control token is missing. Re-pairing is required."
+      uiState.timeRequestError = "Control token is missing. Re-pairing is required."
       return
     }
 
     scope.launch {
-      timeRequestResponding = true
-      timeRequestError = null
-      timeRequestNotice = null
+      uiState.timeRequestResponding = true
+      uiState.timeRequestError = null
+      uiState.timeRequestNotice = null
 
       when (
         val result =
@@ -773,8 +713,8 @@ fun ParentDashboardScreen(
           }
       ) {
         is TimeRequestResponseResult.Success -> {
-          pendingTimeRequest = null
-          timeRequestNotice =
+          uiState.pendingTimeRequest = null
+          uiState.timeRequestNotice =
             if (result.approved) {
               "Approved " + result.requestedMinutes + " minutes."
             } else {
@@ -789,28 +729,28 @@ fun ParentDashboardScreen(
               displayName = device.displayName,
             )
           } else {
-            timeRequestError = result.message
+            uiState.timeRequestError = result.message
           }
         }
       }
 
-      timeRequestResponding = false
+      uiState.timeRequestResponding = false
     }
   }
 
   fun clearProtectionHistory() {
-    if (protectionHistoryClearing) return
+    if (uiState.protectionHistoryClearing) return
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      protectionHistoryError =
+      uiState.protectionHistoryError =
         "Control token is missing. Re-pairing is required."
       return
     }
 
     scope.launch {
-      protectionHistoryClearing = true
-      protectionHistoryError = null
+      uiState.protectionHistoryClearing = true
+      uiState.protectionHistoryError = null
 
       when (
         val result =
@@ -822,9 +762,9 @@ fun ParentDashboardScreen(
           }
       ) {
         ProtectionHistoryClearResult.Success -> {
-          protectionHistory = emptyList()
-          showAllProtectionHistory = false
-          showClearProtectionHistoryConfirm = false
+          uiState.protectionHistory = emptyList()
+          uiState.showAllProtectionHistory = false
+          uiState.showClearProtectionHistoryConfirm = false
         }
 
         is ProtectionHistoryClearResult.Error -> {
@@ -834,28 +774,28 @@ fun ParentDashboardScreen(
               displayName = device.displayName,
             )
           } else {
-            protectionHistoryError = result.message
+            uiState.protectionHistoryError = result.message
           }
         }
       }
 
-      protectionHistoryClearing = false
+      uiState.protectionHistoryClearing = false
     }
   }
 
   fun saveDailyLimit(minutes: Int?) {
-    if (dailyLimitSaving) return
+    if (uiState.dailyLimitSaving) return
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      dailyLimitError = "Control token is missing. Re-pairing is required."
+      uiState.dailyLimitError = "Control token is missing. Re-pairing is required."
       return
     }
 
     scope.launch {
-      dailyLimitSaving = true
-      dailyLimitError = null
-      dailyLimitNotice = null
+      uiState.dailyLimitSaving = true
+      uiState.dailyLimitError = null
+      uiState.dailyLimitNotice = null
 
       when (
         val result =
@@ -868,7 +808,7 @@ fun ParentDashboardScreen(
           }
       ) {
         is DailyLimitSaveResult.Success -> {
-          val currentDevice = pairedDevice ?: device
+          val currentDevice = uiState.pairedDevice ?: device
           val usedSeconds = currentDevice.dailyScreenTime.usedSeconds
           val remainingMinutes =
             result.minutes?.let { limit ->
@@ -891,17 +831,17 @@ fun ParentDashboardScreen(
                 ),
             )
 
-          pairedDevice = updatedDevice
+          uiState.pairedDevice = updatedDevice
           settingsStore.savePairing(
             device = updatedDevice,
             controlToken = controlToken,
           )
-          pairedDevices = settingsStore.loadPairedDevices()
+          uiState.pairedDevices = settingsStore.loadPairedDevices()
           if (result.minutes != null) {
-            selectedDailyLimitMinutes = result.minutes
+            uiState.selectedDailyLimitMinutes = result.minutes
           }
-          showDailyLimitPicker = false
-          dailyLimitNotice =
+          uiState.showDailyLimitPicker = false
+          uiState.dailyLimitNotice =
             if (result.minutes == null) {
               "Daily screen time limit disabled."
             } else if (device.isOnline) {
@@ -918,29 +858,29 @@ fun ParentDashboardScreen(
               displayName = device.displayName,
             )
           } else {
-            dailyLimitError = result.message
+            uiState.dailyLimitError = result.message
           }
         }
       }
 
-      dailyLimitSaving = false
+      uiState.dailyLimitSaving = false
     }
   }
 
   fun testConnection() {
-    if (connectionTestInProgress || commandInProgress) return
+    if (uiState.connectionTestInProgress || uiState.commandInProgress) return
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      connectionTestError =
+      uiState.connectionTestError =
         "Control token is missing. Re-pairing is required."
       return
     }
 
     scope.launch {
-      connectionTestInProgress = true
-      connectionTestMessage = "Testing Parent → backend → Child connection…"
-      connectionTestError = null
+      uiState.connectionTestInProgress = true
+      uiState.connectionTestMessage = "Testing Parent → backend → Child connection…"
+      uiState.connectionTestError = null
 
       when (
         val result =
@@ -979,39 +919,39 @@ fun ParentDashboardScreen(
                   val updatedDevice =
                     statusResult.device.copy(
                       lastSeenAt =
-                        pairedDevice?.lastSeenAt ?: device.lastSeenAt,
+                        uiState.pairedDevice?.lastSeenAt ?: device.lastSeenAt,
                     )
-                  pairedDevice = updatedDevice
+                  uiState.pairedDevice = updatedDevice
                   settingsStore.savePairing(
                     device = updatedDevice,
                     controlToken = controlToken,
                   )
-                  pairedDevices = settingsStore.loadPairedDevices()
+                  uiState.pairedDevices = settingsStore.loadPairedDevices()
                 }
               }
 
               is CommandDeliveryResult.Error -> {
-                connectionTestError = statusResult.message
+                uiState.connectionTestError = statusResult.message
                 break
               }
             }
           }
 
-          if (connectionTestError == null) {
+          if (uiState.connectionTestError == null) {
             when (deliveryStatus) {
               "APPLIED" -> {
-                connectionTestMessage =
+                uiState.connectionTestMessage =
                   "✓ Connection OK — Child received and confirmed the test."
               }
 
               "FAILED" -> {
-                connectionTestMessage = null
-                connectionTestError =
+                uiState.connectionTestMessage = null
+                uiState.connectionTestError =
                   "Child received the test, but could not complete it."
               }
 
               else -> {
-                connectionTestMessage =
+                uiState.connectionTestMessage =
                   "Backend accepted the test, but Child has not confirmed it yet."
               }
             }
@@ -1019,30 +959,30 @@ fun ParentDashboardScreen(
         }
 
         is CommandResult.Error -> {
-          connectionTestMessage = null
-          connectionTestError = result.message
+          uiState.connectionTestMessage = null
+          uiState.connectionTestError = result.message
         }
       }
 
-      connectionTestInProgress = false
+      uiState.connectionTestInProgress = false
     }
   }
 
   fun sendCommand(command: RemoteCommand) {
-    if (commandInProgress) return
+    if (uiState.commandInProgress) return
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
-      commandError = "Control token is missing. Re-pairing is required."
+      uiState.commandError = "Control token is missing. Re-pairing is required."
       return
     }
 
     scope.launch {
-      commandInProgress = true
-      commandProgressMessage = commandSendingLabel(command, device.isOnline)
-      commandNotice = null
-      pendingCommandFeedback = null
-      commandError = null
+      uiState.commandInProgress = true
+      uiState.commandProgressMessage = commandSendingLabel(command, device.isOnline)
+      uiState.commandNotice = null
+      uiState.pendingCommandFeedback = null
+      uiState.commandError = null
 
       when (
         val result =
@@ -1081,56 +1021,56 @@ fun ParentDashboardScreen(
                   val updatedDevice =
                     statusResult.device.copy(
                       lastSeenAt =
-                        pairedDevice?.lastSeenAt ?: device.lastSeenAt,
+                        uiState.pairedDevice?.lastSeenAt ?: device.lastSeenAt,
                     )
-                  pairedDevice = updatedDevice
+                  uiState.pairedDevice = updatedDevice
                   settingsStore.savePairing(
                     device = updatedDevice,
                     controlToken = controlToken,
                   )
-                  pairedDevices = settingsStore.loadPairedDevices()
+                  uiState.pairedDevices = settingsStore.loadPairedDevices()
                 }
               }
 
               is CommandDeliveryResult.Error -> {
-                commandError = statusResult.message
+                uiState.commandError = statusResult.message
                 break
               }
             }
           }
 
-          if (commandError == null) {
+          if (uiState.commandError == null) {
             when (deliveryStatus) {
               "APPLIED" -> {
-                commandNotice = commandAppliedLabel(command)
-                pendingCommandFeedback = null
+                uiState.commandNotice = commandAppliedLabel(command)
+                uiState.pendingCommandFeedback = null
               }
 
               "FAILED" -> {
-                commandNotice = null
-                pendingCommandFeedback = null
-                commandError = "The command could not be applied. Please try again."
+                uiState.commandNotice = null
+                uiState.pendingCommandFeedback = null
+                uiState.commandError = "The command could not be applied. Please try again."
               }
 
               else -> {
-                commandNotice =
+                uiState.commandNotice =
                   commandQueuedLabel(
                     command = command,
-                    deviceOnline = pairedDevice?.isOnline ?: device.isOnline,
+                    deviceOnline = uiState.pairedDevice?.isOnline ?: device.isOnline,
                   )
-                pendingCommandFeedback = command
+                uiState.pendingCommandFeedback = command
               }
             }
           }
         }
 
         is CommandResult.Error -> {
-          commandError = result.message
+          uiState.commandError = result.message
         }
       }
 
-      commandProgressMessage = null
-      commandInProgress = false
+      uiState.commandProgressMessage = null
+      uiState.commandInProgress = false
     }
   }
 
@@ -1181,11 +1121,11 @@ fun ParentDashboardScreen(
         )
 
         OutlinedButton(
-          onClick = { showDevices = true },
+          onClick = { uiState.showDevices = true },
           enabled =
-            !commandInProgress &&
-              !connectionTestInProgress &&
-              !refreshInProgress,
+            !uiState.commandInProgress &&
+              !uiState.connectionTestInProgress &&
+              !uiState.refreshInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("CHANGE DEVICE")
@@ -1193,41 +1133,41 @@ fun ParentDashboardScreen(
       }
     }
 
-    ScrollableTabRow(selectedTabIndex = selectedTab) {
+    ScrollableTabRow(selectedTabIndex = uiState.selectedTab) {
       listOf("Overview", "Schedule", "Apps", "Device", "Settings")
         .forEachIndexed { index, label ->
         Tab(
-          selected = selectedTab == index,
-          onClick = { selectedTab = index },
+          selected = uiState.selectedTab == index,
+          onClick = { uiState.selectedTab = index },
           text = { Text(label) },
         )
       }
     }
 
-    if (selectedTab == 3) {
+    if (uiState.selectedTab == 3) {
       ParentDeviceTab(
         device = device,
-        pairedDeviceCount = pairedDevices.size,
-        refreshInProgress = refreshInProgress,
-        commandInProgress = commandInProgress,
-        deviceRenaming = deviceRenaming,
-        deviceUnpairing = deviceUnpairing,
-        protectionHistory = protectionHistory,
-        protectionHistoryLoading = protectionHistoryLoading,
-        protectionHistoryError = protectionHistoryError,
-        showAllProtectionHistory = showAllProtectionHistory,
-        protectionHistoryClearing = protectionHistoryClearing,
-        onShowDevices = { showDevices = true },
+        pairedDeviceCount = uiState.pairedDevices.size,
+        uiState.refreshInProgress = uiState.refreshInProgress,
+        uiState.commandInProgress = uiState.commandInProgress,
+        uiState.deviceRenaming = uiState.deviceRenaming,
+        uiState.deviceUnpairing = uiState.deviceUnpairing,
+        uiState.protectionHistory = uiState.protectionHistory,
+        uiState.protectionHistoryLoading = uiState.protectionHistoryLoading,
+        uiState.protectionHistoryError = uiState.protectionHistoryError,
+        uiState.showAllProtectionHistory = uiState.showAllProtectionHistory,
+        uiState.protectionHistoryClearing = uiState.protectionHistoryClearing,
+        onShowDevices = { uiState.showDevices = true },
         onRefreshStatus = {
-          if (!refreshInProgress) {
+          if (!uiState.refreshInProgress) {
             val controlToken = settingsStore.controlToken(device.deviceId)
             if (controlToken.isNullOrBlank()) {
-              commandError =
+              uiState.commandError =
                 "Control token is missing. Re-pairing is required."
             } else {
               scope.launch {
-                refreshInProgress = true
-                commandError = null
+                uiState.refreshInProgress = true
+                uiState.commandError = null
 
                 when (
                   val statusResult =
@@ -1239,22 +1179,22 @@ fun ParentDashboardScreen(
                     }
                 ) {
                   is DeviceStatusResult.Success -> {
-                    pairedDevice = statusResult.device
+                    uiState.pairedDevice = statusResult.device
                     settingsStore.savePairing(
                       device = statusResult.device,
                       controlToken = controlToken,
                     )
-                    pairedDevices = settingsStore.loadPairedDevices()
+                    uiState.pairedDevices = settingsStore.loadPairedDevices()
 
-                    pendingCommandFeedback?.let { pendingCommand ->
+                    uiState.pendingCommandFeedback?.let { pendingCommand ->
                       if (
                         commandMatchesDeviceState(
                           pendingCommand,
                           statusResult.device,
                         )
                       ) {
-                        commandNotice = commandAppliedLabel(pendingCommand)
-                        pendingCommandFeedback = null
+                        uiState.commandNotice = commandAppliedLabel(pendingCommand)
+                        uiState.pendingCommandFeedback = null
                       }
                     }
                   }
@@ -1266,76 +1206,76 @@ fun ParentDashboardScreen(
                         displayName = device.displayName,
                       )
                     } else {
-                      commandError = statusResult.message
+                      uiState.commandError = statusResult.message
                     }
                   }
                 }
 
-                refreshInProgress = false
+                uiState.refreshInProgress = false
               }
             }
           }
         },
         onManageDevice = {
-          deviceManagementError = null
-          showDeviceManagement = true
+          uiState.deviceManagementError = null
+          uiState.showDeviceManagement = true
         },
         onToggleProtectionHistory = {
-          showAllProtectionHistory = !showAllProtectionHistory
+          uiState.showAllProtectionHistory = !uiState.showAllProtectionHistory
         },
         onRequestClearProtectionHistory = {
-          showClearProtectionHistoryConfirm = true
-          protectionHistoryError = null
+          uiState.showClearProtectionHistoryConfirm = true
+          uiState.protectionHistoryError = null
         },
       )
     }
 
-    if (selectedTab == 0) {
+    if (uiState.selectedTab == 0) {
       ParentOverviewTab(
         device = device,
-        pendingTimeRequest = pendingTimeRequest,
-        timeRequestResponding = timeRequestResponding,
-        timeRequestNotice = timeRequestNotice,
-        timeRequestError = timeRequestError,
-        commandInProgress = commandInProgress,
-        commandProgressMessage = commandProgressMessage,
-        commandNotice = commandNotice,
-        connectionTestInProgress = connectionTestInProgress,
-        connectionTestMessage = connectionTestMessage,
-        connectionTestError = connectionTestError,
-        appUsageDays = appUsageDays,
-        appUsageLoading = appUsageLoading,
-        appUsageError = appUsageError,
-        appUsageView = appUsageView,
+        uiState.pendingTimeRequest = uiState.pendingTimeRequest,
+        uiState.timeRequestResponding = uiState.timeRequestResponding,
+        uiState.timeRequestNotice = uiState.timeRequestNotice,
+        uiState.timeRequestError = uiState.timeRequestError,
+        uiState.commandInProgress = uiState.commandInProgress,
+        uiState.commandProgressMessage = uiState.commandProgressMessage,
+        uiState.commandNotice = uiState.commandNotice,
+        uiState.connectionTestInProgress = uiState.connectionTestInProgress,
+        uiState.connectionTestMessage = uiState.connectionTestMessage,
+        uiState.connectionTestError = uiState.connectionTestError,
+        uiState.appUsageDays = uiState.appUsageDays,
+        uiState.appUsageLoading = uiState.appUsageLoading,
+        uiState.appUsageError = uiState.appUsageError,
+        uiState.appUsageView = uiState.appUsageView,
         onRespondToTimeRequest = { request, approve ->
           respondToTimeRequest(request, approve)
         },
         onLock = { sendCommand(RemoteCommand.lock()) },
         onUnlock = { sendCommand(RemoteCommand.unlock()) },
-        onAddBonusTime = { showBonusTimePicker = true },
+        onAddBonusTime = { uiState.showBonusTimePicker = true },
         onTestConnection = { testConnection() },
-        onAppUsageViewChange = { appUsageView = it },
+        onAppUsageViewChange = { uiState.appUsageView = it },
       )
     }
 
-    if (selectedTab == 2) {
+    if (uiState.selectedTab == 2) {
       ParentAppsTab(
-        allowedAppsLoading = allowedAppsLoading,
-        allowedAppsSaving = allowedAppsSaving,
-        commandInProgress = commandInProgress,
-        allowedAppsNotice = allowedAppsNotice,
+        uiState.allowedAppsLoading = uiState.allowedAppsLoading,
+        uiState.allowedAppsSaving = uiState.allowedAppsSaving,
+        uiState.commandInProgress = uiState.commandInProgress,
+        uiState.allowedAppsNotice = uiState.allowedAppsNotice,
         onManageAllowedApps = {
-          if (!allowedAppsLoading) {
+          if (!uiState.allowedAppsLoading) {
             val controlToken = settingsStore.controlToken(device.deviceId)
             if (controlToken.isNullOrBlank()) {
-              commandError =
+              uiState.commandError =
                 "Control token is missing. Re-pairing is required."
             } else {
               scope.launch {
-                allowedAppsLoading = true
-                allowedAppsError = null
-                allowedAppsNotice = null
-                commandError = null
+                uiState.allowedAppsLoading = true
+                uiState.allowedAppsError = null
+                uiState.allowedAppsNotice = null
+                uiState.commandError = null
 
                 when (
                   val result =
@@ -1347,15 +1287,15 @@ fun ParentDashboardScreen(
                     }
                 ) {
                   is AllowedAppsFetchResult.Success -> {
-                    allowedAppsEditorSnapshot = result.snapshot
+                    uiState.allowedAppsEditorSnapshot = result.snapshot
                   }
 
                   is AllowedAppsFetchResult.Error -> {
-                    commandError = result.message
+                    uiState.commandError = result.message
                   }
                 }
 
-                allowedAppsLoading = false
+                uiState.allowedAppsLoading = false
               }
             }
           }
@@ -1363,27 +1303,27 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (selectedTab == 1) {
+    if (uiState.selectedTab == 1) {
       ParentScheduleTab(
         device = device,
-        scheduleLoading = scheduleLoading,
-        commandInProgress = commandInProgress,
-        dailyLimitSaving = dailyLimitSaving,
-        dailyLimitNotice = dailyLimitNotice,
-        dailyLimitError = dailyLimitError,
-        scheduleNotice = scheduleNotice,
+        uiState.scheduleLoading = uiState.scheduleLoading,
+        uiState.commandInProgress = uiState.commandInProgress,
+        uiState.dailyLimitSaving = uiState.dailyLimitSaving,
+        uiState.dailyLimitNotice = uiState.dailyLimitNotice,
+        uiState.dailyLimitError = uiState.dailyLimitError,
+        uiState.scheduleNotice = uiState.scheduleNotice,
         onEditSchedule = {
-          if (!scheduleLoading) {
+          if (!uiState.scheduleLoading) {
             val controlToken = settingsStore.controlToken(device.deviceId)
             if (controlToken.isNullOrBlank()) {
-              commandError =
+              uiState.commandError =
                 "Control token is missing. Re-pairing is required."
             } else {
               scope.launch {
-                scheduleLoading = true
-                scheduleError = null
-                commandError = null
-                scheduleNotice = null
+                uiState.scheduleLoading = true
+                uiState.scheduleError = null
+                uiState.commandError = null
+                uiState.scheduleNotice = null
 
                 when (
                   val result =
@@ -1395,34 +1335,34 @@ fun ParentDashboardScreen(
                     }
                 ) {
                   is ScheduleFetchResult.Success -> {
-                    scheduleEditorSchedule = result.schedule
+                    uiState.scheduleEditorSchedule = result.schedule
                   }
 
                   is ScheduleFetchResult.Error -> {
-                    commandError = result.message
+                    uiState.commandError = result.message
                   }
                 }
 
-                scheduleLoading = false
+                uiState.scheduleLoading = false
               }
             }
           }
         },
         onSetDailyLimit = { initialMinutes ->
-          selectedDailyLimitMinutes = initialMinutes
-          dailyLimitError = null
-          dailyLimitNotice = null
-          showDailyLimitPicker = true
+          uiState.selectedDailyLimitMinutes = initialMinutes
+          uiState.dailyLimitError = null
+          uiState.dailyLimitNotice = null
+          uiState.showDailyLimitPicker = true
         },
         onDisableDailyLimit = { saveDailyLimit(null) },
       )
     }
 
-    if (selectedTab == 4) {
+    if (uiState.selectedTab == 4) {
       ParentSettingsScreen()
     }
 
-    commandError?.let { message ->
+    uiState.commandError?.let { message ->
       Text(
         text = message,
         style = MaterialTheme.typography.bodyMedium,
@@ -1432,11 +1372,11 @@ fun ParentDashboardScreen(
     Spacer(modifier = Modifier.height(8.dp))
   }
 
-  if (showClearProtectionHistoryConfirm) {
+  if (uiState.showClearProtectionHistoryConfirm) {
     AlertDialog(
       onDismissRequest = {
-        if (!protectionHistoryClearing) {
-          showClearProtectionHistoryConfirm = false
+        if (!uiState.protectionHistoryClearing) {
+          uiState.showClearProtectionHistoryConfirm = false
         }
       },
       title = {
@@ -1456,10 +1396,10 @@ fun ParentDashboardScreen(
       confirmButton = {
         Button(
           onClick = { clearProtectionHistory() },
-          enabled = !protectionHistoryClearing,
+          enabled = !uiState.protectionHistoryClearing,
         ) {
           Text(
-            if (protectionHistoryClearing) {
+            if (uiState.protectionHistoryClearing) {
               "CLEARING…"
             } else {
               "CLEAR"
@@ -1469,8 +1409,8 @@ fun ParentDashboardScreen(
       },
       dismissButton = {
         OutlinedButton(
-          onClick = { showClearProtectionHistoryConfirm = false },
-          enabled = !protectionHistoryClearing,
+          onClick = { uiState.showClearProtectionHistoryConfirm = false },
+          enabled = !uiState.protectionHistoryClearing,
         ) {
           Text("CANCEL")
         }
@@ -1478,28 +1418,28 @@ fun ParentDashboardScreen(
     )
   }
 
-  if (showDailyLimitPicker) {
+  if (uiState.showDailyLimitPicker) {
     DailyLimitWheelDialog(
-      initialMinutes = selectedDailyLimitMinutes,
+      initialMinutes = uiState.selectedDailyLimitMinutes,
       onDismiss = {
-        if (!dailyLimitSaving) {
-          showDailyLimitPicker = false
+        if (!uiState.dailyLimitSaving) {
+          uiState.showDailyLimitPicker = false
         }
       },
       onConfirm = { minutes ->
-        selectedDailyLimitMinutes = minutes
+        uiState.selectedDailyLimitMinutes = minutes
         saveDailyLimit(minutes)
       },
     )
   }
 
-  if (showBonusTimePicker) {
+  if (uiState.showBonusTimePicker) {
     BonusTimeWheelDialog(
-      initialMinutes = selectedBonusMinutes,
-      onDismiss = { showBonusTimePicker = false },
+      initialMinutes = uiState.selectedBonusMinutes,
+      onDismiss = { uiState.showBonusTimePicker = false },
       onConfirm = { minutes ->
-        selectedBonusMinutes = minutes
-        showBonusTimePicker = false
+        uiState.selectedBonusMinutes = minutes
+        uiState.showBonusTimePicker = false
         sendCommand(RemoteCommand.bonusTime(minutes))
       },
     )
