@@ -177,16 +177,17 @@ internal fun ParentOverviewTab(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
 
+      val remainingMinutes = device.dailyScreenTime.remainingMinutes
       if (
         device.dailyScreenTime.limitMinutes != null &&
-        device.dailyScreenTime.remainingMinutes != null
+        remainingMinutes != null
       ) {
         Text(
           text =
             if (device.dailyScreenTime.limitReached) {
               "Daily screen time limit reached."
             } else {
-              formatDurationMinutes(device.dailyScreenTime.remainingMinutes) +
+              formatDurationMinutes(remainingMinutes) +
                 " remaining today."
             },
           style = MaterialTheme.typography.bodyMedium,
