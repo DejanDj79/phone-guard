@@ -656,7 +656,7 @@ private fun UsageAppCard(
       Surface(
         modifier = Modifier.size(28.dp),
         shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+        color = ParentAccentColor.copy(alpha = 0.10f),
       ) {
         Box(
           contentAlignment = Alignment.Center,
@@ -665,7 +665,7 @@ private fun UsageAppCard(
             text = rank.toString(),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+            color = ParentAccentColor,
           )
         }
       }
@@ -693,7 +693,7 @@ private fun UsageAppCard(
         text = formatUsageSeconds(app.seconds),
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
+        color = ParentAccentColor,
         textAlign = TextAlign.End,
       )
     }
@@ -778,7 +778,7 @@ private fun UsageWeekBarChart(
               shape = RoundedCornerShape(topStart = 9.dp, topEnd = 9.dp),
               color =
                 if (seconds > 0) {
-                  MaterialTheme.colorScheme.primary
+                  ParentAccentColor
                 } else {
                   MaterialTheme.colorScheme.outlineVariant
                 },
