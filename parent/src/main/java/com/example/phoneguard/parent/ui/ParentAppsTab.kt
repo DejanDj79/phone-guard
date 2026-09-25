@@ -37,10 +37,11 @@ internal fun ParentAppsTab(
   allowedAppsError: String?,
   onManageAllowedApps: () -> Unit,
 ) {
+  val allowedPackages = snapshot?.allowedPackages.orEmpty()
   val allowedApps =
     snapshot
       ?.installedApps
-      ?.filter { it.packageName in snapshot.allowedPackages }
+      ?.filter { it.packageName in allowedPackages }
       ?.sortedBy { it.label.lowercase() }
       .orEmpty()
 
