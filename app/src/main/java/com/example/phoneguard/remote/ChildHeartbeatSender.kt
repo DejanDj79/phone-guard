@@ -66,7 +66,7 @@ class ChildHeartbeatSender(context: Context) {
     val accessibilityEnabled =
       accessibilityEnabledOverride
         ?: PhoneGuardAccessibilityStatus.isEnabled(appContext)
-    val preciseTimingEnabled = alarmScheduler.hasExactAlarmAccess()
+    val preciseTimingEnabled = alarmScheduler.hasPreciseTimingPermission()
     val batteryUnrestricted =
       BackgroundProtectionStatus.isBatteryOptimizationIgnored(appContext)
 
