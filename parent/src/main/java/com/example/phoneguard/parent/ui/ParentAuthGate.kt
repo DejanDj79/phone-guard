@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -213,7 +214,7 @@ private fun ParentWelcomeScreen(
 
     Button(
       onClick = onContinueWithGoogle,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
     ) {
       Text("CONTINUE WITH GOOGLE")
     }
@@ -222,7 +223,7 @@ private fun ParentWelcomeScreen(
 
     OutlinedButton(
       onClick = onContinueWithEmail,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
     ) {
       Text("CONTINUE WITH EMAIL")
     }
@@ -291,7 +292,7 @@ private fun ParentGoogleSignInScreen(
         }
       },
       enabled = !inProgress,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
     ) {
       Text(
         if (inProgress) {
@@ -307,7 +308,7 @@ private fun ParentGoogleSignInScreen(
     OutlinedButton(
       onClick = onBack,
       enabled = !inProgress,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
     ) {
       Text("BACK")
     }
@@ -350,7 +351,7 @@ private fun ParentEmailAuthScreen(
       if (mode == ParentEmailMode.SIGN_IN) {
         Button(
           onClick = { mode = ParentEmailMode.SIGN_IN },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           Text("SIGN IN")
         }
@@ -361,7 +362,7 @@ private fun ParentEmailAuthScreen(
             errorMessage = null
             noticeMessage = null
           },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           Text("SIGN IN")
         }
@@ -370,7 +371,7 @@ private fun ParentEmailAuthScreen(
       if (mode == ParentEmailMode.CREATE_ACCOUNT) {
         Button(
           onClick = { mode = ParentEmailMode.CREATE_ACCOUNT },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           Text("CREATE")
         }
@@ -381,7 +382,7 @@ private fun ParentEmailAuthScreen(
             errorMessage = null
             noticeMessage = null
           },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           Text("CREATE")
         }
@@ -518,7 +519,7 @@ private fun ParentEmailAuthScreen(
           emailValid &&
           passwordValid &&
           confirmationValid,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
     ) {
       Text(
         when {
@@ -543,7 +544,7 @@ private fun ParentEmailAuthScreen(
     OutlinedButton(
       onClick = onBack,
       enabled = !inProgress,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
     ) {
       Text("BACK")
     }
