@@ -45,6 +45,7 @@ internal class ParentDashboardUiState(
   var scheduleError by mutableStateOf<String?>(null)
   var scheduleNotice by mutableStateOf<String?>(null)
 
+  var allowedAppsSnapshot by mutableStateOf<AllowedAppsSnapshot?>(null)
   var allowedAppsEditorSnapshot by mutableStateOf<AllowedAppsSnapshot?>(null)
   var allowedAppsLoading by mutableStateOf(false)
   var allowedAppsSaving by mutableStateOf(false)
