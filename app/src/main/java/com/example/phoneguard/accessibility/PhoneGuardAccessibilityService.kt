@@ -193,6 +193,30 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   ): String? {
     if (!phoneGuardAppInfoActive) return null
 
+    val eventPackage = event.packageName?.toString().orEmpty()
+    if (!isSupportedSettingsPackage(eventPackage)) return null
+
+    val activeText = activeWindowText()
+    val phoneGuardLabel =
+      runCatching {
+        packageManager
+          .getApplicationLabel(applicationInfo)
+          .toString()
+      }.getOrDefault("PhoneGuard")
+    val mentionsPhoneGuard =
+      activeText.contains(phoneGuardLabel, ignoreCase = true) ||
+        activeText.contains(packageName, ignoreCase = true)
+
+    if (
+      !mentionsPhoneGuard ||
+      !isAppInfoContent(
+        eventPackage = eventPackage,
+        normalizedText = activeText.lowercase(),
+      )
+    ) {
+      return null
+    }
+
     val clickedText =
       buildString {
         event.text.forEach { item ->
@@ -453,15 +477,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }
   }
 
+  private fun isSupportedSettingsPackage(eventPackage: String): Boolean =
+    eventPackage == "com.android.settings" ||
+      eventPackage == "com.miui.securitycenter"
+
   private fun isAppInfoContent(
     eventPackage: String,
     normalizedText: String,
   ): Boolean {
-    val supportedSettingsPackage =
-      eventPackage == "com.android.settings" ||
-        eventPackage == "com.miui.securitycenter"
-
-    if (!supportedSettingsPackage) return false
+    if (!isSupportedSettingsPackage(eventPackage)) return false
 
     val hasForceStop =
       normalizedText.contains("force stop") ||
