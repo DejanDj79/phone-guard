@@ -60,6 +60,8 @@ dependencies {
   implementation(project(":core"))
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.messaging)
+  implementation(libs.supabase.auth)
+  implementation(libs.ktor.client.android)
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
 
