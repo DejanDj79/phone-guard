@@ -1,5 +1,7 @@
 package com.example.phoneguard.parent.ui
 
+import android.app.TimePickerDialog
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,15 +10,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,8 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import android.app.TimePickerDialog
-import android.content.Context
 import com.example.phoneguard.core.RemoteDaySchedule
 import com.example.phoneguard.core.RemoteWeeklySchedule
 import com.example.phoneguard.core.ScheduleDay
@@ -65,107 +71,131 @@ fun ParentScheduleEditorScreen(
   }
   var validationError by remember { mutableStateOf<String?>(null) }
 
-  Surface(modifier = modifier.fillMaxSize()) {
+  Surface(
+    modifier = modifier.fillMaxSize(),
+    color = MaterialTheme.colorScheme.background,
+  ) {
     Column(
       modifier =
         Modifier
           .fillMaxSize()
           .verticalScroll(rememberScrollState())
-          .padding(24.dp),
+          .padding(horizontal = 20.dp, vertical = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       Text(
         text = "Lock schedule",
-        style = MaterialTheme.typography.headlineSmall,
+        style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
       )
 
-      Spacer(modifier = Modifier.height(8.dp))
-
       Text(
-        text = "Set the periods when the Child phone will be locked. An overnight period can cross midnight, for example 22:00–07:00.",
+        text = "Choose the days and hours when this Child phone should lock automatically.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
 
-      Spacer(modifier = Modifier.height(20.dp))
-
-      ScheduleDay.entries.forEachIndexed { index, day ->
+      ScheduleDay.entries.forEach { day ->
         val row = rows.getValue(day)
 
-        Column(
-          modifier =
-            Modifier
-              .fillMaxWidth()
-              .padding(vertical = 10.dp),
-          verticalArrangement = Arrangement.spacedBy(10.dp),
+        Surface(
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(22.dp),
+          color =
+            if (row.enabled) {
+              MaterialTheme.colorScheme.surface
+            } else {
+              MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+            },
         ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+          Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
           ) {
-            Text(
-              text = day.displayName,
-              style = MaterialTheme.typography.titleMedium,
-              fontWeight = FontWeight.SemiBold,
-              modifier = Modifier.weight(1f),
-            )
-
-            Switch(
-              checked = row.enabled,
-              enabled = !saving,
-              onCheckedChange = { enabled ->
-                rows = rows + (day to row.copy(enabled = enabled))
-                validationError = null
-              },
-            )
-          }
-
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-          ) {
-            OutlinedButton(
-              onClick = {
-                showTimePicker(
-                  context = context,
-                  currentValue = row.start,
-                ) { value ->
-                  rows = rows + (day to row.copy(start = value))
-                  validationError = null
-                }
-              },
-              enabled = row.enabled && !saving,
-              modifier = Modifier.weight(1f),
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.CenterVertically,
             ) {
-              Text("From  " + row.start)
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = day.displayName,
+                  style = MaterialTheme.typography.titleMedium,
+                  fontWeight = FontWeight.Bold,
+                )
+                Text(
+                  text =
+                    if (row.enabled) {
+                      row.start + " – " + row.end
+                    } else {
+                      "No automatic lock"
+                    },
+                  style = MaterialTheme.typography.bodySmall,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
+
+              Switch(
+                checked = row.enabled,
+                enabled = !saving,
+                onCheckedChange = { enabled ->
+                  rows = rows + (day to row.copy(enabled = enabled))
+                  validationError = null
+                },
+              )
             }
 
-            OutlinedButton(
-              onClick = {
-                showTimePicker(
-                  context = context,
-                  currentValue = row.end,
-                ) { value ->
-                  rows = rows + (day to row.copy(end = value))
-                  validationError = null
+            if (row.enabled) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+              ) {
+                OutlinedButton(
+                  onClick = {
+                    showTimePicker(
+                      context = context,
+                      currentValue = row.start,
+                    ) { value ->
+                      rows = rows + (day to row.copy(start = value))
+                      validationError = null
+                    }
+                  },
+                  enabled = !saving,
+                  modifier = Modifier.weight(1f),
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                  )
+                  Text("  " + row.start)
                 }
-              },
-              enabled = row.enabled && !saving,
-              modifier = Modifier.weight(1f),
-            ) {
-              Text("To  " + row.end)
+
+                OutlinedButton(
+                  onClick = {
+                    showTimePicker(
+                      context = context,
+                      currentValue = row.end,
+                    ) { value ->
+                      rows = rows + (day to row.copy(end = value))
+                      validationError = null
+                    }
+                  },
+                  enabled = !saving,
+                  modifier = Modifier.weight(1f),
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                  )
+                  Text("  " + row.end)
+                }
+              }
             }
           }
-        }
-
-        if (index < ScheduleDay.entries.lastIndex) {
-          HorizontalDivider()
         }
       }
 
       val visibleError = validationError ?: saveError
       visibleError?.let {
-        Spacer(modifier = Modifier.height(12.dp))
         Text(
           text = it,
           color = MaterialTheme.colorScheme.error,
@@ -173,7 +203,7 @@ fun ParentScheduleEditorScreen(
         )
       }
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(4.dp))
 
       Button(
         onClick = {
@@ -213,12 +243,18 @@ fun ParentScheduleEditorScreen(
         enabled = !saving,
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text(if (saving) "SAVING…" else "SAVE SCHEDULE")
+        if (saving) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onPrimary,
+          )
+        } else {
+          Text("SAVE SCHEDULE")
+        }
       }
 
-      Spacer(modifier = Modifier.height(10.dp))
-
-      OutlinedButton(
+      TextButton(
         onClick = onCancel,
         enabled = !saving,
         modifier = Modifier.fillMaxWidth(),
@@ -226,11 +262,10 @@ fun ParentScheduleEditorScreen(
         Text("CANCEL")
       }
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(8.dp))
     }
   }
 }
-
 
 private fun showTimePicker(
   context: Context,
