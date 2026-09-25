@@ -1,5 +1,13 @@
 package com.example.phoneguard.parent.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,9 +16,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PhoneAndroid
@@ -39,7 +49,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -174,102 +186,182 @@ internal fun ParentDashboardShell(
   ) {
     Scaffold(
       topBar = {
-        CenterAlignedTopAppBar(
-          navigationIcon = {
-            IconButton(
-              onClick = {
-                scope.launch { drawerState.open() }
-              },
-            ) {
-              Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = "Open navigation",
-              )
+        AnimatedContent(
+          targetState = selectedSection,
+          transitionSpec = {
+            if (targetState == 0) {
+              slideInVertically(
+                animationSpec = tween(260),
+                initialOffsetY = { -it / 3 },
+              ) + fadeIn(animationSpec = tween(220)) togetherWith
+                slideOutVertically(
+                  animationSpec = tween(220),
+                  targetOffsetY = { -it / 3 },
+                ) + fadeOut(animationSpec = tween(180))
+            } else {
+              slideInVertically(
+                animationSpec = tween(300),
+                initialOffsetY = { -it },
+              ) + fadeIn(animationSpec = tween(220)) togetherWith
+                slideOutVertically(
+                  animationSpec = tween(180),
+                  targetOffsetY = { -it / 2 },
+                ) + fadeOut(animationSpec = tween(140))
             }
           },
-          title = {
-            Text(
-              text =
-                parentDashboardSections
-                  .getOrNull(selectedSection)
-                  ?.label
-                  ?: "PhoneGuard",
-              style = MaterialTheme.typography.titleLarge,
-              fontWeight = FontWeight.SemiBold,
-            )
-          },
-          actions = {
-            Box {
-              IconButton(onClick = { accountMenuExpanded = true }) {
-                Icon(
-                  imageVector = Icons.Default.AccountCircle,
-                  contentDescription = "Parent account",
-                )
-              }
+          label = "ParentSectionHeader",
+        ) { sectionIndex ->
+          val isHome = sectionIndex == 0
+          val headerContainerColor =
+            if (isHome) {
+              MaterialTheme.colorScheme.background
+            } else {
+              MaterialTheme.colorScheme.primary
+            }
+          val headerContentColor =
+            if (isHome) {
+              MaterialTheme.colorScheme.onBackground
+            } else {
+              MaterialTheme.colorScheme.onPrimary
+            }
 
-              DropdownMenu(
-                expanded = accountMenuExpanded,
-                onDismissRequest = { accountMenuExpanded = false },
-              ) {
-                parentEmail
-                  ?.takeIf { it.isNotBlank() }
-                  ?.let { email ->
-                    DropdownMenuItem(
-                      text = {
-                        Column {
-                          Text(
-                            text = "Parent account",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                          )
-                          Text(
-                            text = email,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                          )
-                        }
-                      },
-                      onClick = {},
-                      enabled = false,
-                    )
-                    Divider()
-                  }
-
-                DropdownMenuItem(
-                  text = { Text("Settings") },
-                  leadingIcon = {
-                    Icon(
-                      imageVector = Icons.Default.Settings,
-                      contentDescription = null,
-                    )
-                  },
+          CenterAlignedTopAppBar(
+            navigationIcon = {
+              if (isHome) {
+                IconButton(
                   onClick = {
-                    accountMenuExpanded = false
-                    onSectionSelected(4)
+                    scope.launch { drawerState.open() }
                   },
-                )
-
-                DropdownMenuItem(
-                  text = { Text("Sign out") },
-                  leadingIcon = {
+                ) {
+                  Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Open navigation",
+                    tint = headerContentColor,
+                  )
+                }
+              } else {
+                Surface(
+                  shape = CircleShape,
+                  color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                  modifier = Modifier.padding(start = 8.dp),
+                ) {
+                  IconButton(
+                    onClick = { onSectionSelected(0) },
+                  ) {
+                    Icon(
+                      imageVector = Icons.Default.ArrowBack,
+                      contentDescription = "Back to Home",
+                      tint = MaterialTheme.colorScheme.primary,
+                    )
+                  }
+                }
+              }
+            },
+            title = {
+              Text(
+                text =
+                  parentDashboardSections
+                    .getOrNull(sectionIndex)
+                    ?.label
+                    ?: "PhoneGuard",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = headerContentColor,
+              )
+            },
+            actions = {
+              Box {
+                Surface(
+                  shape = CircleShape,
+                  color =
+                    if (isHome) {
+                      Color.Transparent
+                    } else {
+                      MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+                    },
+                  modifier = Modifier.padding(end = 8.dp),
+                ) {
+                  IconButton(onClick = { accountMenuExpanded = true }) {
                     Icon(
                       imageVector = Icons.Default.AccountCircle,
-                      contentDescription = null,
+                      contentDescription = "Parent account",
+                      tint =
+                        if (isHome) {
+                          headerContentColor
+                        } else {
+                          MaterialTheme.colorScheme.primary
+                        },
                     )
-                  },
-                  onClick = {
-                    accountMenuExpanded = false
-                    onSignOut()
-                  },
-                )
+                  }
+                }
+
+                DropdownMenu(
+                  expanded = accountMenuExpanded,
+                  onDismissRequest = { accountMenuExpanded = false },
+                ) {
+                  parentEmail
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { email ->
+                      DropdownMenuItem(
+                        text = {
+                          Column {
+                            Text(
+                              text = "Parent account",
+                              style = MaterialTheme.typography.labelSmall,
+                              color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                              text = email,
+                              maxLines = 1,
+                              overflow = TextOverflow.Ellipsis,
+                            )
+                          }
+                        },
+                        onClick = {},
+                        enabled = false,
+                      )
+                      Divider()
+                    }
+
+                  DropdownMenuItem(
+                    text = { Text("Settings") },
+                    leadingIcon = {
+                      Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = null,
+                      )
+                    },
+                    onClick = {
+                      accountMenuExpanded = false
+                      onSectionSelected(4)
+                    },
+                  )
+
+                  DropdownMenuItem(
+                    text = { Text("Sign out") },
+                    leadingIcon = {
+                      Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = null,
+                      )
+                    },
+                    onClick = {
+                      accountMenuExpanded = false
+                      onSignOut()
+                    },
+                  )
+                }
               }
-            }
-          },
-          colors =
-            TopAppBarDefaults.topAppBarColors(
-              containerColor = MaterialTheme.colorScheme.background,
-            ),
-        )
+            },
+            colors =
+              TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = headerContainerColor,
+                navigationIconContentColor = headerContentColor,
+                titleContentColor = headerContentColor,
+                actionIconContentColor = headerContentColor,
+              ),
+          )
+        }
       },
     ) { innerPadding ->
       Box(
