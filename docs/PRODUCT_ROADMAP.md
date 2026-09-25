@@ -360,3 +360,7 @@ Before publication we still need to decide:
 - Device Protection history preview is capped at 5 events. Longer history opens in a dedicated Protection history screen with its own Back header and clear-history action. Awaiting physical review.
 
 - Floating bottom-nav position is no longer tied to navigation-bar insets. The Parent account dropdown is non-focusable so opening it should not surface Android native navigation controls or make the floating bar jump vertically. Awaiting physical verification.
+
+- Parent buttons now use a taller content-sized action style: standard Button/OutlinedButton/TextButton controls target a 52dp minimum height and no longer stretch full-width unless they are intentional paired/segmented controls. Awaiting physical review.
+
+- Parent account icon now toggles its menu open/closed on repeated taps while keeping the non-focusable popup behavior that prevents native navigation controls from shifting the floating bottom bar.
