@@ -244,6 +244,7 @@ private fun ParentPinSetupScreen(
       },
       enabled = pin.length in 4..6 && confirmation.length in 4..6,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text("SAVE PIN")
     }
@@ -297,6 +298,7 @@ private fun ParentPinUnlockScreen(
       },
       enabled = pin.length in 4..6,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text("UNLOCK")
     }
@@ -307,7 +309,8 @@ private fun ParentPinUnlockScreen(
       OutlinedButton(
         onClick = onBiometricUnlock,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("USE BIOMETRICS")
       }
     }
