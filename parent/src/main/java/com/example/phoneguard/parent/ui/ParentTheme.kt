@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
@@ -9,6 +10,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.phoneguard.parent.R
 
@@ -29,6 +31,7 @@ private val MichromaFamily =
   )
 
 internal val ParentAccentColor = Color(0xFFE83E1D)
+internal val ParentActionShape = RoundedCornerShape(12.dp)
 internal val ParentGradientEdge = Color(0xFFDEDEDA)
 internal val ParentGradientCenter = Color(0xFFF3F3F0)
 
