@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 
 internal val parentDashboardTabs =
-  listOf("Overview", "Schedule", "Apps", "Device", "Settings")
+  listOf("Home", "Schedule", "Apps", "Device", "Settings")
 
 @Composable
 internal fun ParentDashboardHeader(
