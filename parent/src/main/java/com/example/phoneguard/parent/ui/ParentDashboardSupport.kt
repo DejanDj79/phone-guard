@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -213,43 +214,96 @@ internal fun PairDeviceScreen(
     modifier =
       modifier
         .fillMaxSize()
+        .verticalScroll(rememberScrollState())
         .padding(horizontal = 24.dp, vertical = 32.dp),
-    verticalArrangement = Arrangement.Center,
+    verticalArrangement = Arrangement.spacedBy(18.dp),
   ) {
     Text(
-      text = "PhoneGuard Parent",
+      text = "Pair a Child phone",
       style = MaterialTheme.typography.headlineMedium,
       fontWeight = FontWeight.Bold,
     )
 
-    Spacer(modifier = Modifier.height(12.dp))
-
     Text(
-      text = "Pair a Child phone",
-      style = MaterialTheme.typography.headlineSmall,
-      fontWeight = FontWeight.SemiBold,
-    )
-
-    Spacer(modifier = Modifier.height(8.dp))
-
-    Text(
-      text = "Open PhoneGuard on the Child phone and enter its 6-character pairing code.",
+      text =
+        "Connect a Child phone to this Parent account. Existing Child devices on this account will stay connected.",
       style = MaterialTheme.typography.bodyMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
-    parentEmail
-      ?.takeIf { it.isNotBlank() }
-      ?.let { email ->
-        Spacer(modifier = Modifier.height(10.dp))
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
         Text(
-          text = "Signed in as " + email,
+          text = "Parent account",
+          style = MaterialTheme.typography.labelLarge,
+          fontWeight = FontWeight.SemiBold,
+        )
+
+        Text(
+          text =
+            parentEmail
+              ?.takeIf { it.isNotBlank() }
+              ?: "Signed in Parent account",
+          style = MaterialTheme.typography.bodyLarge,
+          fontWeight = FontWeight.Medium,
+        )
+
+        Text(
+          text = "The paired Child phone will belong to this account.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-      }
 
-    Spacer(modifier = Modifier.height(24.dp))
+        OutlinedButton(
+          onClick = {
+            scope.launch {
+              switchingAccount = true
+              errorMessage = null
+              errorMessage = onSwitchAccount()
+              switchingAccount = false
+            }
+          },
+          enabled = !pairingInProgress && !switchingAccount,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text(
+            if (switchingAccount) {
+              "SWITCHING…"
+            } else {
+              "SWITCH ACCOUNT"
+            },
+          )
+        }
+      }
+    }
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        PairingStep(
+          number = "1",
+          title = "Open PhoneGuard on the Child phone",
+          description = "Keep the Child pairing screen open.",
+        )
+
+        PairingStep(
+          number = "2",
+          title = "Find the 6-character code",
+          description = "The code is temporary and is verified by the PhoneGuard backend.",
+        )
+
+        PairingStep(
+          number = "3",
+          title = "Enter the code here",
+          description = "Letters and numbers are accepted.",
+        )
+      }
+    }
 
     OutlinedTextField(
       value = pairingCode,
@@ -261,7 +315,16 @@ internal fun PairDeviceScreen(
             .take(6)
         errorMessage = null
       },
-      label = { Text("Pairing code") },
+      label = { Text("6-character pairing code") },
+      supportingText = {
+        Text(
+          if (pairingCode.isEmpty()) {
+            "Example: AB12CD"
+          } else {
+            pairingCode.length.toString() + " / 6"
+          },
+        )
+      },
       singleLine = true,
       enabled = !pairingInProgress && !switchingAccount,
       keyboardOptions =
@@ -272,16 +335,13 @@ internal fun PairDeviceScreen(
       modifier = Modifier.fillMaxWidth(),
     )
 
-    errorMessage?.let {
-      Spacer(modifier = Modifier.height(10.dp))
+    errorMessage?.let { message ->
       Text(
-        text = it,
+        text = message,
         color = MaterialTheme.colorScheme.error,
         style = MaterialTheme.typography.bodyMedium,
       )
     }
-
-    Spacer(modifier = Modifier.height(16.dp))
 
     Button(
       onClick = {
@@ -300,19 +360,20 @@ internal fun PairDeviceScreen(
           pairingInProgress = false
         }
       },
-      enabled = pairingCode.length == 6 && !pairingInProgress,
+      enabled =
+        pairingCode.length == 6 &&
+          !pairingInProgress &&
+          !switchingAccount,
       modifier = Modifier.fillMaxWidth(),
     ) {
       Text(
         if (pairingInProgress) {
           "PAIRING…"
         } else {
-          "PAIR DEVICE"
+          "PAIR CHILD PHONE"
         },
       )
     }
-
-    Spacer(modifier = Modifier.height(16.dp))
 
     onCancel?.let {
       OutlinedButton(
@@ -320,37 +381,36 @@ internal fun PairDeviceScreen(
         enabled = !pairingInProgress && !switchingAccount,
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text("CANCEL")
+        Text("BACK TO DEVICES")
       }
-
-      Spacer(modifier = Modifier.height(16.dp))
     }
-
-    OutlinedButton(
-      onClick = {
-        scope.launch {
-          switchingAccount = true
-          errorMessage = null
-          errorMessage = onSwitchAccount()
-          switchingAccount = false
-        }
-      },
-      enabled = !pairingInProgress && !switchingAccount,
-      modifier = Modifier.fillMaxWidth(),
-    ) {
-      Text(
-        if (switchingAccount) {
-          "SWITCHING…"
-        } else {
-          "SWITCH ACCOUNT"
-        },
-      )
-    }
-
-    Spacer(modifier = Modifier.height(16.dp))
 
     Text(
-      text = "The code is verified by the PhoneGuard backend and can only be used while it is active.",
+      text =
+        "Pairing a new Child does not remove devices already connected to this Parent account.",
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  }
+}
+
+@Composable
+private fun PairingStep(
+  number: String,
+  title: String,
+  description: String,
+) {
+  Column(
+    modifier = Modifier.fillMaxWidth(),
+    verticalArrangement = Arrangement.spacedBy(3.dp),
+  ) {
+    Text(
+      text = "Step " + number + " · " + title,
+      style = MaterialTheme.typography.titleSmall,
+      fontWeight = FontWeight.SemiBold,
+    )
+    Text(
+      text = description,
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
