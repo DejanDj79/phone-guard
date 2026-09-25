@@ -85,7 +85,7 @@ internal fun ParentOverviewTab(
 
   pendingTimeRequest?.let { request ->
     Surface(
-      modifier = Modifier.heightIn(min = 52.dp),
+      modifier = Modifier.fillMaxWidth(),
       shape = RoundedCornerShape(24.dp),
       color = MaterialTheme.colorScheme.primaryContainer,
     ) {
@@ -111,7 +111,7 @@ internal fun ParentOverviewTab(
         )
 
         Row(
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
           OutlinedButton(
@@ -170,7 +170,7 @@ internal fun ParentOverviewTab(
       activeCommandType == RemoteCommandType.BONUS_TIME
 
   Surface(
-    modifier = Modifier.heightIn(min = 52.dp),
+    modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(30.dp),
     color = MaterialTheme.colorScheme.secondaryContainer,
   ) {
@@ -179,7 +179,7 @@ internal fun ParentOverviewTab(
       verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
       Row(
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top,
       ) {
@@ -188,12 +188,12 @@ internal fun ParentOverviewTab(
           style = MaterialTheme.typography.headlineSmall,
           fontWeight = FontWeight.Bold,
           color = MaterialTheme.colorScheme.onSecondaryContainer,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
 
         Column(
           horizontalAlignment = Alignment.End,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         ) {
           Text(
             text = "LAST SEEN",
@@ -232,13 +232,13 @@ internal fun ParentOverviewTab(
       }
 
       Row(
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         OutlinedButton(
           onClick = if (isLocked) onUnlock else onLock,
           enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         ) {
           if (mainCommandLoading) {
             CircularProgressIndicator(
@@ -269,7 +269,7 @@ internal fun ParentOverviewTab(
         OutlinedButton(
           onClick = onAddBonusTime,
           enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         ) {
           if (bonusLoading) {
             CircularProgressIndicator(
@@ -303,19 +303,19 @@ internal fun ParentOverviewTab(
     }
 
   Row(
-    modifier = Modifier.heightIn(min = 52.dp),
+    modifier = Modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     HomeMetric(
       label = "SCREEN TIME",
       value = formatUsageSeconds(device.dailyScreenTime.usedSeconds),
-      modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+      modifier = Modifier.weight(1f),
     )
 
     HomeMetric(
       label = "REMAINING",
       value = remainingLabel,
-      modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+      modifier = Modifier.weight(1f),
     )
   }
 
@@ -324,7 +324,7 @@ internal fun ParentOverviewTab(
     (protectionKnown && !protectionComplete)
   ) {
     Surface(
-      modifier = Modifier.heightIn(min = 52.dp),
+      modifier = Modifier.fillMaxWidth(),
       shape = RoundedCornerShape(22.dp),
       color = MaterialTheme.colorScheme.errorContainer,
     ) {
@@ -411,7 +411,7 @@ internal fun ParentOverviewTab(
     }
 
   Surface(
-    modifier = Modifier.heightIn(min = 52.dp),
+    modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(24.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
@@ -420,26 +420,26 @@ internal fun ParentOverviewTab(
       verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
       Row(
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         UsageViewSegment(
           text = "Today",
           selected = appUsageView == APP_USAGE_VIEW_TODAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
         UsageViewSegment(
           text = "Yesterday",
           selected = appUsageView == APP_USAGE_VIEW_YESTERDAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
         UsageViewSegment(
           text = "7 days",
           selected = appUsageView == APP_USAGE_VIEW_WEEK,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
       }
 
@@ -605,7 +605,7 @@ private fun RecentUnlockedActivityTimeline(
       .orEmpty()
 
   Surface(
-    modifier = Modifier.heightIn(min = 52.dp),
+    modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(24.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
@@ -613,7 +613,7 @@ private fun RecentUnlockedActivityTimeline(
       modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
       Row(
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Text(
@@ -621,7 +621,7 @@ private fun RecentUnlockedActivityTimeline(
           style = MaterialTheme.typography.labelSmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           fontWeight = FontWeight.Bold,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
 
         Text(
@@ -662,7 +662,7 @@ private fun RecentUnlockedActivityTimeline(
                 )
 
             Row(
-              modifier = Modifier.heightIn(min = 52.dp),
+              modifier = Modifier.fillMaxWidth(),
               verticalAlignment = Alignment.Top,
             ) {
               Column(
