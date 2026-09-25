@@ -637,7 +637,9 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "allowed-apps-overview") {
-    if (uiState.selectedTab != 2) return@LaunchedEffect
+    if (uiState.selectedTab != 0 && uiState.selectedTab != 2) {
+      return@LaunchedEffect
+    }
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
@@ -1286,6 +1288,7 @@ fun ParentDashboardScreen(
         connectionTestMessage = uiState.connectionTestMessage,
         connectionTestError = uiState.connectionTestError,
         appUsageDays = uiState.appUsageDays,
+        appInventorySnapshot = uiState.allowedAppsSnapshot,
         appUsageLoading = uiState.appUsageLoading,
         appUsageError = uiState.appUsageError,
         appUsageView = uiState.appUsageView,
