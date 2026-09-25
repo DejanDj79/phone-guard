@@ -118,14 +118,16 @@ internal fun DailyLimitWheelDialog(
     confirmButton = {
       OutlinedButton(onClick = { onConfirm(selectedMinutes) },
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("SAVE")
       }
     },
     dismissButton = {
       OutlinedButton(onClick = onDismiss,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("CANCEL")
       }
     },
@@ -201,14 +203,16 @@ internal fun BonusTimeWheelDialog(
       OutlinedButton(
         onClick = { onConfirm(selectedMinutes) },
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("ADD")
       }
     },
     dismissButton = {
       OutlinedButton(onClick = onDismiss,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("CANCEL")
       }
     },
@@ -289,7 +293,8 @@ internal fun PairDeviceScreen(
           },
           enabled = !pairingInProgress && !switchingAccount,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text(
             if (switchingAccount) {
               "SWITCHING…"
@@ -386,6 +391,7 @@ internal fun PairDeviceScreen(
           !pairingInProgress &&
           !switchingAccount,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text(
         if (pairingInProgress) {
@@ -401,7 +407,8 @@ internal fun PairDeviceScreen(
         onClick = it,
         enabled = !pairingInProgress && !switchingAccount,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("BACK TO DEVICES")
       }
     }
