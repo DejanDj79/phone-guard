@@ -188,8 +188,8 @@ Home is the main command center and should prioritize only information that matt
 - [x] Parent pairing flow redesign
 - [x] Child five-step setup wizard
 - [x] Clarified Child Change Parent flow
-- [ ] Parent modern app shell: drawer/hamburger replaced by `#9A71FC` Material 3 bottom navigation with Home, Schedule, Apps and Device. Parent menu now lives in the top account icon and contains Manage children, Settings and Sign out. Non-Home/detail screens keep the animated rounded `#9A71FC` Back header. Awaiting final physical UI approval
-- [ ] Parent Home final minimalist redesign — Manrope + `#88D9E0` pass implemented; awaiting final physical UI approval
+- [ ] Parent modern app shell: drawer/hamburger replaced by floating icon-only bottom navigation with Home, Schedule, Apps and Device. Parent menu lives in the top account icon and contains Manage children, Settings and Sign out. Chrome now follows the Warm Modern light-surface + orange-accent direction. Awaiting final physical UI approval
+- [ ] Parent Home final minimalist redesign — Warm Modern palette + Michroma/Manrope typography pass implemented; awaiting final physical UI approval
 - [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a compact selected-day Material 3 dial picker integrated directly into the selected-day card. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
 - [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
 - [ ] Device / protection screen redesign — implemented in new visual system; awaiting physical review
@@ -304,35 +304,37 @@ Before publication we still need to decide:
 - Parent top tabs will be removed; the approved navigation direction is a hamburger drawer plus a Parent account/avatar action in the top app bar.
 - `docs/PRODUCT_ROADMAP.md` is the persistent source of truth for UI phases and should be updated as each phase is completed.
 - First physical review of the new Parent shell confirmed the navigation direction is better, but the Home screen still felt too repetitive and admin-like.
-- Follow-up design requirements: centered page title; no Child subtitle in the top bar; Child name and last-seen aligned in the hero; avoid duplicate Available/Online messaging; replace command-status text with inline button progress indicators. The warm yellow palette was rejected in physical review. Current visual experiment uses **Manrope** for titles/body text, standard sans-serif for small labels, and `#88D9E0` as the Parent app background with coordinated cyan/teal surfaces and controls.
+- Follow-up design requirements: centered page title; no Child subtitle in the top bar; Child name and last-seen aligned in the hero; avoid duplicate Available/Online messaging; replace command-status text with inline button progress indicators. Earlier warm yellow, cyan/teal, cyan+purple and indigo/blush experiments were rejected or superseded. Current visual experiment uses **Michroma** for display/header/label styles, **Manrope** for body text, a subtle `#F8F8F6 → #EEEEEB` background gradient, warm near-white surfaces and `#E83E1D` orange accents.
 
 - Android system Back navigation now follows Parent UI state: detail/edit screens return to their previous Parent screen, non-Home drawer sections return to Home first, and only Home without an open child screen exits normally.
 - Main Parent content and full-screen editors now use more top spacing / status-bar-aware padding.
 
 - Detail-page headers use the same animated teal surface with a circular Back control; the header slides in from the top when entering Schedule editor, Allowed Apps, Devices, and Device management.
 
-- Animated non-Home/detail headers now use `#9A71FC`, slightly increased vertical height, rounded bottom corners, and smaller circular Back/account controls.
+- Animated non-Home/detail headers keep the rounded Back pattern but now use soft light surfaces; orange `#E83E1D` is reserved for icon/accent states.
 
 - Bottom navigation is reserved for the four primary Parent destinations: Home, Schedule, Apps and Device. Settings is intentionally secondary and is opened from the Parent account menu.
 
 - Bottom navigation height was physically reviewed on-device and accepted; keep the current height unless later layout changes require adjustment.
 
-- Parent account menu was visually polished after bottom-nav approval: Home now uses a compact `#9A71FC` avatar button; the menu shows Parent identity plus the currently managed Child, with Manage children, Settings and Sign out actions.
+- Parent account menu remains compact and shows Parent identity plus the currently managed Child, with Manage children, Settings and Sign out actions; its button now follows the light-surface/orange-accent theme.
 
-- Parent bottom navigation now uses a floating rounded `#9A71FC` surface with side/bottom breathing room; Android's persistent navigation bar/buttons are hidden in Parent with transient swipe access. Awaiting physical review.
+- Parent bottom navigation is floating, rounded and icon-only with side/bottom breathing room; the bar is now a soft light surface and the selected circular icon uses `#E83E1D`. Android's persistent navigation bar/buttons remain hidden with transient swipe access. Awaiting physical review.
 
 - Apps overview now lists allowed apps directly with today's real usage time on the right. Child inventory carries a compact real launcher icon (`iconBase64`) through `sync-app-inventory`; Parent renders it with a fallback icon. `sync-app-inventory` v2 is deployed. Awaiting physical review after updating both Child and Parent APKs.
 
 - Allowed Apps editor now keeps `SAVE` pinned in the lower-right corner while the app list scrolls underneath, with reserved bottom space so content is never covered. Top section/detail titles are now smaller and uppercase for a cleaner header hierarchy. Awaiting physical review.
 
-- Allowed Apps save action is now a circular floating `#9A71FC` check button pinned bottom-right; saving uses an inline spinner in the same control.
+- Allowed Apps save action remains a circular floating check button pinned bottom-right; it now inherits the orange accent theme, with an inline spinner while saving.
 
 - Device overview received a second consumer-style redesign: white device hero with compact action tiles, three visual protection status tiles, and a denser Protection history card. Awaiting physical review.
 
-- The cyan + purple palette was rejected after physical review. New trial palette: warm blush background `#F4E9E7`, deep indigo navigation/primary `#2F4FA3`, dusty pink secondary `#D47B94`, and warm off-white surfaces. Awaiting physical approval.
+- The indigo/blush trial was superseded by a MetroPulse-inspired **Warm Modern** direction: very subtle vertical background gradient `#F8F8F6 → #EEEEEB`, warm near-white surfaces, dark graphite text and orange accent `#E83E1D`. Awaiting physical approval.
 
 - Home now includes a Recent activity timeline for unlocked-phone usage only. Child records individual app sessions (start/end/duration) only while PhoneGuard is effectively unlocked, heartbeat stores those sessions inside the existing daily app-usage JSON, and Parent shows up to six newest sessions with app icons, start time and duration. Existing aggregate Today/Yesterday/7 days view remains as Usage overview. Awaiting physical review with updated Child + Parent APKs.
 
 - Usage overview now presents the top five apps as individual cards with real app icons and usage duration for Today/Yesterday. The 7-day view adds a real Compose bar chart plus the same top-five cards; the previous text-based bar visualization is superseded. Awaiting physical review.
 
 - Bottom navigation labels were removed. The floating bar now contains four circular icon-only destinations; selected destination uses a white circle with indigo icon, unselected destinations use translucent white circles with white icons. Awaiting physical review.
+
+- Michroma was bundled from the official Google Fonts repository with its OFL license. It is used for display/header/label typography; Manrope remains the body font for readability.
