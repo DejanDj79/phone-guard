@@ -328,3 +328,7 @@ Before publication we still need to decide:
 - Allowed Apps save action is now a circular floating `#9A71FC` check button pinned bottom-right; saving uses an inline spinner in the same control.
 
 - Device overview received a second consumer-style redesign: white device hero with compact action tiles, three visual protection status tiles, and a denser Protection history card. Awaiting physical review.
+
+- The cyan + purple palette was rejected after physical review. New trial palette: warm blush background `#F4E9E7`, deep indigo navigation/primary `#2F4FA3`, dusty pink secondary `#D47B94`, and warm off-white surfaces. Awaiting physical approval.
+
+- Home now includes a Recent activity timeline for unlocked-phone usage only. Child records individual app sessions (start/end/duration) only while PhoneGuard is effectively unlocked, heartbeat stores those sessions inside the existing daily app-usage JSON, and Parent shows up to six newest sessions with app icons, start time and duration. Existing aggregate Today/Yesterday/7 days view remains as Usage overview. Awaiting physical review with updated Child + Parent APKs.
