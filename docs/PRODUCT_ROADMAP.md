@@ -190,7 +190,7 @@ Home is the main command center and should prioritize only information that matt
 - [x] Clarified Child Change Parent flow
 - [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting final physical UI approval
 - [ ] Parent Home final minimalist redesign — Manrope + `#88D9E0` pass implemented; awaiting final physical UI approval
-- [ ] Schedule screen redesign — overview and editor implemented in new visual system; awaiting physical review
+- [ ] Schedule screen redesign — overview implemented; editor now uses a single Mon–Sun day strip with a selected-day inline 24h time picker and From/To selector; awaiting physical review
 - [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
 - [ ] Device / protection screen redesign — implemented in new visual system; awaiting physical review
 - [ ] Settings screen redesign — implemented in new visual system; awaiting physical review
