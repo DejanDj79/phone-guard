@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,7 +59,7 @@ internal fun ParentAppsTab(
   )
 
   Surface(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.heightIn(min = 52.dp),
     shape = RoundedCornerShape(28.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
@@ -182,8 +183,8 @@ internal fun ParentAppsTab(
             !commandInProgress,
         modifier =
           Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .heightIn(min = 52.dp),
       ) {
         if (allowedAppsLoading) {
           CircularProgressIndicator(
