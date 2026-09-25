@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import android.util.Log
 import android.util.Patterns
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,12 +33,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.phoneguard.parent.auth.ParentSupabase
+import com.example.phoneguard.parent.data.HttpParentDeviceOwnershipGateway
 import com.example.phoneguard.parent.data.ParentAccountScopeStore
+import com.example.phoneguard.parent.data.ParentDeviceClaimResult
+import com.example.phoneguard.parent.data.ParentSettingsStore
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ParentAuthGate(
@@ -47,6 +53,10 @@ fun ParentAuthGate(
   val accountScopeStore =
     remember(context) {
       ParentAccountScopeStore(context.applicationContext)
+    }
+  val ownershipGateway =
+    remember {
+      HttpParentDeviceOwnershipGateway()
     }
   val auth = ParentSupabase.client.auth
   val sessionStatus by auth.sessionStatus.collectAsStateWithLifecycle()
@@ -76,17 +86,64 @@ fun ParentAuthGate(
       if (userId.isNullOrBlank()) {
         ParentAuthLoadingScreen("Loading your account…")
       } else {
+        val accessToken = status.session.accessToken
         var scopeReady by remember(userId) { mutableStateOf(false) }
 
-        LaunchedEffect(userId) {
-          accountScopeStore.activate(userId)
-          scopeReady = true
+        LaunchedEffect(userId, accessToken) {
+          try {
+            accountScopeStore.activate(userId)
+
+            if (accessToken.isNotBlank()) {
+              withContext(Dispatchers.IO) {
+                val settingsStore =
+                  ParentSettingsStore(context.applicationContext)
+
+                settingsStore
+                  .loadPairedDevices()
+                  .filterNot { device ->
+                    settingsStore.backendOwnershipConfirmed(device.deviceId)
+                  }
+                  .forEach { device ->
+                    val controlToken =
+                      settingsStore.controlToken(device.deviceId)
+                        ?: return@forEach
+
+                    when (
+                      val result =
+                        ownershipGateway.claim(
+                          deviceId = device.deviceId,
+                          controlToken = controlToken,
+                          accessToken = accessToken,
+                        )
+                    ) {
+                      ParentDeviceClaimResult.Success -> {
+                        settingsStore.markBackendOwnershipConfirmed(
+                          device.deviceId,
+                        )
+                      }
+
+                      is ParentDeviceClaimResult.Error -> {
+                        Log.w(
+                          "PhoneGuardParent",
+                          "Backend ownership claim failed for " +
+                            device.deviceId +
+                            ": " +
+                            result.code,
+                        )
+                      }
+                    }
+                  }
+              }
+            }
+          } finally {
+            scopeReady = true
+          }
         }
 
         if (scopeReady) {
           content()
         } else {
-          ParentAuthLoadingScreen("Preparing your account…")
+          ParentAuthLoadingScreen("Securing linked devices…")
         }
       }
     }
