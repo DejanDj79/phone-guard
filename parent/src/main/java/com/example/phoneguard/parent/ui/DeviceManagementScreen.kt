@@ -80,7 +80,7 @@ fun DeviceManagementScreen(
           modifier = Modifier.fillMaxWidth(),
         )
 
-        Button(
+        OutlinedButton(
           onClick = { onRename(normalizedName) },
           enabled =
             !busy &&
@@ -138,7 +138,7 @@ fun DeviceManagementScreen(
         )
       },
       confirmButton = {
-        Button(
+        OutlinedButton(
           onClick = {
             showUnpairConfirmation = false
             onUnpair()
