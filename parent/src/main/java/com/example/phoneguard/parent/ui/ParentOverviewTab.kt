@@ -188,12 +188,12 @@ internal fun ParentOverviewTab(
           style = MaterialTheme.typography.headlineSmall,
           fontWeight = FontWeight.Bold,
           color = MaterialTheme.colorScheme.onSecondaryContainer,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
 
         Column(
           horizontalAlignment = Alignment.End,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           Text(
             text = "LAST SEEN",
@@ -238,7 +238,7 @@ internal fun ParentOverviewTab(
         OutlinedButton(
           onClick = if (isLocked) onUnlock else onLock,
           enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           if (mainCommandLoading) {
             CircularProgressIndicator(
@@ -269,7 +269,7 @@ internal fun ParentOverviewTab(
         OutlinedButton(
           onClick = onAddBonusTime,
           enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           if (bonusLoading) {
             CircularProgressIndicator(
@@ -309,13 +309,13 @@ internal fun ParentOverviewTab(
     HomeMetric(
       label = "SCREEN TIME",
       value = formatUsageSeconds(device.dailyScreenTime.usedSeconds),
-      modifier = Modifier.weight(1f),
+      modifier = Modifier.weight(1f).heightIn(min = 52.dp),
     )
 
     HomeMetric(
       label = "REMAINING",
       value = remainingLabel,
-      modifier = Modifier.weight(1f),
+      modifier = Modifier.weight(1f).heightIn(min = 52.dp),
     )
   }
 
@@ -367,7 +367,10 @@ internal fun ParentOverviewTab(
           color = MaterialTheme.colorScheme.onErrorContainer,
         )
 
-        TextButton(onClick = onOpenDevice) {
+        TextButton(
+          onClick = onOpenDevice,
+          modifier = Modifier.heightIn(min = 52.dp),
+        ) {
           Text("VIEW DEVICE STATUS")
         }
       }
@@ -427,19 +430,19 @@ internal fun ParentOverviewTab(
           text = "Today",
           selected = appUsageView == APP_USAGE_VIEW_TODAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
         UsageViewSegment(
           text = "Yesterday",
           selected = appUsageView == APP_USAGE_VIEW_YESTERDAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
         UsageViewSegment(
           text = "7 days",
           selected = appUsageView == APP_USAGE_VIEW_WEEK,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
       }
 
@@ -621,7 +624,7 @@ private fun RecentUnlockedActivityTimeline(
           style = MaterialTheme.typography.labelSmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           fontWeight = FontWeight.Bold,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
 
         Text(
