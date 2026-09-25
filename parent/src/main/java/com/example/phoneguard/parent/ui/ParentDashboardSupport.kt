@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -115,12 +116,16 @@ internal fun DailyLimitWheelDialog(
       }
     },
     confirmButton = {
-      OutlinedButton(onClick = { onConfirm(selectedMinutes) }) {
+      OutlinedButton(onClick = { onConfirm(selectedMinutes) },
+        modifier = Modifier.heightIn(min = 52.dp),
+      ) {
         Text("SAVE")
       }
     },
     dismissButton = {
-      OutlinedButton(onClick = onDismiss) {
+      OutlinedButton(onClick = onDismiss,
+        modifier = Modifier.heightIn(min = 52.dp),
+      ) {
         Text("CANCEL")
       }
     },
@@ -195,12 +200,15 @@ internal fun BonusTimeWheelDialog(
     confirmButton = {
       OutlinedButton(
         onClick = { onConfirm(selectedMinutes) },
+        modifier = Modifier.heightIn(min = 52.dp),
       ) {
         Text("ADD")
       }
     },
     dismissButton = {
-      OutlinedButton(onClick = onDismiss) {
+      OutlinedButton(onClick = onDismiss,
+        modifier = Modifier.heightIn(min = 52.dp),
+      ) {
         Text("CANCEL")
       }
     },
@@ -280,7 +288,7 @@ internal fun PairDeviceScreen(
             }
           },
           enabled = !pairingInProgress && !switchingAccount,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text(
             if (switchingAccount) {
@@ -377,7 +385,7 @@ internal fun PairDeviceScreen(
         pairingCode.length == 6 &&
           !pairingInProgress &&
           !switchingAccount,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
     ) {
       Text(
         if (pairingInProgress) {
@@ -392,7 +400,7 @@ internal fun PairDeviceScreen(
       OutlinedButton(
         onClick = it,
         enabled = !pairingInProgress && !switchingAccount,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
       ) {
         Text("BACK TO DEVICES")
       }
