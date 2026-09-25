@@ -1319,271 +1319,103 @@ fun ParentDashboardScreen(
     }
 
     if (selectedTab == 2) {
-      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-          modifier = Modifier.padding(20.dp),
-          verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-          Text(
-            text = "Allowed apps",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-          )
-  
-          Text(
-            text =
-              "Choose which apps can still be used while the Child phone is locked.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-  
-          OutlinedButton(
-            onClick = {
-              if (!allowedAppsLoading) {
-                val controlToken = settingsStore.controlToken(device.deviceId)
-                if (controlToken.isNullOrBlank()) {
-                  commandError =
-                    "Control token is missing. Re-pairing is required."
-                } else {
-                  scope.launch {
-                    allowedAppsLoading = true
-                    allowedAppsError = null
-                    allowedAppsNotice = null
-                    commandError = null
-  
-                    when (
-                      val result =
-                        withContext(Dispatchers.IO) {
-                          allowedAppsGateway.fetch(
-                            deviceId = device.deviceId,
-                            controlToken = controlToken,
-                          )
-                        }
-                    ) {
-                      is AllowedAppsFetchResult.Success -> {
-                        allowedAppsEditorSnapshot = result.snapshot
-                      }
-  
-                      is AllowedAppsFetchResult.Error -> {
-                        commandError = result.message
-                      }
+      ParentAppsTab(
+        allowedAppsLoading = allowedAppsLoading,
+        allowedAppsSaving = allowedAppsSaving,
+        commandInProgress = commandInProgress,
+        allowedAppsNotice = allowedAppsNotice,
+        onManageAllowedApps = {
+          if (!allowedAppsLoading) {
+            val controlToken = settingsStore.controlToken(device.deviceId)
+            if (controlToken.isNullOrBlank()) {
+              commandError =
+                "Control token is missing. Re-pairing is required."
+            } else {
+              scope.launch {
+                allowedAppsLoading = true
+                allowedAppsError = null
+                allowedAppsNotice = null
+                commandError = null
+
+                when (
+                  val result =
+                    withContext(Dispatchers.IO) {
+                      allowedAppsGateway.fetch(
+                        deviceId = device.deviceId,
+                        controlToken = controlToken,
+                      )
                     }
-  
-                    allowedAppsLoading = false
+                ) {
+                  is AllowedAppsFetchResult.Success -> {
+                    allowedAppsEditorSnapshot = result.snapshot
+                  }
+
+                  is AllowedAppsFetchResult.Error -> {
+                    commandError = result.message
                   }
                 }
+
+                allowedAppsLoading = false
               }
-            },
-            enabled =
-              !allowedAppsLoading &&
-                !allowedAppsSaving &&
-                !commandInProgress,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
-            Text(
-              if (allowedAppsLoading) {
-                "LOADING…"
-              } else {
-                "MANAGE ALLOWED APPS"
-              },
-            )
-          }
-  
-          allowedAppsNotice?.let { message ->
-            Text(
-              text = message,
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
-        }
-      }
-    }
-
-    if (selectedTab == 1) {
-      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-          modifier = Modifier.padding(20.dp),
-          verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-          Text(
-            text = "Lock schedule",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-          )
-  
-          Text(
-            text = "Set the days and times when the Child phone will lock automatically.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-  
-          OutlinedButton(
-            onClick = {
-              if (!scheduleLoading) {
-                val controlToken = settingsStore.controlToken(device.deviceId)
-                if (controlToken.isNullOrBlank()) {
-                  commandError =
-                    "Control token is missing. Re-pairing is required."
-                } else {
-                  scope.launch {
-                    scheduleLoading = true
-                    scheduleError = null
-                    commandError = null
-                    scheduleNotice = null
-  
-                    when (
-                      val result =
-                        withContext(Dispatchers.IO) {
-                          scheduleGateway.fetch(
-                            deviceId = device.deviceId,
-                            controlToken = controlToken,
-                          )
-                        }
-                    ) {
-                      is ScheduleFetchResult.Success -> {
-                        scheduleEditorSchedule = result.schedule
-                      }
-  
-                      is ScheduleFetchResult.Error -> {
-                        commandError = result.message
-                      }
-                    }
-  
-                    scheduleLoading = false
-                  }
-                }
-              }
-            },
-            enabled = !scheduleLoading && !commandInProgress,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
-            Text(if (scheduleLoading) "LOADING…" else "EDIT SCHEDULE")
-          }
-        }
-      }
-
-      val dailyScreenTime = device.dailyScreenTime
-      val dailyLimitMinutes = dailyScreenTime.limitMinutes
-
-      ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-          modifier = Modifier.padding(20.dp),
-          verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-          Text(
-            text = "Daily screen time",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-          )
-
-          if (dailyLimitMinutes == null) {
-            Text(
-              text = "No daily limit is set.",
-              style = MaterialTheme.typography.bodyLarge,
-            )
-          } else {
-            Text(
-              text =
-                "Daily limit: " +
-                  formatDurationMinutes(dailyLimitMinutes),
-              style = MaterialTheme.typography.bodyLarge,
-            )
-          }
-
-          Text(
-            text =
-              "Used today: " +
-                formatUsageSeconds(dailyScreenTime.usedSeconds),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-
-          dailyScreenTime.remainingMinutes?.let { remaining ->
-            Text(
-              text =
-                if (dailyScreenTime.limitReached) {
-                  "Daily limit reached."
-                } else {
-                  "Remaining: " + formatDurationMinutes(remaining)
-                },
-              style = MaterialTheme.typography.bodyMedium,
-              color =
-                if (dailyScreenTime.limitReached) {
-                  MaterialTheme.colorScheme.error
-                } else {
-                  MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-          }
-
-          Text(
-            text =
-              "Only normal unlocked use counts. Allowed apps used while the phone is locked do not consume this limit.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-
-          Button(
-            onClick = {
-              selectedDailyLimitMinutes =
-                dailyLimitMinutes ?: 120
-              dailyLimitError = null
-              dailyLimitNotice = null
-              showDailyLimitPicker = true
-            },
-            enabled = !dailyLimitSaving,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
-            Text(
-              if (dailyLimitSaving) {
-                "SAVING…"
-              } else if (dailyLimitMinutes == null) {
-                "SET DAILY LIMIT"
-              } else {
-                "CHANGE DAILY LIMIT"
-              },
-            )
-          }
-
-          if (dailyLimitMinutes != null) {
-            OutlinedButton(
-              onClick = { saveDailyLimit(null) },
-              enabled = !dailyLimitSaving,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
-              Text("DISABLE DAILY LIMIT")
             }
           }
-
-          dailyLimitNotice?.let { message ->
-            Text(
-              text = message,
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
-
-          dailyLimitError?.let { message ->
-            Text(
-              text = message,
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-        }
-      }
-
+        },
+      )
     }
 
     if (selectedTab == 1) {
-      scheduleNotice?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
+      ParentScheduleTab(
+        device = device,
+        scheduleLoading = scheduleLoading,
+        commandInProgress = commandInProgress,
+        dailyLimitSaving = dailyLimitSaving,
+        dailyLimitNotice = dailyLimitNotice,
+        dailyLimitError = dailyLimitError,
+        scheduleNotice = scheduleNotice,
+        onEditSchedule = {
+          if (!scheduleLoading) {
+            val controlToken = settingsStore.controlToken(device.deviceId)
+            if (controlToken.isNullOrBlank()) {
+              commandError =
+                "Control token is missing. Re-pairing is required."
+            } else {
+              scope.launch {
+                scheduleLoading = true
+                scheduleError = null
+                commandError = null
+                scheduleNotice = null
+
+                when (
+                  val result =
+                    withContext(Dispatchers.IO) {
+                      scheduleGateway.fetch(
+                        deviceId = device.deviceId,
+                        controlToken = controlToken,
+                      )
+                    }
+                ) {
+                  is ScheduleFetchResult.Success -> {
+                    scheduleEditorSchedule = result.schedule
+                  }
+
+                  is ScheduleFetchResult.Error -> {
+                    commandError = result.message
+                  }
+                }
+
+                scheduleLoading = false
+              }
+            }
+          }
+        },
+        onSetDailyLimit = { initialMinutes ->
+          selectedDailyLimitMinutes = initialMinutes
+          dailyLimitError = null
+          dailyLimitNotice = null
+          showDailyLimitPicker = true
+        },
+        onDisableDailyLimit = { saveDailyLimit(null) },
+      )
     }
 
     if (selectedTab == 4) {
