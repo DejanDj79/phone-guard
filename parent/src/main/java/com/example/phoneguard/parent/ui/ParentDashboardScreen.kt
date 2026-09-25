@@ -41,6 +41,8 @@ import com.example.phoneguard.parent.data.HttpProtectionHistoryGateway
 import com.example.phoneguard.parent.data.PairingGateway
 import com.example.phoneguard.parent.data.ProtectionHistoryClearResult
 import com.example.phoneguard.parent.data.ProtectionHistoryResult
+import com.example.phoneguard.parent.auth.ParentSupabase
+import com.example.phoneguard.parent.data.ParentAccountScopeStore
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.data.HttpScheduleGateway
 import com.example.phoneguard.parent.data.HttpTimeRequestGateway
@@ -57,6 +59,7 @@ import com.example.phoneguard.parent.push.ParentPushRegistrar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -65,6 +68,10 @@ fun ParentDashboardScreen(
   pairingGateway: PairingGateway? = null,
 ) {
   val context = LocalContext.current
+  val accountScopeStore =
+    remember(context) {
+      ParentAccountScopeStore(context.applicationContext)
+    }
   val settingsStore =
     remember(context) {
       ParentSettingsStore(context.applicationContext)
@@ -145,6 +152,17 @@ fun ParentDashboardScreen(
   if (uiState.showPairDevice || uiState.pairedDevice == null) {
     PairDeviceScreen(
       modifier = modifier,
+      onSwitchAccount = {
+        runCatching {
+          ParentSupabase.client.auth.signOut()
+          accountScopeStore.clearActiveAccount()
+        }.fold(
+          onSuccess = { null },
+          onFailure = { error ->
+            error.message ?: "Could not switch Parent account. Please try again."
+          },
+        )
+      },
       onPair = { rawCode ->
         val requestResult =
           runCatching { PairingRequest.fromUserInput(rawCode) }
