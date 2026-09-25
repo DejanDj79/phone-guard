@@ -339,7 +339,8 @@ internal fun ParentDeviceTab(
             TextButton(
               onClick = onOpenProtectionHistory,
               modifier = Modifier.heightIn(min = 52.dp),
-            ) {
+      shape = ParentActionShape,
+    ) {
               Text("VIEW FULL HISTORY (" + protectionHistory.size + ")")
             }
           }
@@ -351,7 +352,8 @@ internal fun ParentDeviceTab(
           onClick = onRequestClearProtectionHistory,
           enabled = !protectionHistoryClearing,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           if (protectionHistoryClearing) {
             CircularProgressIndicator(
               modifier = Modifier.size(16.dp),
