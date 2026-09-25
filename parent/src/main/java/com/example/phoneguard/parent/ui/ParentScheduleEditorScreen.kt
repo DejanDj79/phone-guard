@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -93,21 +92,22 @@ fun ParentScheduleEditorScreen(
     color = MaterialTheme.colorScheme.background,
   ) {
     Column(
-      modifier =
-        Modifier
-          .fillMaxSize()
-          .verticalScroll(rememberScrollState())
-          .statusBarsPadding()
-          .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 24.dp),
-      verticalArrangement = Arrangement.spacedBy(16.dp),
+      modifier = Modifier.fillMaxSize(),
     ) {
-      Text(
-        text = "Lock schedule",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
+      ParentDetailHeader(
+        title = "Lock schedule",
+        onBack = onCancel,
       )
 
-      Text(
+      Column(
+        modifier =
+          Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+      ) {
+        Text(
         text = "Choose a day and set its lock period. 00:00 – 00:00 means the day is inactive.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -429,7 +429,8 @@ fun ParentScheduleEditorScreen(
         Text("CANCEL")
       }
 
-      Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+      }
     }
   }
 }
