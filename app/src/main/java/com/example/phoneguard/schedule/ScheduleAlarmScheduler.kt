@@ -70,11 +70,36 @@ class ScheduleAlarmScheduler(context: Context) {
   }
 
   fun scheduleProtectionStatusCheck(delayMillis: Long = 3_000L) {
-    val triggerAtMillis = System.currentTimeMillis() + delayMillis.coerceAtLeast(1_000L)
+    scheduleInexactProtectionStatusCheck(
+      delayMillis = delayMillis,
+      requestCode = REQUEST_CODE_PROTECTION_STATUS,
+    )
+  }
 
-    scheduleAlarm(
-      triggerAtMillis = triggerAtMillis,
-      operation = protectionStatusPendingIntent(),
+  fun scheduleProtectionStatusWatch() {
+    listOf(
+      2_000L to REQUEST_CODE_PROTECTION_STATUS,
+      8_000L to REQUEST_CODE_PROTECTION_STATUS_SECOND,
+      20_000L to REQUEST_CODE_PROTECTION_STATUS_THIRD,
+    ).forEach { (delayMillis, requestCode) ->
+      scheduleInexactProtectionStatusCheck(
+        delayMillis = delayMillis,
+        requestCode = requestCode,
+      )
+    }
+  }
+
+  private fun scheduleInexactProtectionStatusCheck(
+    delayMillis: Long,
+    requestCode: Int,
+  ) {
+    val triggerAtMillis =
+      System.currentTimeMillis() + delayMillis.coerceAtLeast(1_000L)
+
+    alarmManager.setAndAllowWhileIdle(
+      AlarmManager.RTC_WAKEUP,
+      triggerAtMillis,
+      protectionStatusPendingIntent(requestCode),
     )
   }
 
@@ -121,10 +146,12 @@ class ScheduleAlarmScheduler(context: Context) {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
-  private fun protectionStatusPendingIntent(): PendingIntent =
+  private fun protectionStatusPendingIntent(
+    requestCode: Int = REQUEST_CODE_PROTECTION_STATUS,
+  ): PendingIntent =
     PendingIntent.getBroadcast(
       appContext,
-      REQUEST_CODE_PROTECTION_STATUS,
+      requestCode,
       Intent(appContext, ProtectionStatusReceiver::class.java),
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
@@ -133,5 +160,7 @@ class ScheduleAlarmScheduler(context: Context) {
     const val REQUEST_CODE_SCHEDULE_TRANSITION = 4101
     const val REQUEST_CODE_TEMPORARY_ALLOWANCE = 4102
     const val REQUEST_CODE_PROTECTION_STATUS = 4103
+    const val REQUEST_CODE_PROTECTION_STATUS_SECOND = 4104
+    const val REQUEST_CODE_PROTECTION_STATUS_THIRD = 4105
   }
 }
