@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,16 +13,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -158,6 +161,11 @@ fun AllowedAppsEditorScreen(
                     }
                 },
                 enabled = !saving,
+                colors =
+                  SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = ParentAccentColor,
+                  ),
               )
             }
           }
@@ -175,29 +183,16 @@ fun AllowedAppsEditorScreen(
           Spacer(modifier = Modifier.height(8.dp))
         }
 
-        FloatingActionButton(
-          onClick = {
-            if (!saving && snapshot.installedApps.isNotEmpty()) {
-              onSave(selectedPackages)
-            }
-          },
+        OutlinedButton(
+          onClick = { onSave(selectedPackages) },
+          enabled = !saving && snapshot.installedApps.isNotEmpty(),
           modifier =
             Modifier
               .align(Alignment.BottomEnd)
-              .padding(end = 20.dp, bottom = 18.dp),
-          shape = androidx.compose.foundation.shape.CircleShape,
-          containerColor =
-            if (!saving && snapshot.installedApps.isNotEmpty()) {
-              ParentSectionHeaderColor
-            } else {
-              MaterialTheme.colorScheme.surfaceVariant
-            },
-          contentColor =
-            if (!saving && snapshot.installedApps.isNotEmpty()) {
-              MaterialTheme.colorScheme.onPrimary
-            } else {
-              MaterialTheme.colorScheme.onSurfaceVariant
-            },
+              .padding(end = 20.dp, bottom = 18.dp)
+              .size(56.dp),
+          shape = CircleShape,
+          contentPadding = PaddingValues(0.dp),
         ) {
           if (saving) {
             CircularProgressIndicator(
@@ -209,6 +204,7 @@ fun AllowedAppsEditorScreen(
             Icon(
               imageVector = Icons.Default.Check,
               contentDescription = "Save allowed apps",
+              tint = MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.size(24.dp),
             )
           }
