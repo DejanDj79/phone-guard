@@ -364,7 +364,15 @@ private fun ParentPinSetupScreen(
       Spacer(modifier = Modifier.height(12.dp))
 
       Text(
-        text = "Set parent PIN",
+        text = "Child setup · Step 1 of 5",
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+
+      Spacer(modifier = Modifier.height(8.dp))
+
+      Text(
+        text = "Set Parent PIN",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.SemiBold,
       )
@@ -372,7 +380,8 @@ private fun ParentPinSetupScreen(
       Spacer(modifier = Modifier.height(8.dp))
 
       Text(
-        text = "PIN must contain 4 to 6 digits. It is used for local unlocking of the Child phone.",
+        text =
+          "Choose a 4 to 6 digit PIN for local Parent access on this Child phone. This is separate from your Parent account password.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
@@ -468,21 +477,29 @@ private fun ChildSetupWizard(
   val registrationSuccess =
     registrationResult as? ChildRegistrationResult.Success
   val paired = registrationSuccess?.paired == true
-  val completedSteps =
+
+  val completedProtectionSteps =
     listOf(
       accessibilityEnabled,
       batteryOptimizationIgnored,
       exactAlarmAccess,
       paired,
     ).count { it }
+  val completedSetupSteps = 1 + completedProtectionSteps
 
-  val currentStep =
+  val protectionStep =
     when {
       !accessibilityEnabled -> 1
       !batteryOptimizationIgnored -> 2
       !exactAlarmAccess -> 3
       !paired -> 4
       else -> 5
+    }
+  val displayedStep =
+    if (protectionStep == 5) {
+      5
+    } else {
+      protectionStep + 1
     }
 
   Column(
@@ -491,66 +508,85 @@ private fun ChildSetupWizard(
         .fillMaxSize()
         .verticalScroll(rememberScrollState())
         .padding(24.dp),
-    verticalArrangement = Arrangement.spacedBy(16.dp),
+    verticalArrangement = Arrangement.spacedBy(18.dp),
   ) {
     Text(
-      text = "PhoneGuard setup",
+      text = "PhoneGuard Child setup",
       style = MaterialTheme.typography.headlineMedium,
       fontWeight = FontWeight.Bold,
     )
 
     Text(
       text =
-        if (currentStep == 5) {
-          "Protection ready"
+        if (protectionStep == 5) {
+          "Setup complete"
         } else {
-          "Step " + currentStep + " of 4"
+          "Step " + displayedStep + " of 5"
         },
       style = MaterialTheme.typography.titleMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
-    Text(
-      text =
-        completedSteps.toString() +
-          " of 4 setup checks complete.",
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Text(
+          text = completedSetupSteps.toString() + " of 5 steps complete",
+          style = MaterialTheme.typography.titleSmall,
+          fontWeight = FontWeight.SemiBold,
+        )
 
-    SetupStatusLine(
-      label = "Screen protection",
-      complete = accessibilityEnabled,
-    )
-    SetupStatusLine(
-      label = "Background protection",
-      complete = batteryOptimizationIgnored,
-    )
-    SetupStatusLine(
-      label = "Exact timing",
-      complete = exactAlarmAccess,
-    )
-    SetupStatusLine(
-      label = "Parent connection",
-      complete = paired,
-    )
+        SetupStatusLine(
+          label = "Parent PIN",
+          complete = true,
+          active = false,
+        )
+        SetupStatusLine(
+          label = "Screen protection",
+          complete = accessibilityEnabled,
+          active = protectionStep == 1,
+        )
+        SetupStatusLine(
+          label = "Background protection",
+          complete = batteryOptimizationIgnored,
+          active = protectionStep == 2,
+        )
+        SetupStatusLine(
+          label = "Precise timing",
+          complete = exactAlarmAccess,
+          active = protectionStep == 3,
+        )
+        SetupStatusLine(
+          label = "Parent connection",
+          complete = paired,
+          active = protectionStep == 4,
+        )
+      }
+    }
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
       Column(
         modifier = Modifier.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
-        when (currentStep) {
+        when (protectionStep) {
           1 -> {
-            Text(
-              text = "Enable screen protection",
-              style = MaterialTheme.typography.titleMedium,
-              fontWeight = FontWeight.SemiBold,
+            SetupStepHeading(
+              step = 2,
+              title = "Enable screen protection",
             )
             Text(
               text =
-                "PhoneGuard needs its Accessibility service so the parental lock can stay above other apps.",
+                "PhoneGuard uses Android Accessibility so the lock screen can stay above apps when the Child phone is restricted.",
               style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+              text =
+                "Open Accessibility settings, enable PhoneGuard, then return here. PhoneGuard will verify the setting automatically.",
+              style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(
@@ -562,60 +598,71 @@ private fun ChildSetupWizard(
           }
 
           2 -> {
-            Text(
-              text = "Allow background protection",
-              style = MaterialTheme.typography.titleMedium,
-              fontWeight = FontWeight.SemiBold,
+            SetupStepHeading(
+              step = 3,
+              title = "Allow background protection",
             )
             Text(
               text =
-                "Remove battery optimization for PhoneGuard so Android is less likely to suspend protection and background checks.",
+                "Android battery optimization can suspend background checks. Allow PhoneGuard to run without battery restrictions for more reliable protection.",
               style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+              text =
+                "After changing the setting, return to PhoneGuard and this step will be checked automatically.",
+              style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(
               onClick = onOpenBatterySettings,
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text("ALLOW BACKGROUND PROTECTION")
+              Text("OPEN BATTERY SETTINGS")
             }
           }
 
           3 -> {
-            Text(
-              text = "Allow exact timing",
-              style = MaterialTheme.typography.titleMedium,
-              fontWeight = FontWeight.SemiBold,
+            SetupStepHeading(
+              step = 4,
+              title = "Allow precise timing",
             )
             Text(
               text =
-                "Exact alarm access keeps scheduled lock and unlock transitions as close to their configured time as Android allows.",
+                "Precise alarm access helps scheduled lock and unlock changes happen as close to the configured time as Android allows.",
               style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+              text =
+                "Android may label this permission as alarms, reminders, or exact alarms depending on the phone.",
+              style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(
               onClick = onRequestExactAlarmAccess,
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text("ALLOW EXACT TIMING")
+              Text("ALLOW PRECISE TIMING")
             }
           }
 
           4 -> {
-            Text(
-              text = "Connect the Parent app",
-              style = MaterialTheme.typography.titleMedium,
-              fontWeight = FontWeight.SemiBold,
+            SetupStepHeading(
+              step = 5,
+              title = "Connect the Parent app",
             )
 
             Text(
               text =
                 when {
-                  registrationInProgress -> "Connecting this Child device…"
+                  registrationInProgress ->
+                    "Preparing a secure pairing code…"
                   registrationFailure != null ->
-                    "Connection error: " + registrationFailure.message
+                    "PhoneGuard could not reach the backend: " +
+                      registrationFailure.message
                   else ->
-                    "Enter this code in the PhoneGuard Parent app."
+                    "On the Parent phone, open PhoneGuard Parent and choose Pair Child. Enter this code:"
                 },
               style = MaterialTheme.typography.bodyMedium,
               color =
@@ -628,11 +675,23 @@ private fun ChildSetupWizard(
 
             Text(
               text = pairingIdentity.pairingCode,
-              style = MaterialTheme.typography.headlineMedium,
+              modifier = Modifier.fillMaxWidth(),
+              style = MaterialTheme.typography.displaySmall,
               fontWeight = FontWeight.Bold,
+              textAlign = TextAlign.Center,
+              letterSpacing = 3.sp,
             )
 
-            OutlinedButton(
+            Text(
+              text =
+                "The code is temporary. After pairing on the Parent phone, return here and check the connection.",
+              modifier = Modifier.fillMaxWidth(),
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              textAlign = TextAlign.Center,
+            )
+
+            Button(
               onClick = onRetryRegistration,
               enabled = !registrationInProgress,
               modifier = Modifier.fillMaxWidth(),
@@ -657,14 +716,20 @@ private fun ChildSetupWizard(
 
           else -> {
             Text(
-              text = "✓ Protection ready",
+              text = "✓ PhoneGuard is ready",
               style = MaterialTheme.typography.titleLarge,
               fontWeight = FontWeight.SemiBold,
             )
             Text(
               text =
-                "Screen protection, background protection, precise timing and the Parent connection are all ready.",
+                "The Parent PIN, screen protection, background protection, precise timing and Parent connection are all configured.",
               style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+              text =
+                "You can run this setup check again later from the Child dashboard if Android settings change.",
+              style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(
@@ -677,34 +742,51 @@ private fun ChildSetupWizard(
         }
       }
     }
-
-    Text(
-      text =
-        "You can run this setup check again later from the Child dashboard.",
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
   }
+}
+
+@Composable
+private fun SetupStepHeading(
+  step: Int,
+  title: String,
+) {
+  Text(
+    text = "STEP " + step + " OF 5",
+    style = MaterialTheme.typography.labelLarge,
+    color = MaterialTheme.colorScheme.primary,
+    fontWeight = FontWeight.SemiBold,
+  )
+  Text(
+    text = title,
+    style = MaterialTheme.typography.titleLarge,
+    fontWeight = FontWeight.SemiBold,
+  )
 }
 
 @Composable
 private fun SetupStatusLine(
   label: String,
   complete: Boolean,
+  active: Boolean,
 ) {
   Text(
     text =
-      if (complete) {
-        "✓ " + label
-      } else {
-        "○ " + label
+      when {
+        complete -> "✓ " + label
+        active -> "→ " + label
+        else -> "○ " + label
       },
     style = MaterialTheme.typography.bodyMedium,
-    color =
-      if (complete) {
-        MaterialTheme.colorScheme.onSurfaceVariant
+    fontWeight =
+      if (active) {
+        FontWeight.SemiBold
       } else {
-        MaterialTheme.colorScheme.error
+        FontWeight.Normal
+      },
+    color =
+      when {
+        active -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
       },
   )
 }
