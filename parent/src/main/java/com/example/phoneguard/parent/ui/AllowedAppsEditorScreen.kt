@@ -2,6 +2,7 @@ package com.example.phoneguard.parent.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,14 +56,25 @@ fun AllowedAppsEditorScreen(
         onBack = onCancel,
       )
 
-      Column(
+      Box(
         modifier =
           Modifier
             .weight(1f)
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .fillMaxWidth(),
       ) {
+        Column(
+          modifier =
+            Modifier
+              .fillMaxSize()
+              .verticalScroll(rememberScrollState())
+              .padding(
+                start = 20.dp,
+                end = 20.dp,
+                top = 20.dp,
+                bottom = 104.dp,
+              ),
+          verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
         Text(
         text = "Apps enabled here remain available while the Child phone is locked.",
         style = MaterialTheme.typography.bodyMedium,
@@ -157,25 +168,27 @@ fun AllowedAppsEditorScreen(
         )
       }
 
-      Spacer(modifier = Modifier.height(6.dp))
-
-      Button(
-        onClick = { onSave(selectedPackages) },
-        enabled = !saving && snapshot.installedApps.isNotEmpty(),
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        if (saving) {
-          CircularProgressIndicator(
-            modifier = Modifier.size(18.dp),
-            strokeWidth = 2.dp,
-            color = MaterialTheme.colorScheme.onPrimary,
-          )
-        } else {
-          Text("SAVE ALLOWED APPS")
+          Spacer(modifier = Modifier.height(8.dp))
         }
-      }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+          onClick = { onSave(selectedPackages) },
+          enabled = !saving && snapshot.installedApps.isNotEmpty(),
+          modifier =
+            Modifier
+              .align(Alignment.BottomEnd)
+              .padding(end = 20.dp, bottom = 18.dp),
+        ) {
+          if (saving) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(18.dp),
+              strokeWidth = 2.dp,
+              color = MaterialTheme.colorScheme.onPrimary,
+            )
+          } else {
+            Text("SAVE")
+          }
+        }
       }
     }
   }
