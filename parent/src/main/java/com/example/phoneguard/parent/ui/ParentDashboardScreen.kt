@@ -1072,24 +1072,38 @@ fun ParentDashboardScreen(
     }
   }
 
-  Column(
-    modifier =
-      modifier
-        .fillMaxSize()
-        .verticalScroll(rememberScrollState())
-        .padding(horizontal = 24.dp, vertical = 32.dp),
-    verticalArrangement = Arrangement.spacedBy(20.dp),
+  ParentDashboardShell(
+    device = device,
+    selectedSection = uiState.selectedTab,
+    actionsBusy =
+      uiState.commandInProgress ||
+        uiState.connectionTestInProgress ||
+        uiState.refreshInProgress,
+    parentEmail = ParentSupabase.client.auth.currentUserOrNull()?.email,
+    onChangeDevice = { uiState.showDevices = true },
+    onSectionSelected = { uiState.selectedTab = it },
+    onSignOut = {
+      scope.launch {
+        runCatching {
+          ParentSupabase.client.auth.signOut()
+        }.onSuccess {
+          accountScopeStore.clearActiveAccount()
+        }.onFailure { error ->
+          uiState.commandError =
+            error.message ?: "Could not sign out. Please try again."
+        }
+      }
+    },
+    modifier = modifier,
   ) {
-    ParentDashboardHeader(
-      device = device,
-      selectedTab = uiState.selectedTab,
-      actionsBusy =
-        uiState.commandInProgress ||
-          uiState.connectionTestInProgress ||
-          uiState.refreshInProgress,
-      onChangeDevice = { uiState.showDevices = true },
-      onTabSelected = { uiState.selectedTab = it },
-    )
+    Column(
+      modifier =
+        Modifier
+          .fillMaxSize()
+          .verticalScroll(rememberScrollState())
+          .padding(horizontal = 20.dp, vertical = 20.dp),
+      verticalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
 
     if (uiState.selectedTab == 3) {
       ParentDeviceTab(
@@ -1317,7 +1331,8 @@ fun ParentDashboardScreen(
         color = MaterialTheme.colorScheme.error,
       )
     }
-    Spacer(modifier = Modifier.height(8.dp))
+      Spacer(modifier = Modifier.height(8.dp))
+    }
   }
 
   if (uiState.showClearProtectionHistoryConfirm) {
