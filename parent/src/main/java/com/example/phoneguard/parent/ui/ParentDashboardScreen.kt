@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -150,6 +151,10 @@ fun ParentDashboardScreen(
   }
 
   if (uiState.showPairDevice || uiState.pairedDevice == null) {
+    BackHandler(enabled = uiState.pairedDevices.isNotEmpty()) {
+      uiState.showPairDevice = false
+    }
+
     PairDeviceScreen(
       parentEmail =
         ParentSupabase.client.auth.currentUserOrNull()?.email,
@@ -220,20 +225,26 @@ fun ParentDashboardScreen(
   val device = uiState.pairedDevice!!
 
   if (uiState.showDevices) {
+    val devicesBusy =
+      uiState.commandInProgress ||
+        uiState.connectionTestInProgress ||
+        uiState.refreshInProgress ||
+        uiState.scheduleLoading ||
+        uiState.scheduleSaving ||
+        uiState.allowedAppsLoading ||
+        uiState.allowedAppsSaving ||
+        uiState.dailyLimitSaving ||
+        uiState.deviceRenaming ||
+        uiState.deviceUnpairing
+
+    BackHandler(enabled = !devicesBusy) {
+      uiState.showDevices = false
+    }
+
     DevicesScreen(
       devices = uiState.pairedDevices,
       selectedDeviceId = device.deviceId,
-      busy =
-        uiState.commandInProgress ||
-          uiState.connectionTestInProgress ||
-          uiState.refreshInProgress ||
-          uiState.scheduleLoading ||
-          uiState.scheduleSaving ||
-          uiState.allowedAppsLoading ||
-          uiState.allowedAppsSaving ||
-          uiState.dailyLimitSaving ||
-          uiState.deviceRenaming ||
-          uiState.deviceUnpairing,
+      busy = devicesBusy,
       onSelectDevice = { selected ->
         if (settingsStore.selectDevice(selected.deviceId)) {
           uiState.pairedDevice = settingsStore.loadPairedDevice()
@@ -286,6 +297,11 @@ fun ParentDashboardScreen(
   }
 
   if (uiState.showDeviceManagement) {
+    BackHandler(enabled = !uiState.deviceRenaming && !uiState.deviceUnpairing) {
+      uiState.showDeviceManagement = false
+      uiState.deviceManagementError = null
+    }
+
     DeviceManagementScreen(
       currentName = device.displayName,
       renaming = uiState.deviceRenaming,
@@ -387,6 +403,11 @@ fun ParentDashboardScreen(
   }
 
   uiState.allowedAppsEditorSnapshot?.let { snapshot ->
+    BackHandler(enabled = !uiState.allowedAppsSaving) {
+      uiState.allowedAppsEditorSnapshot = null
+      uiState.allowedAppsError = null
+    }
+
     AllowedAppsEditorScreen(
       snapshot = snapshot,
       saving = uiState.allowedAppsSaving,
@@ -445,6 +466,11 @@ fun ParentDashboardScreen(
   }
 
   uiState.scheduleEditorSchedule?.let { schedule ->
+    BackHandler(enabled = !uiState.scheduleSaving) {
+      uiState.scheduleEditorSchedule = null
+      uiState.scheduleError = null
+    }
+
     ParentScheduleEditorScreen(
       schedule = schedule,
       saving = uiState.scheduleSaving,
@@ -1074,6 +1100,10 @@ fun ParentDashboardScreen(
     }
   }
 
+  BackHandler(enabled = uiState.selectedTab != 0) {
+    uiState.selectedTab = 0
+  }
+
   ParentDashboardShell(
     device = device,
     selectedSection = uiState.selectedTab,
@@ -1103,7 +1133,7 @@ fun ParentDashboardScreen(
         Modifier
           .fillMaxSize()
           .verticalScroll(rememberScrollState())
-          .padding(horizontal = 20.dp, vertical = 20.dp),
+          .padding(start = 20.dp, end = 20.dp, top = 30.dp, bottom = 20.dp),
       verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
 
