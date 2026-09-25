@@ -190,7 +190,7 @@ Home is the main command center and should prioritize only information that matt
 - [x] Clarified Child Change Parent flow
 - [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting final physical UI approval
 - [ ] Parent Home final minimalist redesign — Manrope + `#88D9E0` pass implemented; awaiting final physical UI approval
-- [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a selected-day Material 3 dial picker. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
+- [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a compact selected-day Material 3 dial picker. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
 - [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
 - [ ] Device / protection screen redesign — implemented in new visual system; awaiting physical review
 - [ ] Settings screen redesign — implemented in new visual system; awaiting physical review
@@ -305,3 +305,6 @@ Before publication we still need to decide:
 - `docs/PRODUCT_ROADMAP.md` is the persistent source of truth for UI phases and should be updated as each phase is completed.
 - First physical review of the new Parent shell confirmed the navigation direction is better, but the Home screen still felt too repetitive and admin-like.
 - Follow-up design requirements: centered page title; no Child subtitle in the top bar; Child name and last-seen aligned in the hero; avoid duplicate Available/Online messaging; replace command-status text with inline button progress indicators. The warm yellow palette was rejected in physical review. Current visual experiment uses **Manrope** for titles/body text, standard sans-serif for small labels, and `#88D9E0` as the Parent app background with coordinated cyan/teal surfaces and controls.
+
+- Android system Back navigation now follows Parent UI state: detail/edit screens return to their previous Parent screen, non-Home drawer sections return to Home first, and only Home without an open child screen exits normally.
+- Main Parent content and full-screen editors now use more top spacing / status-bar-aware padding.
