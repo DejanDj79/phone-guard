@@ -320,23 +320,17 @@ fun ParentScheduleEditorScreen(
               }
             }
 
-            Surface(
-              modifier = Modifier.fillMaxWidth(),
-              shape = RoundedCornerShape(22.dp),
-              color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+            Box(
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .padding(vertical = 2.dp),
+              contentAlignment = Alignment.Center,
             ) {
-              Box(
-                modifier =
-                  Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center,
-              ) {
-                TimePicker(
-                  state = pickerState,
-                  modifier = Modifier.scale(0.78f),
-                )
-              }
+              TimePicker(
+                state = pickerState,
+                modifier = Modifier.scale(0.78f),
+              )
             }
           }
 
