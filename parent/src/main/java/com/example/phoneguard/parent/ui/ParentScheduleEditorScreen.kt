@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -80,6 +81,7 @@ fun ParentScheduleEditorScreen(
   }
   var selectedDay by remember { mutableStateOf(ScheduleDay.MONDAY) }
   var editingStart by remember { mutableStateOf(true) }
+  var pickerRevision by remember { mutableIntStateOf(0) }
   var validationError by remember { mutableStateOf<String?>(null) }
 
   val selectedRow = rows.getValue(selectedDay)
@@ -279,7 +281,7 @@ fun ParentScheduleEditorScreen(
             }
           }
 
-          key(selectedDay, editingStart) {
+          key(selectedDay, editingStart, pickerRevision) {
             val initialValue =
               if (editingStart) {
                 selectedRow.start
@@ -347,6 +349,7 @@ fun ParentScheduleEditorScreen(
                         )
                     )
                 editingStart = true
+                pickerRevision += 1
                 validationError = null
               },
               enabled = !saving,
