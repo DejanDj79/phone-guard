@@ -322,3 +322,5 @@ Before publication we still need to decide:
 - Parent bottom navigation now uses a floating rounded `#9A71FC` surface with side/bottom breathing room; Android's persistent navigation bar/buttons are hidden in Parent with transient swipe access. Awaiting physical review.
 
 - Apps overview now lists allowed apps directly with today's real usage time on the right. Child inventory carries a compact real launcher icon (`iconBase64`) through `sync-app-inventory`; Parent renders it with a fallback icon. `sync-app-inventory` v2 is deployed. Awaiting physical review after updating both Child and Parent APKs.
+
+- Allowed Apps editor now keeps `SAVE` pinned in the lower-right corner while the app list scrolls underneath, with reserved bottom space so content is never covered. Top section/detail titles are now smaller and uppercase for a cleaner header hierarchy. Awaiting physical review.
