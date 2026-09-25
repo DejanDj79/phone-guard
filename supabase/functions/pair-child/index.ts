@@ -1,13 +1,9 @@
 import { withSupabase } from "npm:@supabase/server@1.7.1";
+import { requireParentUserId } from "../_shared/parent-auth.ts";
 
 const PAIRING_CODE = /^[A-Z0-9]{6}$/;
 const MAX_ATTEMPTS = 20;
 const ATTEMPT_WINDOW_MS = 5 * 60 * 1000;
-
-type ParentIdentity =
-  | { kind: "none"; userId: null }
-  | { kind: "invalid"; userId: null }
-  | { kind: "user"; userId: string };
 
 async function sha256Hex(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -42,44 +38,15 @@ function clientIp(req: Request): string {
   return forwardedFor.split(",")[0]?.trim().slice(0, 128) || "unknown";
 }
 
-async function parentIdentity(
-  req: Request,
-  ctx: { supabaseAdmin: any },
-): Promise<ParentIdentity> {
-  const authorization = req.headers.get("authorization")?.trim();
-
-  if (!authorization) {
-    return { kind: "none", userId: null };
-  }
-
-  const match = /^Bearer\s+(.+)$/i.exec(authorization);
-  const token = match?.[1]?.trim();
-
-  if (!token) {
-    return { kind: "invalid", userId: null };
-  }
-
-  const {
-    data: { user },
-    error,
-  } = await ctx.supabaseAdmin.auth.getUser(token);
-
-  if (error || !user) {
-    return { kind: "invalid", userId: null };
-  }
-
-  return { kind: "user", userId: user.id };
-}
-
 export default {
   fetch: withSupabase({ auth: "none" }, async (req, ctx) => {
     if (req.method !== "POST") {
       return json({ error: "method_not_allowed" }, 405);
     }
 
-    const identity = await parentIdentity(req, ctx);
-    if (identity.kind === "invalid") {
-      return json({ error: "parent_auth_invalid" }, 401);
+    const parentUserId = await requireParentUserId(req, ctx);
+    if (!parentUserId) {
+      return json({ error: "parent_auth_required" }, 401);
     }
 
     const ipAddress = clientIp(req);
@@ -139,14 +106,11 @@ export default {
       return json({ error: "invalid_or_expired_code" }, 404);
     }
 
-    if (candidate.parent_user_id) {
-      if (identity.kind !== "user") {
-        return json({ error: "parent_sign_in_required" }, 401);
-      }
-
-      if (candidate.parent_user_id !== identity.userId) {
-        return json({ error: "device_owned_by_another_parent" }, 409);
-      }
+    if (
+      candidate.parent_user_id &&
+      candidate.parent_user_id !== parentUserId
+    ) {
+      return json({ error: "device_owned_by_another_parent" }, 409);
     }
 
     const controlToken = randomToken();
@@ -159,9 +123,7 @@ export default {
       updated_at: now,
     };
 
-    if (identity.kind === "user") {
-      updateValues.parent_user_id = identity.userId;
-    }
+    updateValues.parent_user_id = parentUserId;
 
     let updateQuery = ctx.supabaseAdmin
       .from("child_devices")
