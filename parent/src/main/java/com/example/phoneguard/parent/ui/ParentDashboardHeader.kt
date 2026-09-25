@@ -277,10 +277,17 @@ internal fun ParentDashboardShell(
           onSignOut()
         },
         modifier =
-          Modifier
-            .align(Alignment.TopEnd)
-            .statusBarsPadding()
-            .padding(top = 58.dp, end = 12.dp),
+          if (selectedSection == 0) {
+            Modifier
+              .align(Alignment.TopStart)
+              .statusBarsPadding()
+              .padding(top = 58.dp, start = 12.dp)
+          } else {
+            Modifier
+              .align(Alignment.TopEnd)
+              .statusBarsPadding()
+              .padding(top = 58.dp, end = 12.dp)
+          },
       )
     }
 
