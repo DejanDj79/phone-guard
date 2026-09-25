@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,14 +36,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.phoneguard.parent.auth.ParentSupabase
+import com.example.phoneguard.parent.data.ParentAccountScopeStore
 import com.example.phoneguard.parent.data.ParentNotificationSettingsStore
 import com.example.phoneguard.parent.data.ParentSecurityStore
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.launch
 
 @Composable
 fun ParentSettingsScreen(
   modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
+  val scope = rememberCoroutineScope()
+  val accountScopeStore =
+    remember(context) {
+      ParentAccountScopeStore(context.applicationContext)
+    }
   val securityStore =
     remember(context) {
       ParentSecurityStore(context.applicationContext)
@@ -84,6 +94,12 @@ fun ParentSettingsScreen(
   var confirmPin by remember { mutableStateOf("") }
   var pinNotice by remember { mutableStateOf<String?>(null) }
   var pinError by remember { mutableStateOf<String?>(null) }
+  var signOutInProgress by remember { mutableStateOf(false) }
+  var accountError by remember { mutableStateOf<String?>(null) }
+
+  val parentEmail =
+    ParentSupabase.client.auth.currentUserOrNull()?.email
+      ?: "Signed in Parent account"
 
   val notificationsAllowed =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -96,6 +112,71 @@ fun ParentSettingsScreen(
     modifier = modifier.fillMaxWidth(),
     verticalArrangement = Arrangement.spacedBy(16.dp),
   ) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        Text(
+          text = "Parent account",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+        )
+
+        Text(
+          text = parentEmail,
+          style = MaterialTheme.typography.bodyLarge,
+        )
+
+        Text(
+          text =
+            "Your account identifies the Parent. The PIN and biometrics below protect this specific phone.",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        accountError?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+          )
+        }
+
+        OutlinedButton(
+          onClick = {
+            if (!signOutInProgress) {
+              scope.launch {
+                signOutInProgress = true
+                accountError = null
+
+                runCatching {
+                  ParentSupabase.client.auth.signOut()
+                }.onSuccess {
+                  accountScopeStore.clearActiveAccount()
+                }.onFailure { error ->
+                  accountError =
+                    error.message ?: "Could not sign out. Please try again."
+                }
+
+                signOutInProgress = false
+              }
+            }
+          },
+          enabled = !signOutInProgress,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text(
+            if (signOutInProgress) {
+              "SIGNING OUT…"
+            } else {
+              "SIGN OUT"
+            },
+          )
+        }
+      }
+    }
+
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
       Column(
         modifier = Modifier.padding(20.dp),
