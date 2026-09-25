@@ -1510,7 +1510,8 @@ fun ParentDashboardScreen(
           onClick = { clearProtectionHistory() },
           enabled = !uiState.protectionHistoryClearing,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
           Text(
             if (uiState.protectionHistoryClearing) {
               "CLEARING…"
@@ -1525,7 +1526,8 @@ fun ParentDashboardScreen(
           onClick = { uiState.showClearProtectionHistoryConfirm = false },
           enabled = !uiState.protectionHistoryClearing,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
           Text("CANCEL")
         }
       },
