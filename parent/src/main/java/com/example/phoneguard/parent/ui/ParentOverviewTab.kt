@@ -123,7 +123,7 @@ internal fun ParentOverviewTab(
               CircularProgressIndicator(
                 modifier = Modifier.size(18.dp),
                 strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.onPrimary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
             } else {
               Text("APPROVE")
@@ -244,7 +244,7 @@ internal fun ParentOverviewTab(
             CircularProgressIndicator(
               modifier = Modifier.size(19.dp),
               strokeWidth = 2.dp,
-              color = MaterialTheme.colorScheme.onPrimary,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           } else {
             Icon(
