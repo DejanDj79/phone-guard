@@ -318,3 +318,7 @@ Before publication we still need to decide:
 - Bottom navigation height was physically reviewed on-device and accepted; keep the current height unless later layout changes require adjustment.
 
 - Parent account menu was visually polished after bottom-nav approval: Home now uses a compact `#9A71FC` avatar button; the menu shows Parent identity plus the currently managed Child, with Manage children, Settings and Sign out actions.
+
+- Parent bottom navigation now uses a floating rounded `#9A71FC` surface with side/bottom breathing room; Android's persistent navigation bar/buttons are hidden in Parent with transient swipe access. Awaiting physical review.
+
+- Apps overview now lists allowed apps directly with today's real usage time on the right. Child inventory carries a compact real launcher icon (`iconBase64`) through `sync-app-inventory`; Parent renders it with a fallback icon. `sync-app-inventory` v2 is deployed. Awaiting physical review after updating both Child and Parent APKs.
