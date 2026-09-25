@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -426,18 +427,33 @@ internal fun ParentOverviewTab(
           selected = appUsageView == APP_USAGE_VIEW_TODAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
           label = { Text("Today") },
+          colors =
+            FilterChipDefaults.filterChipColors(
+              selectedContainerColor = ParentAccentColor,
+              selectedLabelColor = Color.White,
+            ),
           modifier = Modifier.weight(1f),
         )
         FilterChip(
           selected = appUsageView == APP_USAGE_VIEW_YESTERDAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
           label = { Text("Yesterday") },
+          colors =
+            FilterChipDefaults.filterChipColors(
+              selectedContainerColor = ParentAccentColor,
+              selectedLabelColor = Color.White,
+            ),
           modifier = Modifier.weight(1f),
         )
         FilterChip(
           selected = appUsageView == APP_USAGE_VIEW_WEEK,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
           label = { Text("7 days") },
+          colors =
+            FilterChipDefaults.filterChipColors(
+              selectedContainerColor = ParentAccentColor,
+              selectedLabelColor = Color.White,
+            ),
           modifier = Modifier.weight(1f),
         )
       }
@@ -608,7 +624,7 @@ private fun RecentUnlockedActivityTimeline(
         Text(
           text = "UNLOCKED PHONE",
           style = MaterialTheme.typography.labelSmall,
-          color = MaterialTheme.colorScheme.primary,
+          color = ParentAccentColor,
           fontWeight = FontWeight.Bold,
           modifier = Modifier.weight(1f),
         )
@@ -698,7 +714,7 @@ private fun RecentUnlockedActivityTimeline(
                 modifier = Modifier.padding(top = 3.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                color = ParentAccentColor,
                 textAlign = TextAlign.End,
               )
             }
