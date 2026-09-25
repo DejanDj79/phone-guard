@@ -71,7 +71,7 @@ private val ParentTypography =
     headlineSmall =
       TextStyle(
         fontFamily = ManropeFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
         lineHeight = 30.sp,
         letterSpacing = (-0.35).sp,
@@ -79,7 +79,7 @@ private val ParentTypography =
     titleLarge =
       TextStyle(
         fontFamily = ManropeFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 21.sp,
         lineHeight = 27.sp,
         letterSpacing = (-0.2).sp,
@@ -94,14 +94,14 @@ private val ParentTypography =
     bodyLarge =
       TextStyle(
         fontFamily = ManropeFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 16.sp,
         lineHeight = 24.sp,
       ),
     bodyMedium =
       TextStyle(
         fontFamily = ManropeFamily,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 14.sp,
         lineHeight = 21.sp,
       ),
