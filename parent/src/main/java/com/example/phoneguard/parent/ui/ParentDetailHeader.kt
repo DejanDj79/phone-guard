@@ -7,6 +7,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,8 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+
+internal val ParentSectionHeaderColor = Color(0xFF9A71FC)
 
 @Composable
 internal fun ParentDetailHeader(
@@ -50,11 +54,11 @@ internal fun ParentDetailHeader(
     modifier = modifier.fillMaxWidth(),
   ) {
     Surface(
-      color = MaterialTheme.colorScheme.primary,
+      color = ParentSectionHeaderColor,
       shape =
         RoundedCornerShape(
-          bottomStart = 28.dp,
-          bottomEnd = 28.dp,
+          bottomStart = 32.dp,
+          bottomEnd = 32.dp,
         ),
     ) {
       Box(
@@ -62,18 +66,25 @@ internal fun ParentDetailHeader(
           Modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 15.dp),
       ) {
         Surface(
           shape = CircleShape,
           color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-          modifier = Modifier.align(Alignment.CenterStart),
+          modifier =
+            Modifier
+              .align(Alignment.CenterStart)
+              .size(36.dp),
         ) {
-          IconButton(onClick = onBack) {
+          IconButton(
+            onClick = onBack,
+            modifier = Modifier.size(36.dp),
+          ) {
             Icon(
               imageVector = Icons.Default.ArrowBack,
               contentDescription = "Back",
-              tint = MaterialTheme.colorScheme.primary,
+              tint = ParentSectionHeaderColor,
+              modifier = Modifier.size(19.dp),
             )
           }
         }
