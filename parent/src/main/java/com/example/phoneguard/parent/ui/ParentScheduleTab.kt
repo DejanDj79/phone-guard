@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -93,7 +94,7 @@ internal fun ParentScheduleTab(
       OutlinedButton(
         onClick = onEditSchedule,
         enabled = !scheduleLoading && !commandInProgress,
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
         if (scheduleLoading) {
@@ -189,7 +190,7 @@ internal fun ParentScheduleTab(
       OutlinedButton(
         onClick = { onSetDailyLimit(dailyLimitMinutes ?: 120) },
         enabled = !dailyLimitSaving,
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
         if (dailyLimitSaving) {
@@ -213,7 +214,7 @@ internal fun ParentScheduleTab(
         TextButton(
           onClick = onDisableDailyLimit,
           enabled = !dailyLimitSaving,
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
           Text("REMOVE DAILY LIMIT")
