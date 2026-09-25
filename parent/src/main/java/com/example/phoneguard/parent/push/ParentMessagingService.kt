@@ -8,6 +8,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.phoneguard.parent.MainActivity
+import com.example.phoneguard.parent.data.ParentNotificationSettingsStore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -20,9 +21,25 @@ class ParentMessagingService : FirebaseMessagingService() {
   override fun onMessageReceived(message: RemoteMessage) {
     super.onMessageReceived(message)
 
+    val notificationSettings =
+      ParentNotificationSettingsStore(applicationContext)
+
     when (message.data["type"]) {
-      TYPE_TIME_REQUEST -> showTimeRequestNotification(message)
-      TYPE_PROTECTION_ALERT -> showProtectionAlertNotification(message)
+      TYPE_TIME_REQUEST -> {
+        if (notificationSettings.timeRequestNotificationsEnabled()) {
+          showTimeRequestNotification(message)
+        } else {
+          Log.i(TAG, "Time request notification suppressed by Parent setting")
+        }
+      }
+
+      TYPE_PROTECTION_ALERT -> {
+        if (notificationSettings.protectionAlertNotificationsEnabled()) {
+          showProtectionAlertNotification(message)
+        } else {
+          Log.i(TAG, "Protection alert notification suppressed by Parent setting")
+        }
+      }
     }
   }
 
