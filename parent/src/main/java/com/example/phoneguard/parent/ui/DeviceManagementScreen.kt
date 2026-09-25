@@ -88,7 +88,8 @@ fun DeviceManagementScreen(
               normalizedName.isNotBlank() &&
               normalizedName != currentName,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text(if (renaming) "SAVING…" else "SAVE NAME")
         }
 
@@ -109,7 +110,8 @@ fun DeviceManagementScreen(
           onClick = { showUnpairConfirmation = true },
           enabled = !busy,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("UNPAIR DEVICE")
         }
 
@@ -146,7 +148,8 @@ fun DeviceManagementScreen(
           },
           enabled = !unpairing,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text(if (unpairing) "UNPAIRING…" else "UNPAIR")
         }
       },
@@ -155,7 +158,8 @@ fun DeviceManagementScreen(
           onClick = { showUnpairConfirmation = false },
           enabled = !unpairing,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("CANCEL")
         }
       },
