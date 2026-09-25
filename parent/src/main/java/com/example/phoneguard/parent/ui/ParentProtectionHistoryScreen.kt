@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +16,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -30,6 +35,8 @@ internal fun ParentProtectionHistoryScreen(
   onRequestClear: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  var showClearConfirmation by remember { mutableStateOf(false) }
+
   Surface(
     modifier = modifier.fillMaxSize(),
     color = Color.Transparent,
@@ -126,7 +133,7 @@ internal fun ParentProtectionHistoryScreen(
         if (events.isNotEmpty()) {
           item {
             OutlinedButton(
-              onClick = onRequestClear,
+              onClick = { showClearConfirmation = true },
               enabled = !clearing,
               modifier = Modifier.fillMaxWidth(),
             ) {
@@ -148,5 +155,40 @@ internal fun ParentProtectionHistoryScreen(
         }
       }
     }
+  }
+
+  if (showClearConfirmation) {
+    AlertDialog(
+      onDismissRequest = {
+        if (!clearing) {
+          showClearConfirmation = false
+        }
+      },
+      title = {
+        Text("Clear protection history?")
+      },
+      text = {
+        Text("This permanently deletes all protection history for this Child device.")
+      },
+      confirmButton = {
+        OutlinedButton(
+          onClick = {
+            showClearConfirmation = false
+            onRequestClear()
+          },
+          enabled = !clearing,
+        ) {
+          Text("CLEAR")
+        }
+      },
+      dismissButton = {
+        OutlinedButton(
+          onClick = { showClearConfirmation = false },
+          enabled = !clearing,
+        ) {
+          Text("CANCEL")
+        }
+      },
+    )
   }
 }
