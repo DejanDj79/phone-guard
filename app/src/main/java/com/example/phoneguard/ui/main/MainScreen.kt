@@ -984,11 +984,11 @@ private fun ChildDashboard(
               },
               modifier = Modifier.fillMaxWidth(),
             ) {
-              Text("PAIR NEW PARENT")
+              Text("CHANGE PARENT")
             }
           } else {
             Text(
-              text = "This will revoke access for the previously paired Parent app.",
+              text = "Changing Parent will disconnect the currently paired Parent account from this Child phone.",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.error,
             )
@@ -1038,7 +1038,7 @@ private fun ChildDashboard(
                 if (resetInProgress) {
                   "UPDATING…"
                 } else {
-                  "CONFIRM NEW PAIRING"
+                  "CONFIRM CHANGE"
                 },
               )
             }
