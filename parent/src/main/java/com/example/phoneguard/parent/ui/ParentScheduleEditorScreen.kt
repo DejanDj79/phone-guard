@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -116,7 +117,7 @@ fun ParentScheduleEditorScreen(
       )
 
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
         horizontalArrangement = Arrangement.spacedBy(5.dp),
       ) {
         ScheduleDay.entries.forEach { day ->
@@ -164,7 +165,7 @@ fun ParentScheduleEditorScreen(
       }
 
       Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surface,
       ) {
@@ -173,7 +174,7 @@ fun ParentScheduleEditorScreen(
           verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
           Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.heightIn(min = 52.dp),
             verticalAlignment = Alignment.CenterVertically,
           ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -210,14 +211,14 @@ fun ParentScheduleEditorScreen(
           }
 
           Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.heightIn(min = 52.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
           ) {
             if (editingStart) {
               Button(
                 onClick = { editingStart = true },
                 enabled = !saving,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
                 colors =
                   ButtonDefaults.buttonColors(
                     containerColor = ParentAccentColor,
@@ -239,7 +240,7 @@ fun ParentScheduleEditorScreen(
               OutlinedButton(
                 onClick = { editingStart = true },
                 enabled = !saving,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
               ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
@@ -258,7 +259,7 @@ fun ParentScheduleEditorScreen(
               Button(
                 onClick = { editingStart = false },
                 enabled = !saving,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
                 colors =
                   ButtonDefaults.buttonColors(
                     containerColor = ParentAccentColor,
@@ -280,7 +281,7 @@ fun ParentScheduleEditorScreen(
               OutlinedButton(
                 onClick = { editingStart = false },
                 enabled = !saving,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
               ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
@@ -363,7 +364,7 @@ fun ParentScheduleEditorScreen(
                 validationError = null
               },
               enabled = !saving,
-              modifier = Modifier.fillMaxWidth(),
+              modifier = Modifier.heightIn(min = 52.dp),
             ) {
               Text("CLEAR DAY")
             }
@@ -420,7 +421,7 @@ fun ParentScheduleEditorScreen(
           }
         },
         enabled = !saving,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
       ) {
         if (saving) {
           CircularProgressIndicator(
