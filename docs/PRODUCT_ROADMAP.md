@@ -316,3 +316,5 @@ Before publication we still need to decide:
 - Bottom navigation is reserved for the four primary Parent destinations: Home, Schedule, Apps and Device. Settings is intentionally secondary and is opened from the Parent account menu.
 
 - Bottom navigation height was physically reviewed on-device and accepted; keep the current height unless later layout changes require adjustment.
+
+- Parent account menu was visually polished after bottom-nav approval: Home now uses a compact `#9A71FC` avatar button; the menu shows Parent identity plus the currently managed Child, with Manage children, Settings and Sign out actions.
