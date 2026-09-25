@@ -534,9 +534,8 @@ internal fun AppUsageDayContent(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   } else {
-    topApps.forEachIndexed { index, app ->
+    topApps.forEach { app ->
       UsageAppCard(
-        rank = index + 1,
         app = app,
         inventory = inventory,
       )
@@ -618,9 +617,8 @@ internal fun AppUsageWeekContent(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   } else {
-    topApps.forEachIndexed { index, app ->
+    topApps.forEach { app ->
       UsageAppCard(
-        rank = index + 1,
         app = app,
         inventory = inventory,
       )
@@ -630,7 +628,6 @@ internal fun AppUsageWeekContent(
 
 @Composable
 private fun UsageAppCard(
-  rank: Int,
   app: AppUsageEntry,
   inventory: AllowedAppsSnapshot?,
 ) {
@@ -653,23 +650,6 @@ private fun UsageAppCard(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Surface(
-        modifier = Modifier.size(28.dp),
-        shape = RoundedCornerShape(10.dp),
-        color = ParentAccentColor.copy(alpha = 0.10f),
-      ) {
-        Box(
-          contentAlignment = Alignment.Center,
-        ) {
-          Text(
-            text = rank.toString(),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = ParentAccentColor,
-          )
-        }
-      }
-
       ParentAppIcon(
         app = installedApp,
         modifier = Modifier.size(38.dp),
