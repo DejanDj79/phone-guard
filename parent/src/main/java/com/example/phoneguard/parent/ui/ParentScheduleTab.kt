@@ -89,7 +89,7 @@ internal fun ParentScheduleTab(
         }
       }
 
-      Button(
+      OutlinedButton(
         onClick = onEditSchedule,
         enabled = !scheduleLoading && !commandInProgress,
         modifier = Modifier.fillMaxWidth(),
@@ -184,7 +184,7 @@ internal fun ParentScheduleTab(
         )
       }
 
-      Button(
+      OutlinedButton(
         onClick = { onSetDailyLimit(dailyLimitMinutes ?: 120) },
         enabled = !dailyLimitSaving,
         modifier = Modifier.fillMaxWidth(),
