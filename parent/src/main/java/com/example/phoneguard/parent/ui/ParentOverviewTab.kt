@@ -1,6 +1,8 @@
 package com.example.phoneguard.parent.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +21,6 @@ import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -55,8 +55,6 @@ internal fun ParentOverviewTab(
   commandInProgress: Boolean,
   activeCommandType: RemoteCommandType?,
   connectionTestInProgress: Boolean,
-  connectionTestMessage: String?,
-  connectionTestError: String?,
   appUsageDays: List<AppUsageDay>,
   appInventorySnapshot: AllowedAppsSnapshot?,
   appUsageLoading: Boolean,
@@ -66,7 +64,6 @@ internal fun ParentOverviewTab(
   onLock: () -> Unit,
   onUnlock: () -> Unit,
   onAddBonusTime: () -> Unit,
-  onTestConnection: () -> Unit,
   onOpenDevice: () -> Unit,
   onAppUsageViewChange: (Int) -> Unit,
 ) {
@@ -424,37 +421,22 @@ internal fun ParentOverviewTab(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        FilterChip(
+        UsageViewSegment(
+          text = "Today",
           selected = appUsageView == APP_USAGE_VIEW_TODAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
-          label = { Text("Today") },
-          colors =
-            FilterChipDefaults.filterChipColors(
-              selectedContainerColor = ParentAccentColor,
-              selectedLabelColor = Color.White,
-            ),
           modifier = Modifier.weight(1f),
         )
-        FilterChip(
+        UsageViewSegment(
+          text = "Yesterday",
           selected = appUsageView == APP_USAGE_VIEW_YESTERDAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
-          label = { Text("Yesterday") },
-          colors =
-            FilterChipDefaults.filterChipColors(
-              selectedContainerColor = ParentAccentColor,
-              selectedLabelColor = Color.White,
-            ),
           modifier = Modifier.weight(1f),
         )
-        FilterChip(
+        UsageViewSegment(
+          text = "7 days",
           selected = appUsageView == APP_USAGE_VIEW_WEEK,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
-          label = { Text("7 days") },
-          colors =
-            FilterChipDefaults.filterChipColors(
-              selectedContainerColor = ParentAccentColor,
-              selectedLabelColor = Color.White,
-            ),
           modifier = Modifier.weight(1f),
         )
       }
@@ -503,44 +485,54 @@ internal fun ParentOverviewTab(
     }
   }
 
-  Row(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.End,
-  ) {
-    TextButton(
-      onClick = onTestConnection,
-      enabled = !commandInProgress && !connectionTestInProgress,
-    ) {
-      if (connectionTestInProgress) {
-        CircularProgressIndicator(
-          modifier = Modifier.size(16.dp),
-          strokeWidth = 2.dp,
-        )
-        Text("  TESTING CONNECTION")
+
+@Composable
+private fun UsageViewSegment(
+  text: String,
+  selected: Boolean,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier =
+      modifier
+        .height(40.dp)
+        .clickable(onClick = onClick),
+    shape = RoundedCornerShape(20.dp),
+    color =
+      if (selected) {
+        ParentAccentColor
       } else {
-        Text("TEST CONNECTION")
-      }
+        Color.Transparent
+      },
+    border =
+      BorderStroke(
+        width = 1.dp,
+        color =
+          if (selected) {
+            ParentAccentColor
+          } else {
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.70f)
+          },
+      ),
+  ) {
+    Box(
+      modifier = Modifier.fillMaxWidth(),
+      contentAlignment = Alignment.Center,
+    ) {
+      Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color =
+          if (selected) {
+            Color.White
+          } else {
+            MaterialTheme.colorScheme.onSurface
+          },
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+      )
     }
-  }
-
-  connectionTestMessage?.let { message ->
-    Text(
-      text = message,
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      modifier = Modifier.fillMaxWidth(),
-      textAlign = TextAlign.End,
-    )
-  }
-
-  connectionTestError?.let { message ->
-    Text(
-      text = message,
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.error,
-      modifier = Modifier.fillMaxWidth(),
-      textAlign = TextAlign.End,
-    )
   }
 }
 
@@ -625,7 +617,7 @@ private fun RecentUnlockedActivityTimeline(
         Text(
           text = "UNLOCKED PHONE",
           style = MaterialTheme.typography.labelSmall,
-          color = ParentAccentColor,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
           fontWeight = FontWeight.Bold,
           modifier = Modifier.weight(1f),
         )
@@ -637,11 +629,13 @@ private fun RecentUnlockedActivityTimeline(
         )
       }
 
+      androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(14.dp))
+
       when {
         loading && recentItems.isEmpty() -> {
           Text(
             text = "Loading recent activity…",
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
@@ -650,7 +644,7 @@ private fun RecentUnlockedActivityTimeline(
         recentItems.isEmpty() -> {
           Text(
             text = "No unlocked app activity has been recorded yet.",
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
