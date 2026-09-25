@@ -16,6 +16,7 @@ import com.example.phoneguard.parent.ui.ParentDashboardScreen
 import com.example.phoneguard.parent.ui.ParentSecurityGate
 import com.example.phoneguard.parent.ui.ParentPostAuthOnboardingGate
 import com.google.firebase.FirebaseApp
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : FragmentActivity() {
@@ -43,7 +44,10 @@ class MainActivity : FragmentActivity() {
   override fun onStart() {
     super.onStart()
 
-    if (FirebaseApp.getApps(this).isNotEmpty()) {
+    if (
+      FirebaseApp.getApps(this).isNotEmpty() &&
+      ParentSupabase.client.auth.currentSessionOrNull() != null
+    ) {
       ParentPushRegistrar(applicationContext).registerCurrentToken()
     }
   }
