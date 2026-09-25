@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
 
-private const val PROTECTION_HISTORY_PREVIEW_COUNT = 5
+private const val DEVICE_HISTORY_PREVIEW_COUNT = 5
 
 @Composable
 internal fun ParentDeviceTab(
@@ -323,7 +323,7 @@ internal fun ParentDeviceTab(
 
         else -> {
           val visibleEvents =
-            protectionHistory.take(PROTECTION_HISTORY_PREVIEW_COUNT)
+            protectionHistory.take(DEVICE_HISTORY_PREVIEW_COUNT)
 
           visibleEvents.forEachIndexed { index, event ->
             if (index > 0) {
@@ -334,7 +334,7 @@ internal fun ParentDeviceTab(
             ProtectionHistoryRow(event)
           }
 
-          if (protectionHistory.size > PROTECTION_HISTORY_PREVIEW_COUNT) {
+          if (protectionHistory.size > DEVICE_HISTORY_PREVIEW_COUNT) {
             TextButton(
               onClick = onOpenProtectionHistory,
               modifier = Modifier.fillMaxWidth(),
