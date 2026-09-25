@@ -30,7 +30,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -174,7 +174,7 @@ internal fun ParentDashboardShell(
   ) {
     Scaffold(
       topBar = {
-        TopAppBar(
+        CenterAlignedTopAppBar(
           navigationIcon = {
             IconButton(
               onClick = {
@@ -188,24 +188,15 @@ internal fun ParentDashboardShell(
             }
           },
           title = {
-            Column {
-              Text(
-                text =
-                  parentDashboardSections
-                    .getOrNull(selectedSection)
-                    ?.label
-                    ?: "PhoneGuard",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-              )
-              Text(
-                text = device.displayName,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-              )
-            }
+            Text(
+              text =
+                parentDashboardSections
+                  .getOrNull(selectedSection)
+                  ?.label
+                  ?: "PhoneGuard",
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.SemiBold,
+            )
           },
           actions = {
             Box {
