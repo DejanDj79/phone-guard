@@ -4,10 +4,17 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+data class AppUsageSession(
+  val startedAtMillis: Long,
+  val endedAtMillis: Long,
+  val seconds: Int,
+)
+
 data class AppUsageEntry(
   val packageName: String,
   val label: String,
   val seconds: Int,
+  val sessions: List<AppUsageSession> = emptyList(),
 )
 
 data class AppUsageDay(
@@ -95,6 +102,41 @@ class HttpAppUsageGateway : AppUsageGateway {
                         val label = appJson.optString("label").trim()
                         val seconds =
                           appJson.optInt("seconds", 0).coerceAtLeast(0)
+                        val sessionsJson = appJson.optJSONArray("sessions")
+                        val sessions =
+                          buildList {
+                            if (sessionsJson != null) {
+                              for (
+                                sessionIndex in 0 until sessionsJson.length()
+                              ) {
+                                val sessionJson =
+                                  sessionsJson.optJSONObject(sessionIndex)
+                                    ?: continue
+                                val startedAtMillis =
+                                  sessionJson.optLong("startedAtMillis", 0L)
+                                val endedAtMillis =
+                                  sessionJson.optLong("endedAtMillis", 0L)
+                                val sessionSeconds =
+                                  sessionJson.optInt("seconds", 0)
+                                    .coerceAtLeast(0)
+
+                                if (
+                                  startedAtMillis > 0L &&
+                                  endedAtMillis > startedAtMillis &&
+                                  sessionSeconds > 0
+                                ) {
+                                  add(
+                                    AppUsageSession(
+                                      startedAtMillis = startedAtMillis,
+                                      endedAtMillis = endedAtMillis,
+                                      seconds = sessionSeconds,
+                                    ),
+                                  )
+                                }
+                              }
+                            }
+                          }
+                            .sortedByDescending { it.startedAtMillis }
 
                         if (packageName.isNotBlank() && label.isNotBlank()) {
                           add(
@@ -102,6 +144,7 @@ class HttpAppUsageGateway : AppUsageGateway {
                               packageName = packageName,
                               label = label,
                               seconds = seconds,
+                              sessions = sessions,
                             ),
                           )
                         }
