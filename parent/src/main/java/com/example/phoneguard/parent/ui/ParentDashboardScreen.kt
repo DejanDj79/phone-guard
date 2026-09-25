@@ -1185,7 +1185,17 @@ fun ParentDashboardScreen(
         Modifier
           .fillMaxSize()
           .verticalScroll(rememberScrollState())
-          .padding(start = 20.dp, end = 20.dp, top = 30.dp, bottom = 20.dp),
+          .padding(
+            start = 20.dp,
+            end = 20.dp,
+            top = 30.dp,
+            bottom =
+              if (uiState.selectedTab in 0..3) {
+                108.dp
+              } else {
+                20.dp
+              },
+          ),
       verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
 
