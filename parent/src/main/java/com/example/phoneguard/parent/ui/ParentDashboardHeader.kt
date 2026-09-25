@@ -1,12 +1,16 @@
 package com.example.phoneguard.parent.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -87,200 +91,240 @@ internal fun ParentDashboardShell(
 ) {
   var accountMenuExpanded by remember { mutableStateOf(false) }
   val showBottomNavigation = selectedSection in parentBottomSections.indices
+  val headerShape =
+    RoundedCornerShape(
+      bottomStart = 28.dp,
+      bottomEnd = 28.dp,
+    )
 
-  Scaffold(
+  Box(
     modifier = modifier.fillMaxSize(),
-    containerColor = Color.Transparent,
-    topBar = {
-      AnimatedContent(
-        targetState = selectedSection,
-        transitionSpec = {
-          if (targetState == 0) {
-            slideInVertically(
-              animationSpec = tween(260),
-              initialOffsetY = { -it / 3 },
-            ) + fadeIn(animationSpec = tween(220)) togetherWith
-              slideOutVertically(
-                animationSpec = tween(220),
-                targetOffsetY = { -it / 3 },
-              ) + fadeOut(animationSpec = tween(180))
-          } else {
-            slideInVertically(
-              animationSpec = tween(300),
-              initialOffsetY = { -it },
-            ) + fadeIn(animationSpec = tween(220)) togetherWith
-              slideOutVertically(
-                animationSpec = tween(180),
-                targetOffsetY = { -it / 2 },
-              ) + fadeOut(animationSpec = tween(140))
-          }
-        },
-        label = "ParentSectionHeader",
-      ) { sectionIndex ->
-        val isHome = sectionIndex == 0
-        val headerContainerColor = Color.Transparent
-        val headerContentColor = MaterialTheme.colorScheme.onSurface
-
-        Surface(
-          color = headerContainerColor,
-          shape = RoundedCornerShape(0.dp),
-        ) {
-          CenterAlignedTopAppBar(
-            modifier =
-              if (isHome) {
-                Modifier
-              } else {
-                Modifier.padding(bottom = 8.dp)
-              },
-            navigationIcon = {
-              if (isHome) {
-                ParentAccountMenuButton(
-                  expanded = accountMenuExpanded,
-                  onExpandedChange = { accountMenuExpanded = it },
-                  parentEmail = parentEmail,
-                  childName = device.displayName,
-                  actionsBusy = actionsBusy,
-                  coloredHeader = false,
-                  onChangeDevice = onChangeDevice,
-                  onOpenSettings = { onSectionSelected(4) },
-                  onSignOut = onSignOut,
-                )
-              } else {
-                Surface(
-                  shape = CircleShape,
-                  color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
-                  modifier =
-                    Modifier
-                      .padding(start = 10.dp)
-                      .size(38.dp),
-                ) {
-                  IconButton(
-                    onClick = { onSectionSelected(0) },
-                    modifier = Modifier.size(38.dp),
-                  ) {
-                    Icon(
-                      imageVector = Icons.Default.ArrowBack,
-                      contentDescription = "Back to Home",
-                      tint = MaterialTheme.colorScheme.onSurface,
-                      modifier = Modifier.size(20.dp),
-                    )
-                  }
-                }
-              }
-            },
-            title = {
-              Text(
-                text =
-                  (
-                    parentDashboardSections
-                      .getOrNull(sectionIndex)
-                      ?.label
-                      ?: "PhoneGuard"
-                  ).uppercase(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = headerContentColor,
-              )
-            },
-            actions = {
-              if (isHome) {
-                Spacer(modifier = Modifier.size(48.dp))
-              } else {
-                ParentAccountMenuButton(
-                  expanded = accountMenuExpanded,
-                  onExpandedChange = { accountMenuExpanded = it },
-                  parentEmail = parentEmail,
-                  childName = device.displayName,
-                  actionsBusy = actionsBusy,
-                  coloredHeader = true,
-                  onChangeDevice = onChangeDevice,
-                  onOpenSettings = { onSectionSelected(4) },
-                  onSignOut = onSignOut,
-                )
-              }
-            },
-            colors =
-              TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = Color.Transparent,
-                navigationIconContentColor = headerContentColor,
-                titleContentColor = headerContentColor,
-                actionIconContentColor = headerContentColor,
-              ),
-          )
-        }
-      }
-    },
-    bottomBar = {
-      if (showBottomNavigation) {
-        Box(
-          modifier =
-            Modifier
-              .fillMaxWidth()
-              .navigationBarsPadding()
-              .padding(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 10.dp),
-        ) {
-          Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(30.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
-            shadowElevation = 12.dp,
-            tonalElevation = 0.dp,
-          ) {
-            Row(
-              modifier =
-                Modifier
-                  .fillMaxWidth()
-                  .padding(horizontal = 14.dp, vertical = 12.dp),
-              horizontalArrangement = Arrangement.SpaceEvenly,
-              verticalAlignment = Alignment.CenterVertically,
-            ) {
-              parentBottomSections.forEachIndexed { index, section ->
-                val selected = selectedSection == index
-
-                Surface(
-                  modifier =
-                    Modifier
-                      .size(44.dp)
-                      .clickable { onSectionSelected(index) },
-                  shape = CircleShape,
-                  color =
-                    if (selected) {
-                      ParentAccentColor
-                    } else {
-                      Color.Transparent
-                    },
-                ) {
-                  Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                  ) {
-                    Icon(
-                      imageVector = section.icon,
-                      contentDescription = section.label,
-                      tint =
-                        if (selected) {
-                          Color.White
-                        } else {
-                          MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                      modifier = Modifier.size(22.dp),
-                    )
-                  }
-                }
-              }
+  ) {
+    Scaffold(
+      modifier = Modifier.fillMaxSize(),
+      containerColor = Color.Transparent,
+      topBar = {
+        AnimatedContent(
+          targetState = selectedSection,
+          transitionSpec = {
+            if (targetState == 0) {
+              slideInVertically(
+                animationSpec = tween(260),
+                initialOffsetY = { -it / 3 },
+              ) + fadeIn(animationSpec = tween(220)) togetherWith
+                slideOutVertically(
+                  animationSpec = tween(220),
+                  targetOffsetY = { -it / 3 },
+                ) + fadeOut(animationSpec = tween(180))
+            } else {
+              slideInVertically(
+                animationSpec = tween(300),
+                initialOffsetY = { -it },
+              ) + fadeIn(animationSpec = tween(220)) togetherWith
+                slideOutVertically(
+                  animationSpec = tween(180),
+                  targetOffsetY = { -it / 2 },
+                ) + fadeOut(animationSpec = tween(140))
             }
+          },
+          label = "ParentSectionHeader",
+        ) { sectionIndex ->
+          val isHome = sectionIndex == 0
+          val headerContentColor = MaterialTheme.colorScheme.onSurface
+
+          Surface(
+            color = Color.Transparent,
+            shape = headerShape,
+            border =
+              BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.58f),
+              ),
+          ) {
+            CenterAlignedTopAppBar(
+              modifier =
+                if (isHome) {
+                  Modifier
+                } else {
+                  Modifier.padding(bottom = 8.dp)
+                },
+              navigationIcon = {
+                if (isHome) {
+                  ParentAccountMenuButton(
+                    expanded = accountMenuExpanded,
+                    onExpandedChange = { accountMenuExpanded = it },
+                    parentEmail = parentEmail,
+                    childName = device.displayName,
+                    actionsBusy = actionsBusy,
+                    coloredHeader = false,
+                    onChangeDevice = onChangeDevice,
+                    onOpenSettings = { onSectionSelected(4) },
+                    onSignOut = onSignOut,
+                  )
+                } else {
+                  Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                    modifier =
+                      Modifier
+                        .padding(start = 10.dp)
+                        .size(38.dp),
+                  ) {
+                    IconButton(
+                      onClick = { onSectionSelected(0) },
+                      modifier = Modifier.size(38.dp),
+                    ) {
+                      Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back to Home",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp),
+                      )
+                    }
+                  }
+                }
+              },
+              title = {
+                Text(
+                  text =
+                    (
+                      parentDashboardSections
+                        .getOrNull(sectionIndex)
+                        ?.label
+                        ?: "PhoneGuard"
+                    ).uppercase(),
+                  style = MaterialTheme.typography.titleMedium,
+                  fontWeight = FontWeight.Bold,
+                  color = headerContentColor,
+                )
+              },
+              actions = {
+                if (isHome) {
+                  Spacer(modifier = Modifier.size(48.dp))
+                } else {
+                  ParentAccountMenuButton(
+                    expanded = accountMenuExpanded,
+                    onExpandedChange = { accountMenuExpanded = it },
+                    parentEmail = parentEmail,
+                    childName = device.displayName,
+                    actionsBusy = actionsBusy,
+                    coloredHeader = true,
+                    onChangeDevice = onChangeDevice,
+                    onOpenSettings = { onSectionSelected(4) },
+                    onSignOut = onSignOut,
+                  )
+                }
+              },
+              colors =
+                TopAppBarDefaults.centerAlignedTopAppBarColors(
+                  containerColor = Color.Transparent,
+                  navigationIconContentColor = headerContentColor,
+                  titleContentColor = headerContentColor,
+                  actionIconContentColor = headerContentColor,
+                ),
+            )
           }
         }
+      },
+    ) { innerPadding ->
+      Box(
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .padding(innerPadding),
+      ) {
+        content()
       }
-    },
-  ) { innerPadding ->
-    Box(
+    }
+
+    if (showBottomNavigation) {
+      ParentFloatingBottomNavigation(
+        selectedSection = selectedSection,
+        onSectionSelected = onSectionSelected,
+        modifier =
+          Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
+      )
+    }
+  }
+}
+
+@Composable
+private fun ParentFloatingBottomNavigation(
+  selectedSection: Int,
+  onSectionSelected: (Int) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier = modifier,
+    shape = RoundedCornerShape(30.dp),
+    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+    shadowElevation = 14.dp,
+    tonalElevation = 0.dp,
+  ) {
+    BoxWithConstraints(
       modifier =
         Modifier
-          .fillMaxSize()
-          .padding(innerPadding),
+          .fillMaxWidth()
+          .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-      content()
+      val itemWidth = maxWidth / parentBottomSections.size
+      val indicatorTarget =
+        (itemWidth * selectedSection.toFloat()) +
+          ((itemWidth - 44.dp) / 2f)
+      val indicatorOffset by
+        animateDpAsState(
+          targetValue = indicatorTarget,
+          animationSpec =
+            spring(
+              dampingRatio = Spring.DampingRatioMediumBouncy,
+              stiffness = Spring.StiffnessMediumLow,
+            ),
+          label = "BottomNavIndicator",
+        )
+
+      Surface(
+        modifier =
+          Modifier
+            .offset(x = indicatorOffset)
+            .size(44.dp),
+        shape = CircleShape,
+        color = ParentAccentColor,
+        shadowElevation = 2.dp,
+      ) {}
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        parentBottomSections.forEachIndexed { index, section ->
+          val selected = selectedSection == index
+
+          Box(
+            modifier =
+              Modifier
+                .weight(1f)
+                .height(44.dp)
+                .clickable { onSectionSelected(index) },
+            contentAlignment = Alignment.Center,
+          ) {
+            Icon(
+              imageVector = section.icon,
+              contentDescription = section.label,
+              tint =
+                if (selected) {
+                  Color.White
+                } else {
+                  MaterialTheme.colorScheme.onSurfaceVariant
+                },
+              modifier = Modifier.size(22.dp),
+            )
+          }
+        }
+      }
     }
   }
 }
