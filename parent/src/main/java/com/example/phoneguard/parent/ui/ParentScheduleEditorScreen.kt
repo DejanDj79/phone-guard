@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -95,7 +97,8 @@ fun ParentScheduleEditorScreen(
         Modifier
           .fillMaxSize()
           .verticalScroll(rememberScrollState())
-          .padding(horizontal = 16.dp, vertical = 24.dp),
+          .statusBarsPadding()
+          .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 24.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       Text(
@@ -331,6 +334,7 @@ fun ParentScheduleEditorScreen(
               ) {
                 TimePicker(
                   state = pickerState,
+                  modifier = Modifier.scale(0.82f),
                 )
               }
             }
