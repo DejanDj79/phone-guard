@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-internal val ParentSectionHeaderColor = Color(0xFF2F4FA3)
+internal val ParentSectionHeaderColor = ParentAccentColor
 
 @Composable
 internal fun ParentDetailHeader(
@@ -54,11 +54,11 @@ internal fun ParentDetailHeader(
     modifier = modifier.fillMaxWidth(),
   ) {
     Surface(
-      color = ParentSectionHeaderColor,
+      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
       shape =
         RoundedCornerShape(
-          bottomStart = 32.dp,
-          bottomEnd = 32.dp,
+          bottomStart = 28.dp,
+          bottomEnd = 28.dp,
         ),
     ) {
       Box(
@@ -70,7 +70,7 @@ internal fun ParentDetailHeader(
       ) {
         Surface(
           shape = CircleShape,
-          color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+          color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
           modifier =
             Modifier
               .align(Alignment.CenterStart)
@@ -83,7 +83,7 @@ internal fun ParentDetailHeader(
             Icon(
               imageVector = Icons.Default.ArrowBack,
               contentDescription = "Back",
-              tint = ParentSectionHeaderColor,
+              tint = ParentAccentColor,
               modifier = Modifier.size(19.dp),
             )
           }
@@ -93,7 +93,7 @@ internal fun ParentDetailHeader(
           text = title.uppercase(),
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onPrimary,
+          color = MaterialTheme.colorScheme.onSurface,
           modifier = Modifier.align(Alignment.Center),
         )
       }
