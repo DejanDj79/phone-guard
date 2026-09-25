@@ -99,7 +99,7 @@ fun DevicesScreen(
         }
       }
 
-      Button(
+      OutlinedButton(
         onClick = onAddDevice,
         enabled = !busy,
         modifier = Modifier.fillMaxWidth(),
