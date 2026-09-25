@@ -1,4 +1,5 @@
 import { withSupabase } from "npm:@supabase/server@1.7.1";
+import { requireParentUserId } from "../_shared/parent-auth.ts";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -35,6 +36,9 @@ export default {
     if (req.method !== "POST") {
       return json({ error: "method_not_allowed" }, 405);
     }
+
+    const parentUserId = await requireParentUserId(req, ctx);
+    if (!parentUserId) return json({ error: "parent_auth_required" }, 401);
 
     let payload: Record<string, unknown>;
     try {
@@ -74,6 +78,7 @@ export default {
       .from("child_devices")
       .select("device_id, allowed_apps_version")
       .eq("device_id", deviceId)
+      .eq("parent_user_id", parentUserId)
       .eq("control_token_hash", controlTokenHash)
       .maybeSingle();
 
@@ -108,6 +113,7 @@ export default {
         updated_at: now,
       })
       .eq("device_id", deviceId)
+      .eq("parent_user_id", parentUserId)
       .eq("control_token_hash", controlTokenHash)
       .eq("allowed_apps_version", currentVersion)
       .select("device_id")
