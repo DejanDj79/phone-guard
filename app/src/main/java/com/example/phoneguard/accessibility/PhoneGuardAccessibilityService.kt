@@ -149,11 +149,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           isAppInfoClass(
             eventPackage = eventPackage,
             className = className,
-          ) ||
-            isAppInfoContent(
-              eventPackage = eventPackage,
-              normalizedText = activeWindowText().lowercase(),
-            )
+          )
 
         if (!isAppInfoScreen && !isFollowUpUninstallSurface) {
           phoneGuardAppInfoActive = false
@@ -236,11 +232,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     event: AccessibilityEvent,
   ): String? {
     if (!phoneGuardAppInfoActive) return null
-
-    if (
-      event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-      event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-    ) {
+    if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
       return null
     }
 
@@ -248,34 +240,12 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     val hasCancel =
       activeText.contains("cancel") ||
         activeText.contains("otka")
-    val hasConfirm =
-      activeText.contains("ok") ||
-        activeText.contains("confirm") ||
-        activeText.contains("delete") ||
-        activeText.contains("clear")
-
-    if (!hasCancel || !hasConfirm) return null
-
     val forceStopConfirmation =
       activeText.contains("force stop") ||
         activeText.contains("force-stop")
 
-    if (forceStopConfirmation) {
-      return PROTECTION_EVENT_FORCE_STOP_ATTEMPT
-    }
-
-    val clearDataConfirmation =
-      activeText.contains("clear data") ||
-        activeText.contains("clear storage") ||
-        activeText.contains("clear all data") ||
-        activeText.contains("delete app data") ||
-        activeText.contains("all app data") ||
-        activeText.contains("all of this app") &&
-          activeText.contains("data") &&
-          activeText.contains("deleted")
-
-    return if (clearDataConfirmation) {
-      PROTECTION_EVENT_CLEAR_DATA_ATTEMPT
+    return if (hasCancel && forceStopConfirmation) {
+      PROTECTION_EVENT_FORCE_STOP_ATTEMPT
     } else {
       null
     }
@@ -463,37 +433,17 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     val normalizedText = visibleText.lowercase()
 
-    val hasUninstallAction =
-      normalizedText.contains("uninstall") ||
-        normalizedText.contains("deinstall") ||
-        normalizedText.contains("deinstal") ||
-        normalizedText.contains("remove app") ||
-        normalizedText.contains("ukloni aplikaciju")
-
-    val hasConfirmationAction =
-      normalizedText.contains("cancel") ||
-        normalizedText.contains("otka") ||
-        normalizedText.contains("confirm") ||
-        normalizedText.contains("potvr") ||
-        normalizedText.contains("ok")
-
-    val uninstallConfirmation =
-      hasUninstallAction &&
-        hasConfirmationAction
-
-    if (phoneGuardAppInfoActive && uninstallConfirmation) {
-      phoneGuardAppInfoActive = false
-      return PROTECTION_EVENT_UNINSTALL_SCREEN_OPENED
-    }
-
     val isAppInfoScreen =
       isAppInfoClass(
         eventPackage = eventPackage,
         className = className,
       ) ||
-        isAppInfoContent(
-          eventPackage = eventPackage,
-          normalizedText = normalizedText,
+        (
+          event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            isAppInfoContent(
+              eventPackage = eventPackage,
+              normalizedText = normalizedText,
+            )
         )
 
     return if (isAppInfoScreen) {
