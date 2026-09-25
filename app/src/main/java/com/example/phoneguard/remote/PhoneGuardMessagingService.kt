@@ -36,6 +36,11 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
     )
 
     val settingsStore = ChildSettingsStore(applicationContext)
+
+    Thread {
+      ChildHeartbeatSender(applicationContext).send()
+    }.start()
+
     if (message.data[KEY_TYPE]?.uppercase() == TYPE_TIME_REQUEST_RESULT) {
       when (message.data[KEY_DECISION]?.uppercase()) {
         "DENIED" ->
