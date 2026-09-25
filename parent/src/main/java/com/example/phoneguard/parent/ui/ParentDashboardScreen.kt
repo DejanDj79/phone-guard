@@ -840,7 +840,6 @@ fun ParentDashboardScreen(
       ) {
         ProtectionHistoryClearResult.Success -> {
           uiState.protectionHistory = emptyList()
-          uiState.showAllProtectionHistory = false
           uiState.showClearProtectionHistoryConfirm = false
         }
 
@@ -1186,6 +1185,23 @@ fun ParentDashboardScreen(
     }
   }
 
+  if (uiState.showAllProtectionHistory) {
+    BackHandler(enabled = !uiState.protectionHistoryClearing) {
+      uiState.showAllProtectionHistory = false
+    }
+
+    ParentProtectionHistoryScreen(
+      events = uiState.protectionHistory,
+      loading = uiState.protectionHistoryLoading,
+      clearing = uiState.protectionHistoryClearing,
+      errorMessage = uiState.protectionHistoryError,
+      onBack = { uiState.showAllProtectionHistory = false },
+      onRequestClear = { clearProtectionHistory() },
+      modifier = modifier,
+    )
+    return
+  }
+
   BackHandler(enabled = uiState.selectedTab != 0) {
     uiState.selectedTab = 0
   }
@@ -1247,7 +1263,6 @@ fun ParentDashboardScreen(
         protectionHistory = uiState.protectionHistory,
         protectionHistoryLoading = uiState.protectionHistoryLoading,
         protectionHistoryError = uiState.protectionHistoryError,
-        showAllProtectionHistory = uiState.showAllProtectionHistory,
         protectionHistoryClearing = uiState.protectionHistoryClearing,
         onShowDevices = { uiState.showDevices = true },
         onRefreshStatus = {
@@ -1312,8 +1327,8 @@ fun ParentDashboardScreen(
           uiState.deviceManagementError = null
           uiState.showDeviceManagement = true
         },
-        onToggleProtectionHistory = {
-          uiState.showAllProtectionHistory = !uiState.showAllProtectionHistory
+        onOpenProtectionHistory = {
+          uiState.showAllProtectionHistory = true
         },
         onRequestClearProtectionHistory = {
           uiState.showClearProtectionHistoryConfirm = true
