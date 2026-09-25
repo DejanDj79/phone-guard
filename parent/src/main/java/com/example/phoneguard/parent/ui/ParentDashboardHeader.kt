@@ -439,7 +439,7 @@ private fun ParentAccountMenuButton(
         },
     ) {
       IconButton(
-        onClick = { onExpandedChange(true) },
+        onClick = { onExpandedChange(!expanded) },
         modifier = Modifier.size(38.dp),
       ) {
         Icon(
