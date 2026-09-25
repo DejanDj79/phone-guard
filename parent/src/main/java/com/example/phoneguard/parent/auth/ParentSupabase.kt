@@ -10,12 +10,15 @@ object ParentSupabase {
   const val AUTH_HOST = "auth-callback"
   const val REDIRECT_URL = "${AUTH_SCHEME}://${AUTH_HOST}"
 
-  // This is a Supabase publishable key. It is intentionally safe to ship
-  // in a client application. Never put a service-role/secret key here.
-  private const val SUPABASE_URL =
+  // These are public client configuration values. Never put a
+  // service-role/secret key in the Android application.
+  const val SUPABASE_URL =
     "https://lpcytegfsslhugeiefdu.supabase.co"
-  private const val SUPABASE_PUBLISHABLE_KEY =
+  const val SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_GajuPePv3yNwGPNvVx61OA_6GIsGgDU"
+
+  fun functionUrl(functionName: String): String =
+    "$SUPABASE_URL/functions/v1/$functionName"
 
   val client: SupabaseClient =
     createSupabaseClient(
