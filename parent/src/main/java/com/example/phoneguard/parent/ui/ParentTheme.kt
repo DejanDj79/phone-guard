@@ -29,15 +29,15 @@ private val MichromaFamily =
   )
 
 internal val ParentAccentColor = Color(0xFFE83E1D)
-internal val ParentGradientTop = Color(0xFFF8F8F6)
-internal val ParentGradientBottom = Color(0xFFEEEEEB)
+internal val ParentGradientTop = Color(0xFFF2F2EF)
+internal val ParentGradientBottom = Color(0xFFE4E4E0)
 
 private val ParentColors =
   lightColorScheme(
-    primary = ParentAccentColor,
+    primary = Color(0xFF3C3C3A),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFFBE4DC),
-    onPrimaryContainer = Color(0xFF5A1B0D),
+    primaryContainer = Color(0xFFE8E8E4),
+    onPrimaryContainer = Color(0xFF31312F),
     secondary = Color(0xFF55575A),
     onSecondary = Color(0xFFFFFFFF),
     secondaryContainer = Color(0xFFF0F0ED),
@@ -46,14 +46,14 @@ private val ParentColors =
     onTertiary = Color(0xFFFFFFFF),
     tertiaryContainer = Color(0xFFF8E4DB),
     onTertiaryContainer = Color(0xFF5B2B1A),
-    background = Color(0xFFF4F4F2),
+    background = Color(0xFFECECE8),
     onBackground = Color(0xFF2F3031),
-    surface = Color(0xFFF9F9F7),
+    surface = Color(0xFFF6F6F3),
     onSurface = Color(0xFF303132),
-    surfaceVariant = Color(0xFFEEEEEB),
+    surfaceVariant = Color(0xFFE9E9E5),
     onSurfaceVariant = Color(0xFF7F8082),
-    outline = Color(0xFFB6B6B2),
-    outlineVariant = Color(0xFFDEDEDA),
+    outline = Color(0xFF8D8D89),
+    outlineVariant = Color(0xFFD3D3CE),
     error = Color(0xFFA43D3D),
     onError = Color(0xFFFFFFFF),
     errorContainer = Color(0xFFF8DEDE),
