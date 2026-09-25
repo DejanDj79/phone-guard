@@ -67,6 +67,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private var lockStateListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
   private val lastProtectionEventAt = mutableMapOf<String, Long>()
   private var phoneGuardAppInfoActive = false
+  private var appInfoDialogGraceUntil = 0L
 
   private val networkCallback =
     object : ConnectivityManager.NetworkCallback() {
@@ -151,8 +152,18 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
             className = className,
           )
 
-        if (!isAppInfoScreen && !isFollowUpUninstallSurface) {
+        val keepAppInfoContextForDialog =
+          phoneGuardAppInfoActive &&
+            System.currentTimeMillis() <= appInfoDialogGraceUntil &&
+            isSupportedSettingsPackage(eventPackage)
+
+        if (
+          !isAppInfoScreen &&
+          !isFollowUpUninstallSurface &&
+          !keepAppInfoContextForDialog
+        ) {
           phoneGuardAppInfoActive = false
+          appInfoDialogGraceUntil = 0L
         }
       }
     }
@@ -177,9 +188,16 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
       protectionEvent?.let { detectedEvent ->
         if (detectedEvent == PROTECTION_EVENT_APP_INFO_OPENED) {
+          val wasAlreadyInAppInfo = phoneGuardAppInfoActive
           phoneGuardAppInfoActive = true
+          appInfoDialogGraceUntil = 0L
+
+          if (!wasAlreadyInAppInfo) {
+            reportProtectionEvent(detectedEvent)
+          }
+        } else {
+          reportProtectionEvent(detectedEvent)
         }
-        reportProtectionEvent(detectedEvent)
       }
     }
 
@@ -196,37 +214,8 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     val eventPackage = event.packageName?.toString().orEmpty()
     if (!isSupportedSettingsPackage(eventPackage)) return null
 
-    val activeText = activeWindowText()
-    val phoneGuardLabel =
-      runCatching {
-        packageManager
-          .getApplicationLabel(applicationInfo)
-          .toString()
-      }.getOrDefault("PhoneGuard")
-    val mentionsPhoneGuard =
-      activeText.contains(phoneGuardLabel, ignoreCase = true) ||
-        activeText.contains(packageName, ignoreCase = true)
-
-    if (
-      !mentionsPhoneGuard ||
-      !isAppInfoContent(
-        eventPackage = eventPackage,
-        normalizedText = activeText.lowercase(),
-      )
-    ) {
-      return null
-    }
-
-    val clickedText =
+    val sourceText =
       buildString {
-        event.text.forEach { item ->
-          append(item)
-          append(' ')
-        }
-        event.contentDescription?.let {
-          append(it)
-          append(' ')
-        }
         event.source?.text?.let {
           append(it)
           append(' ')
@@ -235,21 +224,46 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           append(it)
           append(' ')
         }
-      }.lowercase()
+        event.contentDescription?.let {
+          append(it)
+          append(' ')
+        }
+      }.trim().lowercase()
 
-    return when {
-      clickedText.contains("force stop") ||
-        clickedText.contains("force-stop") ->
-        PROTECTION_EVENT_FORCE_STOP_ATTEMPT
+    val fallbackEventText =
+      if (sourceText.isBlank() && event.text.size <= 2) {
+        event.text.joinToString(" ").trim().lowercase()
+      } else {
+        ""
+      }
 
-      clickedText.contains("clear data") ||
-        clickedText.contains("clear storage") ||
-        clickedText.contains("erase app data") ||
-        clickedText.contains("delete app data") ->
-        PROTECTION_EVENT_CLEAR_DATA_ATTEMPT
+    val clickedText =
+      (sourceText + " " + fallbackEventText).trim()
+    if (clickedText.isBlank()) return null
 
-      else -> null
+    val protectionEvent =
+      when {
+        clickedText.contains("force stop") ||
+          clickedText.contains("force-stop") ->
+          PROTECTION_EVENT_FORCE_STOP_ATTEMPT
+
+        clickedText.contains("clear data") ||
+          clickedText.contains("clear storage") ||
+          clickedText.contains("erase app data") ||
+          clickedText.contains("delete app data") ||
+          clickedText.contains("obriši podatke") ||
+          clickedText.contains("obrisi podatke") ->
+          PROTECTION_EVENT_CLEAR_DATA_ATTEMPT
+
+        else -> null
+      }
+
+    if (protectionEvent != null) {
+      appInfoDialogGraceUntil =
+        System.currentTimeMillis() + APP_INFO_DIALOG_GRACE_MS
     }
+
+    return protectionEvent
   }
 
   private fun detectSensitiveActionConfirmation(
@@ -1154,6 +1168,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
   private companion object {
     const val TAG = "PhoneGuardAccessibility"
+    const val APP_INFO_DIALOG_GRACE_MS = 10_000L
     const val HEARTBEAT_INTERVAL_MS = 30_000L
     const val PROTECTION_EVENT_DEBOUNCE_MS = 30_000L
     const val MAX_ACCESSIBILITY_NODES_TO_SCAN = 250
