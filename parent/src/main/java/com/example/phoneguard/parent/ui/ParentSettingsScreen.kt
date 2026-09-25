@@ -189,7 +189,8 @@ fun ParentSettingsScreen(
           },
           enabled = !signOutInProgress,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           if (signOutInProgress) {
             CircularProgressIndicator(
               modifier = Modifier.size(16.dp),
@@ -298,7 +299,8 @@ fun ParentSettingsScreen(
               newPin.length in 4..6 &&
               confirmPin.length in 4..6,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("CHANGE PIN")
         }
       }
@@ -379,7 +381,8 @@ fun ParentSettingsScreen(
                       containerColor = ParentAccentColor,
                       contentColor = Color.White,
                     ),
-                ) {
+      shape = ParentActionShape,
+    ) {
                   Text(label)
                 }
               } else {
@@ -389,7 +392,8 @@ fun ParentSettingsScreen(
                     securityStore.setRelockAfterBackgroundMillis(delay)
                   },
                   modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-                ) {
+      shape = ParentActionShape,
+    ) {
                   Text(label)
                 }
               }
@@ -473,7 +477,8 @@ fun ParentSettingsScreen(
             context.startActivity(intent)
           },
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("ANDROID NOTIFICATION SETTINGS")
         }
       }
