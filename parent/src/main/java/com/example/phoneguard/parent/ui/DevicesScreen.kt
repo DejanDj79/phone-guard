@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -90,7 +91,7 @@ fun DevicesScreen(
               OutlinedButton(
                 onClick = { onSelectDevice(device) },
                 enabled = !busy,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.heightIn(min = 52.dp),
               ) {
                 Text("SELECT DEVICE")
               }
@@ -102,7 +103,7 @@ fun DevicesScreen(
       OutlinedButton(
         onClick = onAddDevice,
         enabled = !busy,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
       ) {
         Text("+ ADD DEVICE")
       }
