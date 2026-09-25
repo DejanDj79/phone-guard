@@ -9,15 +9,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,53 +47,61 @@ fun AllowedAppsEditorScreen(
     mutableStateOf(snapshot.allowedPackages)
   }
 
-  Surface(modifier = modifier.fillMaxSize()) {
+  Surface(
+    modifier = modifier.fillMaxSize(),
+    color = MaterialTheme.colorScheme.background,
+  ) {
     Column(
       modifier =
         Modifier
           .fillMaxSize()
           .verticalScroll(rememberScrollState())
-          .padding(24.dp),
+          .padding(horizontal = 20.dp, vertical = 24.dp),
+      verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
       Text(
         text = "Allowed apps",
-        style = MaterialTheme.typography.headlineSmall,
+        style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
       )
 
-      Spacer(modifier = Modifier.height(8.dp))
-
       Text(
-        text =
-          "Choose which apps the Child can use while the phone is locked. " +
-            "System settings and other sensitive system apps are excluded.",
+        text = "Apps enabled here remain available while the Child phone is locked.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
 
-      Spacer(modifier = Modifier.height(8.dp))
-
-      Text(
-        text = selectedPackages.size.toString() + " selected",
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-
-      Spacer(modifier = Modifier.height(16.dp))
+      Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.primaryContainer,
+      ) {
+        Text(
+          text = selectedPackages.size.toString() + " selected",
+          modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+          style = MaterialTheme.typography.labelLarge,
+          color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+      }
 
       if (snapshot.installedApps.isEmpty()) {
-        Text(
-          text =
-            "No app inventory is available yet. Open PhoneGuard on the Child device " +
-              "while it is online, then return here and try again.",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Surface(
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(22.dp),
+          color = MaterialTheme.colorScheme.surface,
+        ) {
+          Text(
+            text =
+              "No app list is available yet. Keep the Child phone online and open PhoneGuard there, then try again.",
+            modifier = Modifier.padding(18.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
       } else {
-        snapshot.installedApps.forEachIndexed { index, app ->
+        snapshot.installedApps.forEach { app ->
           val selected = app.packageName in selectedPackages
 
-          Row(
+          Surface(
             modifier =
               Modifier
                 .fillMaxWidth()
@@ -99,46 +112,62 @@ fun AllowedAppsEditorScreen(
                     } else {
                       selectedPackages + app.packageName
                     }
-                }
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                },
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
           ) {
-            Checkbox(
-              checked = selected,
-              onCheckedChange = { checked ->
-                selectedPackages =
-                  if (checked) {
-                    selectedPackages + app.packageName
+            Row(
+              modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+              Surface(
+                shape = RoundedCornerShape(14.dp),
+                color =
+                  if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
                   } else {
-                    selectedPackages - app.packageName
-                  }
-              },
-              enabled = !saving,
-            )
+                    MaterialTheme.colorScheme.surfaceVariant
+                  },
+              ) {
+                Icon(
+                  imageVector = Icons.Default.Apps,
+                  contentDescription = null,
+                  tint =
+                    if (selected) {
+                      MaterialTheme.colorScheme.primary
+                    } else {
+                      MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                  modifier = Modifier.padding(10.dp),
+                )
+              }
 
-            Column(modifier = Modifier.weight(1f)) {
               Text(
                 text = app.label,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
               )
-              Text(
-                text = app.packageName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+
+              Switch(
+                checked = selected,
+                onCheckedChange = { checked ->
+                  selectedPackages =
+                    if (checked) {
+                      selectedPackages + app.packageName
+                    } else {
+                      selectedPackages - app.packageName
+                    }
+                },
+                enabled = !saving,
               )
             }
-          }
-
-          if (index < snapshot.installedApps.lastIndex) {
-            HorizontalDivider()
           }
         }
       }
 
       saveError?.let { message ->
-        Spacer(modifier = Modifier.height(16.dp))
         Text(
           text = message,
           style = MaterialTheme.typography.bodyMedium,
@@ -146,19 +175,25 @@ fun AllowedAppsEditorScreen(
         )
       }
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(6.dp))
 
       Button(
         onClick = { onSave(selectedPackages) },
         enabled = !saving && snapshot.installedApps.isNotEmpty(),
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text(if (saving) "SAVING…" else "SAVE ALLOWED APPS")
+        if (saving) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onPrimary,
+          )
+        } else {
+          Text("SAVE ALLOWED APPS")
+        }
       }
 
-      Spacer(modifier = Modifier.height(10.dp))
-
-      OutlinedButton(
+      TextButton(
         onClick = onCancel,
         enabled = !saving,
         modifier = Modifier.fillMaxWidth(),
@@ -166,7 +201,7 @@ fun AllowedAppsEditorScreen(
         Text("CANCEL")
       }
 
-      Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(8.dp))
     }
   }
 }
