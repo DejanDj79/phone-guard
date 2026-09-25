@@ -334,7 +334,7 @@ fun ParentScheduleEditorScreen(
               ) {
                 TimePicker(
                   state = pickerState,
-                  modifier = Modifier.scale(0.82f),
+                  modifier = Modifier.scale(0.78f),
                 )
               }
             }
