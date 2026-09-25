@@ -22,8 +22,8 @@ import com.example.phoneguard.parent.ui.ParentAuthGate
 import com.example.phoneguard.parent.ui.ParentDashboardScreen
 import com.example.phoneguard.parent.ui.ParentSecurityGate
 import com.example.phoneguard.parent.ui.ParentPostAuthOnboardingGate
-import com.example.phoneguard.parent.ui.ParentGradientBottom
-import com.example.phoneguard.parent.ui.ParentGradientTop
+import com.example.phoneguard.parent.ui.ParentGradientCenter
+import com.example.phoneguard.parent.ui.ParentGradientEdge
 import com.example.phoneguard.parent.ui.PhoneGuardParentTheme
 import com.google.firebase.FirebaseApp
 import io.github.jan.supabase.auth.auth
@@ -44,11 +44,14 @@ class MainActivity : FragmentActivity() {
             Modifier
               .fillMaxSize()
               .background(
-                Brush.verticalGradient(
-                  colors =
-                    listOf(
-                      ParentGradientTop,
-                      ParentGradientBottom,
+                Brush.horizontalGradient(
+                  colorStops =
+                    arrayOf(
+                      0.0f to ParentGradientEdge,
+                      0.18f to Color(0xFFE7E7E3),
+                      0.50f to ParentGradientCenter,
+                      0.82f to Color(0xFFE7E7E3),
+                      1.0f to ParentGradientEdge,
                     ),
                 ),
               ),
