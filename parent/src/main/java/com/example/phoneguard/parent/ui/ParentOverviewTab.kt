@@ -5,11 +5,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -44,47 +54,72 @@ internal fun ParentOverviewTab(
   onOpenDevice: () -> Unit,
   onAppUsageViewChange: (Int) -> Unit,
 ) {
+  val presence = devicePresenceState(device.lastSeenAt)
+  val protection = device.protectionStatus
+  val protectionKnown =
+    listOf(
+      protection.accessibilityEnabled,
+      protection.preciseTimingEnabled,
+      protection.batteryUnrestricted,
+    ).all { it != null }
+  val protectionComplete =
+    protectionKnown &&
+      protection.accessibilityEnabled == true &&
+      protection.preciseTimingEnabled == true &&
+      protection.batteryUnrestricted == true
+
   pendingTimeRequest?.let { request ->
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    Surface(
+      modifier = Modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(24.dp),
+      color = MaterialTheme.colorScheme.primaryContainer,
+    ) {
       Column(
         modifier = Modifier.padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         Text(
-          text = "More time requested",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
+          text = "Time request",
+          style = MaterialTheme.typography.labelLarge,
+          color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
 
         Text(
           text =
             request.displayName +
-              " is asking for " +
+              " wants " +
               request.requestedMinutes +
               " more minutes.",
-          style = MaterialTheme.typography.bodyLarge,
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.SemiBold,
+          color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
 
-        Button(
-          onClick = { onRespondToTimeRequest(request, true) },
-          enabled = !timeRequestResponding,
+        Row(
           modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-          Text(
-            if (timeRequestResponding) {
-              "RESPONDING…"
-            } else {
-              "APPROVE " + request.requestedMinutes + " MIN"
-            },
-          )
-        }
+          Button(
+            onClick = { onRespondToTimeRequest(request, true) },
+            enabled = !timeRequestResponding,
+            modifier = Modifier.weight(1f),
+          ) {
+            Text(
+              if (timeRequestResponding) {
+                "WAIT…"
+              } else {
+                "APPROVE"
+              },
+            )
+          }
 
-        OutlinedButton(
-          onClick = { onRespondToTimeRequest(request, false) },
-          enabled = !timeRequestResponding,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("DENY")
+          OutlinedButton(
+            onClick = { onRespondToTimeRequest(request, false) },
+            enabled = !timeRequestResponding,
+            modifier = Modifier.weight(1f),
+          ) {
+            Text("DENY")
+          }
         }
       }
     }
@@ -106,117 +141,172 @@ internal fun ParentOverviewTab(
     )
   }
 
-  val presence = devicePresenceState(device.lastSeenAt)
-  val protection = device.protectionStatus
-  val protectionKnown =
-    listOf(
-      protection.accessibilityEnabled,
-      protection.preciseTimingEnabled,
-      protection.batteryUnrestricted,
-    ).all { it != null }
-  val protectionComplete =
-    protectionKnown &&
-      protection.accessibilityEnabled == true &&
-      protection.preciseTimingEnabled == true &&
-      protection.batteryUnrestricted == true
+  val isLocked = device.state == DeviceAccessState.LOCKED
+  val stateTitle =
+    when (device.state) {
+      DeviceAccessState.ALLOWED -> "Phone is available"
+      DeviceAccessState.LOCKED -> "Phone is locked"
+      DeviceAccessState.TEMPORARILY_ALLOWED -> "Bonus time is active"
+      DeviceAccessState.OFFLINE -> "Status unavailable"
+    }
 
-  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(28.dp),
+    color = MaterialTheme.colorScheme.secondaryContainer,
+  ) {
     Column(
-      modifier = Modifier.padding(20.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
+      modifier = Modifier.padding(24.dp),
+      verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
       Text(
-        text = "Today",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
+        text = device.displayName,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSecondaryContainer,
       )
 
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-      ) {
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = "Screen time",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-          Text(
-            text = formatUsageSeconds(device.dailyScreenTime.usedSeconds),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-          )
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = "Daily limit",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-          Text(
-            text =
-              device.dailyScreenTime.limitMinutes
-                ?.let(::formatDurationMinutes)
-                ?: "Not set",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
-          )
-        }
-      }
-
       Text(
-        text = deviceStateLabel(device),
-        style = MaterialTheme.typography.bodyLarge,
-        fontWeight = FontWeight.SemiBold,
+        text = stateTitle,
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSecondaryContainer,
       )
 
       Text(
         text = devicePresenceSummary(device.lastSeenAt),
         style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = MaterialTheme.colorScheme.onSecondaryContainer,
       )
 
-      val remainingMinutes = device.dailyScreenTime.remainingMinutes
       if (
-        device.dailyScreenTime.limitMinutes != null &&
-        remainingMinutes != null
+        device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
+        device.temporaryAccessMinutesRemaining != null
       ) {
         Text(
           text =
-            if (device.dailyScreenTime.limitReached) {
-              "Daily screen time limit reached."
+            device.temporaryAccessMinutesRemaining.toString() +
+              " min bonus time remaining",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.SemiBold,
+          color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+      }
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        Button(
+          onClick = if (isLocked) onUnlock else onLock,
+          enabled = !commandInProgress && !connectionTestInProgress,
+          modifier = Modifier.weight(1f),
+        ) {
+          Icon(
+            imageVector =
+              if (isLocked) {
+                Icons.Default.LockOpen
+              } else {
+                Icons.Default.Lock
+              },
+            contentDescription = null,
+          )
+          Text(
+            if (isLocked) {
+              " UNLOCK"
             } else {
-              formatDurationMinutes(remainingMinutes) +
-                " remaining today."
+              " LOCK NOW"
             },
-          style = MaterialTheme.typography.bodyMedium,
-          color =
-            if (device.dailyScreenTime.limitReached) {
-              MaterialTheme.colorScheme.error
-            } else {
-              MaterialTheme.colorScheme.onSurfaceVariant
-            },
+          )
+        }
+
+        OutlinedButton(
+          onClick = onAddBonusTime,
+          enabled = !commandInProgress && !connectionTestInProgress,
+          modifier = Modifier.weight(1f),
+        ) {
+          Icon(
+            imageVector = Icons.Default.AddCircle,
+            contentDescription = null,
+          )
+          Text(" BONUS")
+        }
+      }
+
+      commandProgressMessage?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+      }
+
+      commandNotice?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSecondaryContainer,
         )
       }
     }
+  }
+
+  val remainingLabel =
+    when {
+      device.dailyScreenTime.limitMinutes == null ->
+        "No limit"
+      device.dailyScreenTime.limitReached ->
+        "Limit reached"
+      device.dailyScreenTime.remainingMinutes != null ->
+        formatDurationMinutes(device.dailyScreenTime.remainingMinutes)
+      else ->
+        "—"
+    }
+
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    HomeMetric(
+      label = "Screen time",
+      value = formatUsageSeconds(device.dailyScreenTime.usedSeconds),
+      modifier = Modifier.weight(1f),
+    )
+
+    HomeMetric(
+      label = "Remaining",
+      value = remainingLabel,
+      modifier = Modifier.weight(1f),
+    )
   }
 
   if (
     presence == DevicePresenceState.POSSIBLE_SHUTDOWN ||
     (protectionKnown && !protectionComplete)
   ) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    Surface(
+      modifier = Modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(22.dp),
+      color = MaterialTheme.colorScheme.errorContainer,
+    ) {
       Column(
-        modifier = Modifier.padding(20.dp),
+        modifier = Modifier.padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        Text(
-          text = "Needs attention",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.SemiBold,
-          color = MaterialTheme.colorScheme.error,
-        )
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onErrorContainer,
+          )
+          Text(
+            text = "Needs attention",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+          )
+        }
 
         Text(
           text =
@@ -226,152 +316,28 @@ internal fun ParentOverviewTab(
               protection.accessibilityEnabled == false ->
                 "Screen protection is disabled on the Child phone."
               protection.batteryUnrestricted == false ->
-                "Background protection is restricted by Android battery settings."
+                "Android is restricting PhoneGuard in the background."
               protection.preciseTimingEnabled == false ->
-                "Precise timing is not allowed on the Child phone."
+                "Precise timing is not available on the Child phone."
               else ->
                 "One or more protection checks need attention."
             },
           style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onErrorContainer,
         )
 
-        OutlinedButton(
-          onClick = onOpenDevice,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
+        TextButton(onClick = onOpenDevice) {
           Text("VIEW DEVICE STATUS")
         }
       }
     }
   }
 
-  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-    Column(
-      modifier = Modifier.padding(20.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-      Text(
-        text = "Quick controls",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-      )
-
-      val isLocked = device.state == DeviceAccessState.LOCKED
-      val isUnlocked =
-        device.state == DeviceAccessState.ALLOWED ||
-          device.state == DeviceAccessState.TEMPORARILY_ALLOWED
-
-      if (isLocked) {
-        Button(
-          onClick = onUnlock,
-          enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("UNLOCK")
-        }
-      } else {
-        Button(
-          onClick = onLock,
-          enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text("LOCK NOW")
-        }
-      }
-
-      if (
-        device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
-        device.temporaryAccessMinutesRemaining != null
-      ) {
-        Text(
-          text =
-            "Bonus time remaining: " +
-              device.temporaryAccessMinutesRemaining +
-              " min",
-          style = MaterialTheme.typography.bodyMedium,
-          fontWeight = FontWeight.SemiBold,
-        )
-      }
-
-      OutlinedButton(
-        onClick = onAddBonusTime,
-        enabled = !commandInProgress && !connectionTestInProgress,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text("ADD BONUS TIME")
-      }
-
-      commandProgressMessage?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-
-      commandNotice?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-    }
-  }
-
-  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-    Column(
-      modifier = Modifier.padding(20.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-      Text(
-        text = "Connection",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-      )
-
-      Text(
-        text =
-          if (presence == DevicePresenceState.ONLINE) {
-            "PhoneGuard is checking in normally."
-          } else {
-            devicePresenceSummary(device.lastSeenAt)
-          },
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-
-      OutlinedButton(
-        onClick = onTestConnection,
-        enabled = !commandInProgress && !connectionTestInProgress,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text(
-          if (connectionTestInProgress) {
-            "TESTING CONNECTION…"
-          } else {
-            "TEST CONNECTION"
-          },
-        )
-      }
-
-      connectionTestMessage?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-
-      connectionTestError?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.error,
-        )
-      }
-    }
-  }
+  Text(
+    text = "Activity",
+    style = MaterialTheme.typography.titleLarge,
+    fontWeight = FontWeight.SemiBold,
+  )
 
   val referenceDate =
     device.dailyScreenTime.usageDate
@@ -386,80 +352,43 @@ internal fun ParentOverviewTab(
       appUsageDays.firstOrNull { it.usageDate == date }
     }
 
-  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(24.dp),
+    tonalElevation = 1.dp,
+  ) {
     Column(
-      modifier = Modifier.padding(20.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
+      modifier = Modifier.padding(18.dp),
+      verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-      Text(
-        text = "App usage",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-      )
-
-      Text(
-        text = "Screen time by app for " + device.displayName + ".",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        if (appUsageView == APP_USAGE_VIEW_TODAY) {
-          Button(
-            onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("TODAY")
-          }
-        } else {
-          OutlinedButton(
-            onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("TODAY")
-          }
-        }
-
-        if (appUsageView == APP_USAGE_VIEW_YESTERDAY) {
-          Button(
-            onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("YESTERDAY")
-          }
-        } else {
-          OutlinedButton(
-            onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("YESTERDAY")
-          }
-        }
-
-        if (appUsageView == APP_USAGE_VIEW_WEEK) {
-          Button(
-            onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("7 DAYS")
-          }
-        } else {
-          OutlinedButton(
-            onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
-            modifier = Modifier.weight(1f),
-          ) {
-            Text("7 DAYS")
-          }
-        }
+        FilterChip(
+          selected = appUsageView == APP_USAGE_VIEW_TODAY,
+          onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
+          label = { Text("Today") },
+          modifier = Modifier.weight(1f),
+        )
+        FilterChip(
+          selected = appUsageView == APP_USAGE_VIEW_YESTERDAY,
+          onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
+          label = { Text("Yesterday") },
+          modifier = Modifier.weight(1f),
+        )
+        FilterChip(
+          selected = appUsageView == APP_USAGE_VIEW_WEEK,
+          onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
+          label = { Text("7 days") },
+          modifier = Modifier.weight(1f),
+        )
       }
 
       when {
         appUsageLoading && appUsageDays.isEmpty() -> {
           Text(
-            text = "Loading app usage…",
+            text = "Loading activity…",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
@@ -487,13 +416,6 @@ internal fun ParentOverviewTab(
         }
       }
 
-      Text(
-        text =
-          "System screens and the launcher are excluded. Allowed apps used while PhoneGuard is locked are included.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-
       appUsageError?.let { message ->
         Text(
           text = message,
@@ -501,6 +423,87 @@ internal fun ParentOverviewTab(
           color = MaterialTheme.colorScheme.error,
         )
       }
+    }
+  }
+
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.SpaceBetween,
+  ) {
+    Column(modifier = Modifier.weight(1f)) {
+      Text(
+        text = "Connection",
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
+      )
+      Text(
+        text =
+          if (presence == DevicePresenceState.ONLINE) {
+            "Child is checking in normally."
+          } else {
+            devicePresenceSummary(device.lastSeenAt)
+          },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+
+    TextButton(
+      onClick = onTestConnection,
+      enabled = !commandInProgress && !connectionTestInProgress,
+    ) {
+      Text(
+        if (connectionTestInProgress) {
+          "TESTING…"
+        } else {
+          "TEST"
+        },
+      )
+    }
+  }
+
+  connectionTestMessage?.let { message ->
+    Text(
+      text = message,
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  }
+
+  connectionTestError?.let { message ->
+    Text(
+      text = message,
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.error,
+    )
+  }
+}
+
+@Composable
+private fun HomeMetric(
+  label: String,
+  value: String,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier = modifier,
+    shape = RoundedCornerShape(20.dp),
+    tonalElevation = 1.dp,
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Text(
+        text = value,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+      )
     }
   }
 }
