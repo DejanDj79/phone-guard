@@ -31,13 +31,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -86,6 +90,9 @@ internal fun ParentDashboardShell(
   selectedSection: Int,
   actionsBusy: Boolean,
   parentEmail: String?,
+  connectionTestInProgress: Boolean,
+  connectionTestSucceeded: Boolean?,
+  onTestConnection: () -> Unit,
   onChangeDevice: () -> Unit,
   onSectionSelected: (Int) -> Unit,
   onSignOut: () -> Unit,
@@ -203,7 +210,15 @@ internal fun ParentDashboardShell(
               },
               actions = {
                 if (isHome) {
-                  Spacer(modifier = Modifier.size(48.dp))
+                  ParentConnectionTestAction(
+                    inProgress = connectionTestInProgress,
+                    succeeded = connectionTestSucceeded,
+                    enabled =
+                      !actionsBusy &&
+                        !connectionTestInProgress &&
+                        connectionTestSucceeded == null,
+                    onClick = onTestConnection,
+                  )
                 } else {
                   ParentAccountMenuButton(
                     expanded = accountMenuExpanded,
@@ -326,6 +341,66 @@ private fun ParentFloatingBottomNavigation(
               modifier = Modifier.size(22.dp),
             )
           }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun ParentConnectionTestAction(
+  inProgress: Boolean,
+  succeeded: Boolean?,
+  enabled: Boolean,
+  onClick: () -> Unit,
+) {
+  Surface(
+    shape = CircleShape,
+    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+    modifier =
+      Modifier
+        .padding(end = 10.dp)
+        .size(38.dp),
+  ) {
+    IconButton(
+      onClick = onClick,
+      enabled = enabled,
+      modifier = Modifier.size(38.dp),
+    ) {
+      when {
+        inProgress -> {
+          CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        succeeded == true -> {
+          Icon(
+            imageVector = Icons.Default.Check,
+            contentDescription = "Connection OK",
+            tint = Color(0xFF3E7C4E),
+            modifier = Modifier.size(21.dp),
+          )
+        }
+
+        succeeded == false -> {
+          Icon(
+            imageVector = Icons.Default.Close,
+            contentDescription = "Connection failed",
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(21.dp),
+          )
+        }
+
+        else -> {
+          Icon(
+            imageVector = Icons.Default.Refresh,
+            contentDescription = "Test connection",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+          )
         }
       }
     }
