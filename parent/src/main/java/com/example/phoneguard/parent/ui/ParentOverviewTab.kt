@@ -455,19 +455,23 @@ internal fun ParentOverviewTab(
     }
   }
 
-  TextButton(
-    onClick = onTestConnection,
-    enabled = !commandInProgress && !connectionTestInProgress,
-    modifier = Modifier.align(Alignment.End),
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.End,
   ) {
-    if (connectionTestInProgress) {
-      CircularProgressIndicator(
-        modifier = Modifier.size(16.dp),
-        strokeWidth = 2.dp,
-      )
-      Text("  TESTING CONNECTION")
-    } else {
-      Text("TEST CONNECTION")
+    TextButton(
+      onClick = onTestConnection,
+      enabled = !commandInProgress && !connectionTestInProgress,
+    ) {
+      if (connectionTestInProgress) {
+        CircularProgressIndicator(
+          modifier = Modifier.size(16.dp),
+          strokeWidth = 2.dp,
+        )
+        Text("  TESTING CONNECTION")
+      } else {
+        Text("TEST CONNECTION")
+      }
     }
   }
 
