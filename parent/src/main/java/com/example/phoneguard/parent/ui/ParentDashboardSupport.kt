@@ -759,4 +759,3 @@ internal fun deviceStateLabel(device: ChildDevice): String =
     DeviceAccessState.OFFLINE -> "○ Device state is unknown"
   }
 
-@Preview(showBackground = true)
