@@ -2,14 +2,24 @@ package com.example.phoneguard.parent.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,117 +38,189 @@ internal fun ParentScheduleTab(
   onSetDailyLimit: (Int) -> Unit,
   onDisableDailyLimit: () -> Unit,
 ) {
-  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+  Text(
+    text = "Automatic controls",
+    style = MaterialTheme.typography.headlineSmall,
+    fontWeight = FontWeight.Bold,
+  )
+
+  Text(
+    text = "Choose when the phone locks and how much normal screen time is available each day.",
+    style = MaterialTheme.typography.bodyMedium,
+    color = MaterialTheme.colorScheme.onSurfaceVariant,
+  )
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(28.dp),
+    color = MaterialTheme.colorScheme.secondaryContainer,
+  ) {
     Column(
-      modifier = Modifier.padding(20.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
+      modifier = Modifier.padding(22.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      Text(
-        text = "Lock schedule",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-      )
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+        ) {
+          Icon(
+            imageVector = Icons.Default.EditCalendar,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(12.dp),
+          )
+        }
 
-      Text(
-        text = "Set the days and times when the Child phone will lock automatically.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "Lock schedule",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            text = "Automatically lock the Child phone during selected hours.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      }
 
-      OutlinedButton(
+      Button(
         onClick = onEditSchedule,
         enabled = !scheduleLoading && !commandInProgress,
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text(if (scheduleLoading) "LOADING…" else "EDIT SCHEDULE")
+        if (scheduleLoading) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onPrimary,
+          )
+        } else {
+          Text("EDIT SCHEDULE")
+        }
+      }
+
+      scheduleNotice?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
       }
     }
   }
 
   val dailyScreenTime = device.dailyScreenTime
   val dailyLimitMinutes = dailyScreenTime.limitMinutes
+  val remainingMinutes = dailyScreenTime.remainingMinutes
 
-  ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(28.dp),
+    color = MaterialTheme.colorScheme.surface,
+  ) {
     Column(
-      modifier = Modifier.padding(20.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
+      modifier = Modifier.padding(22.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      Text(
-        text = "Daily screen time",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-      )
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = MaterialTheme.colorScheme.primaryContainer,
+        ) {
+          Icon(
+            imageVector = Icons.Default.Timer,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(12.dp),
+          )
+        }
 
-      if (dailyLimitMinutes == null) {
-        Text(
-          text = "No daily limit is set.",
-          style = MaterialTheme.typography.bodyLarge,
-        )
-      } else {
-        Text(
-          text = "Daily limit: " + formatDurationMinutes(dailyLimitMinutes),
-          style = MaterialTheme.typography.bodyLarge,
-        )
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "Daily screen time",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            text =
+              dailyLimitMinutes
+                ?.let { formatDurationMinutes(it) + " daily limit" }
+                ?: "No daily limit",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
       }
 
-      Text(
-        text =
-          "Used today: " +
-            formatUsageSeconds(dailyScreenTime.usedSeconds),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        ScheduleMetric(
+          label = "USED TODAY",
+          value = formatUsageSeconds(dailyScreenTime.usedSeconds),
+          modifier = Modifier.weight(1f),
+        )
 
-      dailyScreenTime.remainingMinutes?.let { remaining ->
-        Text(
-          text =
-            if (dailyScreenTime.limitReached) {
-              "Daily limit reached."
-            } else {
-              "Remaining: " + formatDurationMinutes(remaining)
+        ScheduleMetric(
+          label = "REMAINING",
+          value =
+            when {
+              dailyLimitMinutes == null -> "No limit"
+              dailyScreenTime.limitReached -> "Reached"
+              remainingMinutes != null -> formatDurationMinutes(remainingMinutes)
+              else -> "—"
             },
-          style = MaterialTheme.typography.bodyMedium,
-          color =
-            if (dailyScreenTime.limitReached) {
-              MaterialTheme.colorScheme.error
-            } else {
-              MaterialTheme.colorScheme.onSurfaceVariant
-            },
+          modifier = Modifier.weight(1f),
         )
       }
-
-      Text(
-        text =
-          "Only normal unlocked use counts. Allowed apps used while the phone is locked do not consume this limit.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
 
       Button(
         onClick = { onSetDailyLimit(dailyLimitMinutes ?: 120) },
         enabled = !dailyLimitSaving,
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text(
-          if (dailyLimitSaving) {
-            "SAVING…"
-          } else if (dailyLimitMinutes == null) {
-            "SET DAILY LIMIT"
-          } else {
-            "CHANGE DAILY LIMIT"
-          },
-        )
+        if (dailyLimitSaving) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onPrimary,
+          )
+        } else {
+          Text(
+            if (dailyLimitMinutes == null) {
+              "SET DAILY LIMIT"
+            } else {
+              "CHANGE DAILY LIMIT"
+            },
+          )
+        }
       }
 
       if (dailyLimitMinutes != null) {
-        OutlinedButton(
+        TextButton(
           onClick = onDisableDailyLimit,
           enabled = !dailyLimitSaving,
           modifier = Modifier.fillMaxWidth(),
         ) {
-          Text("DISABLE DAILY LIMIT")
+          Text("REMOVE DAILY LIMIT")
         }
       }
+
+      Text(
+        text = "Allowed apps used while the phone is locked do not count toward this total.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
 
       dailyLimitNotice?.let { message ->
         Text(
@@ -157,12 +239,33 @@ internal fun ParentScheduleTab(
       }
     }
   }
+}
 
-  scheduleNotice?.let { message ->
-    Text(
-      text = message,
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+@Composable
+private fun ScheduleMetric(
+  label: String,
+  value: String,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier = modifier,
+    shape = RoundedCornerShape(18.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+  ) {
+    Column(
+      modifier = Modifier.padding(14.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Text(
+        text = value,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+      )
+    }
   }
 }
