@@ -195,14 +195,6 @@ fun AllowedAppsEditorScreen(
         }
       }
 
-      TextButton(
-        onClick = onCancel,
-        enabled = !saving,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text("CANCEL")
-      }
-
         Spacer(modifier = Modifier.height(8.dp))
       }
     }
