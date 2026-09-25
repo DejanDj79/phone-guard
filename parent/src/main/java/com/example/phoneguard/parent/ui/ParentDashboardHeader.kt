@@ -87,7 +87,7 @@ internal fun ParentDashboardShell(
         Column(
           modifier =
             Modifier
-              .fillMaxWidth()
+              .fillMaxSize()
               .padding(horizontal = 16.dp, vertical = 20.dp),
           verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
