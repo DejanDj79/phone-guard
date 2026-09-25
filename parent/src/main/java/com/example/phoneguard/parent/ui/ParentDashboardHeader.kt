@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -24,6 +25,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,8 +45,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,7 +65,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
 import com.example.phoneguard.core.ChildDevice
 
 internal val parentDashboardSections =
@@ -255,6 +255,35 @@ internal fun ParentDashboardShell(
       }
     }
 
+    if (accountMenuExpanded) {
+      BackHandler {
+        accountMenuExpanded = false
+      }
+
+      ParentAccountMenuOverlay(
+        parentEmail = parentEmail,
+        childName = device.displayName,
+        actionsBusy = actionsBusy,
+        onChangeDevice = {
+          accountMenuExpanded = false
+          onChangeDevice()
+        },
+        onOpenSettings = {
+          accountMenuExpanded = false
+          onSectionSelected(4)
+        },
+        onSignOut = {
+          accountMenuExpanded = false
+          onSignOut()
+        },
+        modifier =
+          Modifier
+            .align(Alignment.TopEnd)
+            .statusBarsPadding()
+            .padding(top = 58.dp, end = 12.dp),
+      )
+    }
+
     if (showBottomNavigation) {
       ParentFloatingBottomNavigation(
         selectedSection = selectedSection,
@@ -407,6 +436,123 @@ private fun ParentConnectionTestAction(
 }
 
 @Composable
+private fun ParentAccountMenuOverlay(
+  parentEmail: String?,
+  childName: String,
+  actionsBusy: Boolean,
+  onChangeDevice: () -> Unit,
+  onOpenSettings: () -> Unit,
+  onSignOut: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier = modifier.widthIn(min = 230.dp, max = 300.dp),
+    shape = RoundedCornerShape(18.dp),
+    color = MaterialTheme.colorScheme.surface,
+    shadowElevation = 12.dp,
+    tonalElevation = 0.dp,
+    border =
+      BorderStroke(
+        width = 1.dp,
+        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+      ),
+  ) {
+    Column(
+      modifier = Modifier.padding(vertical = 10.dp),
+    ) {
+      Column(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+      ) {
+        Text(
+          text = "PARENT ACCOUNT",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+          text =
+            parentEmail
+              ?.takeIf { it.isNotBlank() }
+              ?: "Signed in Parent",
+          style = MaterialTheme.typography.bodyMedium,
+          fontWeight = FontWeight.Bold,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+          text = "Managing " + childName,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+      }
+
+      Divider()
+
+      ParentAccountMenuRow(
+        icon = Icons.Default.Devices,
+        label = "Manage children",
+        enabled = !actionsBusy,
+        onClick = onChangeDevice,
+      )
+      ParentAccountMenuRow(
+        icon = Icons.Default.Settings,
+        label = "Settings",
+        onClick = onOpenSettings,
+      )
+
+      Divider()
+
+      ParentAccountMenuRow(
+        icon = Icons.Default.Logout,
+        label = "Sign out",
+        onClick = onSignOut,
+      )
+    }
+  }
+}
+
+@Composable
+private fun ParentAccountMenuRow(
+  icon: ImageVector,
+  label: String,
+  enabled: Boolean = true,
+  onClick: () -> Unit,
+) {
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .clickable(enabled = enabled, onClick = onClick)
+        .padding(horizontal = 16.dp, vertical = 13.dp),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Icon(
+      imageVector = icon,
+      contentDescription = null,
+      tint =
+        if (enabled) {
+          MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+          MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        },
+      modifier = Modifier.size(20.dp),
+    )
+    Text(
+      text = label,
+      style = MaterialTheme.typography.bodyMedium,
+      color =
+        if (enabled) {
+          MaterialTheme.colorScheme.onSurface
+        } else {
+          MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        },
+    )
+  }
+}
+
+@Composable
 private fun ParentAccountMenuButton(
   expanded: Boolean,
   onExpandedChange: (Boolean) -> Unit,
@@ -451,9 +597,7 @@ private fun ParentAccountMenuButton(
       }
     }
 
-    DropdownMenu(
-      expanded = expanded,
-      onDismissRequest = { onExpandedChange(false) },
+,
       properties =
         PopupProperties(
           focusable = false,
