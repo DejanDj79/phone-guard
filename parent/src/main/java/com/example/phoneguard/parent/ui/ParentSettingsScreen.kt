@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -187,7 +188,7 @@ fun ParentSettingsScreen(
             }
           },
           enabled = !signOutInProgress,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           if (signOutInProgress) {
             CircularProgressIndicator(
@@ -296,7 +297,7 @@ fun ParentSettingsScreen(
             currentPin.length in 4..6 &&
               newPin.length in 4..6 &&
               confirmPin.length in 4..6,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text("CHANGE PIN")
         }
@@ -372,7 +373,7 @@ fun ParentSettingsScreen(
                     relockDelay = delay
                     securityStore.setRelockAfterBackgroundMillis(delay)
                   },
-                  modifier = Modifier.weight(1f),
+                  modifier = Modifier.weight(1f).heightIn(min = 52.dp),
                   colors =
                     ButtonDefaults.buttonColors(
                       containerColor = ParentAccentColor,
@@ -387,7 +388,7 @@ fun ParentSettingsScreen(
                     relockDelay = delay
                     securityStore.setRelockAfterBackgroundMillis(delay)
                   },
-                  modifier = Modifier.weight(1f),
+                  modifier = Modifier.weight(1f).heightIn(min = 52.dp),
                 ) {
                   Text(label)
                 }
@@ -471,7 +472,7 @@ fun ParentSettingsScreen(
               }
             context.startActivity(intent)
           },
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text("ANDROID NOTIFICATION SETTINGS")
         }
