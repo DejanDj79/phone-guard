@@ -188,12 +188,12 @@ Home is the main command center and should prioritize only information that matt
 - [x] Parent pairing flow redesign
 - [x] Child five-step setup wizard
 - [x] Clarified Child Change Parent flow
-- [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting physical UI review
-- [ ] Parent Home final minimalist redesign — second pastel/minimal pass implemented after physical feedback; awaiting review
-- [ ] Schedule screen redesign
-- [ ] Apps screen redesign
-- [ ] Device / protection screen redesign
-- [ ] Settings screen redesign
+- [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting final physical UI approval
+- [ ] Parent Home final minimalist redesign — Manrope + `#88D9E0` pass implemented; awaiting final physical UI approval
+- [ ] Schedule screen redesign — overview and editor implemented in new visual system; awaiting physical review
+- [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
+- [ ] Device / protection screen redesign — implemented in new visual system; awaiting physical review
+- [ ] Settings screen redesign — implemented in new visual system; awaiting physical review
 - [ ] Pairing/setup visual polish pass after the main design system is established
 - [ ] Final accessibility, small-screen and dark-theme pass
 
