@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,7 +52,7 @@ internal fun ParentScheduleTab(
   )
 
   Surface(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.heightIn(min = 52.dp),
     shape = RoundedCornerShape(28.dp),
     color = MaterialTheme.colorScheme.secondaryContainer,
   ) {
@@ -92,7 +93,7 @@ internal fun ParentScheduleTab(
       OutlinedButton(
         onClick = onEditSchedule,
         enabled = !scheduleLoading && !commandInProgress,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
       ) {
         if (scheduleLoading) {
           CircularProgressIndicator(
@@ -120,7 +121,7 @@ internal fun ParentScheduleTab(
   val remainingMinutes = dailyScreenTime.remainingMinutes
 
   Surface(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.heightIn(min = 52.dp),
     shape = RoundedCornerShape(28.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
@@ -162,13 +163,13 @@ internal fun ParentScheduleTab(
       }
 
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         ScheduleMetric(
           label = "USED TODAY",
           value = formatUsageSeconds(dailyScreenTime.usedSeconds),
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
 
         ScheduleMetric(
@@ -180,14 +181,14 @@ internal fun ParentScheduleTab(
               remainingMinutes != null -> formatDurationMinutes(remainingMinutes)
               else -> "—"
             },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
       }
 
       OutlinedButton(
         onClick = { onSetDailyLimit(dailyLimitMinutes ?: 120) },
         enabled = !dailyLimitSaving,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
       ) {
         if (dailyLimitSaving) {
           CircularProgressIndicator(
@@ -210,7 +211,7 @@ internal fun ParentScheduleTab(
         TextButton(
           onClick = onDisableDailyLimit,
           enabled = !dailyLimitSaving,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
         ) {
           Text("REMOVE DAILY LIMIT")
         }
