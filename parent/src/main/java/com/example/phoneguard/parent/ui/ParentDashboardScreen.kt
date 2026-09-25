@@ -264,7 +264,7 @@ fun ParentDashboardScreen(
           uiState.scheduleError = null
           uiState.scheduleNotice = null
           uiState.allowedAppsSnapshot = null
-    uiState.allowedAppsEditorSnapshot = null
+          uiState.allowedAppsEditorSnapshot = null
           uiState.allowedAppsError = null
           uiState.allowedAppsNotice = null
           uiState.showBonusTimePicker = false
@@ -410,8 +410,7 @@ fun ParentDashboardScreen(
 
   uiState.allowedAppsEditorSnapshot?.let { snapshot ->
     BackHandler(enabled = !uiState.allowedAppsSaving) {
-      uiState.allowedAppsSnapshot = null
-    uiState.allowedAppsEditorSnapshot = null
+      uiState.allowedAppsEditorSnapshot = null
       uiState.allowedAppsError = null
     }
 
@@ -442,8 +441,12 @@ fun ParentDashboardScreen(
                   }
               ) {
                 is AllowedAppsSaveResult.Success -> {
-                  uiState.allowedAppsSnapshot = null
-    uiState.allowedAppsEditorSnapshot = null
+                  uiState.allowedAppsSnapshot =
+                    snapshot.copy(
+                      allowedPackages = allowedPackages,
+                      version = result.version,
+                    )
+                  uiState.allowedAppsEditorSnapshot = null
                   uiState.allowedAppsNotice =
                     if (device.isOnline) {
                       "Allowed apps saved and sent to the Child device."
@@ -464,8 +467,7 @@ fun ParentDashboardScreen(
       },
       onCancel = {
         if (!uiState.allowedAppsSaving) {
-          uiState.allowedAppsSnapshot = null
-    uiState.allowedAppsEditorSnapshot = null
+          uiState.allowedAppsEditorSnapshot = null
           uiState.allowedAppsError = null
         }
       },
