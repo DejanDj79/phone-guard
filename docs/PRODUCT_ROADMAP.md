@@ -350,3 +350,7 @@ Before publication we still need to decide:
 - Top headers now retain the root gradient while adding a thin darker outline and rounded lower corners so their shape remains visible without introducing a separate fill layer.
 
 - Bottom navigation is now a true overlay instead of a Scaffold bottomBar, so no reserved background strip sits behind its shadow. Main scroll content keeps internal bottom breathing room only. The selected orange circle is a single shared indicator that slides between icons using a spring/bounce animation.
+
+- Home connection test moved into the top-right header as a compact status action: neutral gray refresh icon when idle, spinner while testing, green check on confirmed success, red X on failure/timeout, then automatic reset to idle after about 3 seconds. Textual Test Connection controls/results were removed from Home content. Awaiting physical review.
+
+- Usage overview filters now use custom equal-width centered segments so Today/Yesterday/7 days fit cleanly with Michroma. Top-five app cards no longer show rank numbers. Recent activity's UNLOCKED PHONE label is neutral and the app timeline starts with more breathing room below the header. Awaiting physical review.
