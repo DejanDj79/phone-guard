@@ -514,7 +514,12 @@ class ChildBackendClient {
         appsJson.put(
           JSONObject()
             .put("packageName", app.packageName)
-            .put("label", app.label),
+            .put("label", app.label)
+            .also { json ->
+              if (!app.iconBase64.isNullOrBlank()) {
+                json.put("iconBase64", app.iconBase64)
+              }
+            },
         )
       }
 
