@@ -113,7 +113,7 @@ internal fun ParentOverviewTab(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-          Button(
+          OutlinedButton(
             onClick = { onRespondToTimeRequest(request, true) },
             enabled = !timeRequestResponding,
             modifier = Modifier.weight(1f),
@@ -234,7 +234,7 @@ internal fun ParentOverviewTab(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        Button(
+        OutlinedButton(
           onClick = if (isLocked) onUnlock else onLock,
           enabled = !commandInProgress && !connectionTestInProgress,
           modifier = Modifier.weight(1f),
