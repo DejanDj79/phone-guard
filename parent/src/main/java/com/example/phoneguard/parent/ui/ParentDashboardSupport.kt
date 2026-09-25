@@ -2,15 +2,19 @@ package com.example.phoneguard.parent.ui
 
 import android.widget.NumberPicker
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -18,6 +22,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -32,7 +38,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.phoneguard.core.AllowedAppsSnapshot
 import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.core.InstalledAppInfo
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
@@ -477,6 +485,7 @@ internal fun ProtectionStatusLine(
 internal fun AppUsageDayContent(
   day: AppUsageDay?,
   emptyMessage: String,
+  inventory: AllowedAppsSnapshot?,
 ) {
   if (day == null) {
     Text(
@@ -487,21 +496,34 @@ internal fun AppUsageDayContent(
     return
   }
 
-  Text(
-    text = "Tracked app time: " + formatUsageSeconds(day.totalSeconds),
-    style = MaterialTheme.typography.bodyLarge,
-    fontWeight = FontWeight.SemiBold,
-  )
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Column(modifier = Modifier.weight(1f)) {
+      Text(
+        text = "Tracked app time",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Text(
+        text = formatUsageSeconds(day.totalSeconds),
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+      )
+    }
 
-  Text(
-    text = formatUsageDate(day.usageDate),
-    style = MaterialTheme.typography.bodySmall,
-    color = MaterialTheme.colorScheme.onSurfaceVariant,
-  )
+    Text(
+      text = formatUsageDate(day.usageDate),
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+  }
 
   val topApps =
     day.apps
       .filter { it.seconds > 0 }
+      .sortedByDescending { it.seconds }
       .take(APP_USAGE_PREVIEW_COUNT)
 
   if (topApps.isEmpty()) {
@@ -511,21 +533,11 @@ internal fun AppUsageDayContent(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
   } else {
-    Text(
-      text = "Top apps",
-      style = MaterialTheme.typography.labelLarge,
-      fontWeight = FontWeight.SemiBold,
-    )
-
     topApps.forEachIndexed { index, app ->
-      Text(
-        text =
-          (index + 1).toString() +
-            ". " +
-            app.label +
-            " · " +
-            formatUsageSeconds(app.seconds),
-        style = MaterialTheme.typography.bodyMedium,
+      UsageAppCard(
+        rank = index + 1,
+        app = app,
+        inventory = inventory,
       )
     }
   }
@@ -535,6 +547,7 @@ internal fun AppUsageDayContent(
 internal fun AppUsageWeekContent(
   days: List<AppUsageDay>,
   referenceDate: String?,
+  inventory: AllowedAppsSnapshot?,
 ) {
   val dateKeys = usageWeekDateKeys(referenceDate ?: days.firstOrNull()?.usageDate)
   if (dateKeys.isEmpty()) {
@@ -558,35 +571,32 @@ internal fun AppUsageWeekContent(
       ?.coerceAtLeast(1)
       ?: 1
 
-  Text(
-    text = "7-day total: " + formatUsageSeconds(totalSeconds),
-    style = MaterialTheme.typography.bodyLarge,
-    fontWeight = FontWeight.SemiBold,
-  )
-
-  Text(
-    text = "Daily average: " + formatUsageSeconds(averageSeconds),
-    style = MaterialTheme.typography.bodyMedium,
-    color = MaterialTheme.colorScheme.onSurfaceVariant,
-  )
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    UsageSummaryCard(
+      label = "7-DAY TOTAL",
+      value = formatUsageSeconds(totalSeconds),
+      modifier = Modifier.weight(1f),
+    )
+    UsageSummaryCard(
+      label = "DAILY AVG",
+      value = formatUsageSeconds(averageSeconds),
+      modifier = Modifier.weight(1f),
+    )
+  }
 
   Text(
     text = "Daily usage",
     style = MaterialTheme.typography.labelLarge,
-    fontWeight = FontWeight.SemiBold,
+    fontWeight = FontWeight.Bold,
   )
 
-  dailySeconds.forEach { (dateKey, seconds) ->
-    Text(
-      text =
-        formatUsageDayLabel(dateKey) +
-          "  " +
-          usageBar(seconds, maxSeconds) +
-          "  " +
-          formatUsageSeconds(seconds),
-      style = MaterialTheme.typography.bodyMedium,
-    )
-  }
+  UsageWeekBarChart(
+    dailySeconds = dailySeconds,
+    maxSeconds = maxSeconds,
+  )
 
   val weekDays =
     dateKeys.mapNotNull(byDate::get)
@@ -595,9 +605,9 @@ internal fun AppUsageWeekContent(
       .take(APP_USAGE_PREVIEW_COUNT)
 
   Text(
-    text = "Top apps · 7 days",
+    text = "Top 5 apps",
     style = MaterialTheme.typography.labelLarge,
-    fontWeight = FontWeight.SemiBold,
+    fontWeight = FontWeight.Bold,
   )
 
   if (topApps.isEmpty()) {
@@ -608,15 +618,179 @@ internal fun AppUsageWeekContent(
     )
   } else {
     topApps.forEachIndexed { index, app ->
-      Text(
-        text =
-          (index + 1).toString() +
-            ". " +
-            app.label +
-            " · " +
-            formatUsageSeconds(app.seconds),
-        style = MaterialTheme.typography.bodyMedium,
+      UsageAppCard(
+        rank = index + 1,
+        app = app,
+        inventory = inventory,
       )
+    }
+  }
+}
+
+@Composable
+private fun UsageAppCard(
+  rank: Int,
+  app: AppUsageEntry,
+  inventory: AllowedAppsSnapshot?,
+) {
+  val installedApp =
+    inventory
+      ?.installedApps
+      ?.firstOrNull { it.packageName == app.packageName }
+      ?: InstalledAppInfo(
+        packageName = app.packageName,
+        label = app.label,
+      )
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(18.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Surface(
+        modifier = Modifier.size(28.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+      ) {
+        Box(
+          contentAlignment = Alignment.Center,
+        ) {
+          Text(
+            text = rank.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+          )
+        }
+      }
+
+      ParentAppIcon(
+        app = installedApp,
+        modifier = Modifier.size(38.dp),
+      )
+
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = app.label,
+          style = MaterialTheme.typography.bodyLarge,
+          fontWeight = FontWeight.Bold,
+          maxLines = 1,
+        )
+        Text(
+          text = "App usage",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+
+      Text(
+        text = formatUsageSeconds(app.seconds),
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.End,
+      )
+    }
+  }
+}
+
+@Composable
+private fun UsageSummaryCard(
+  label: String,
+  value: String,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier = modifier,
+    shape = RoundedCornerShape(16.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+  ) {
+    Column(
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+      verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Text(
+        text = value,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+      )
+    }
+  }
+}
+
+@Composable
+private fun UsageWeekBarChart(
+  dailySeconds: List<Pair<String, Int>>,
+  maxSeconds: Int,
+) {
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(20.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
+  ) {
+    Row(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 10.dp, vertical = 14.dp),
+      horizontalArrangement = Arrangement.spacedBy(5.dp),
+      verticalAlignment = Alignment.Bottom,
+    ) {
+      dailySeconds.forEach { (dateKey, seconds) ->
+        val ratio =
+          (seconds.toFloat() / maxSeconds.coerceAtLeast(1).toFloat())
+            .coerceIn(0f, 1f)
+        val barHeight =
+          if (seconds <= 0) {
+            4.dp
+          } else {
+            (96.dp * ratio).coerceAtLeast(10.dp)
+          }
+
+        Column(
+          modifier = Modifier.weight(1f),
+          horizontalAlignment = Alignment.CenterHorizontally,
+          verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+          Box(
+            modifier =
+              Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            contentAlignment = Alignment.BottomCenter,
+          ) {
+            Surface(
+              modifier =
+                Modifier
+                  .width(18.dp)
+                  .height(barHeight),
+              shape = RoundedCornerShape(topStart = 9.dp, topEnd = 9.dp),
+              color =
+                if (seconds > 0) {
+                  MaterialTheme.colorScheme.primary
+                } else {
+                  MaterialTheme.colorScheme.outlineVariant
+                },
+            ) {}
+          }
+
+          Text(
+            text = formatUsageDayLabel(dateKey),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      }
     }
   }
 }
