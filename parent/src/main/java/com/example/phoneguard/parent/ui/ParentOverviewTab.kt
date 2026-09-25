@@ -485,7 +485,7 @@ internal fun ParentOverviewTab(
       }
     }
   }
-
+}
 
 @Composable
 private fun UsageViewSegment(
