@@ -1148,15 +1148,15 @@ fun ParentDashboardScreen(
       ParentDeviceTab(
         device = device,
         pairedDeviceCount = uiState.pairedDevices.size,
-        uiState.refreshInProgress = uiState.refreshInProgress,
-        uiState.commandInProgress = uiState.commandInProgress,
-        uiState.deviceRenaming = uiState.deviceRenaming,
-        uiState.deviceUnpairing = uiState.deviceUnpairing,
-        uiState.protectionHistory = uiState.protectionHistory,
-        uiState.protectionHistoryLoading = uiState.protectionHistoryLoading,
-        uiState.protectionHistoryError = uiState.protectionHistoryError,
-        uiState.showAllProtectionHistory = uiState.showAllProtectionHistory,
-        uiState.protectionHistoryClearing = uiState.protectionHistoryClearing,
+        refreshInProgress = uiState.refreshInProgress,
+        commandInProgress = uiState.commandInProgress,
+        deviceRenaming = uiState.deviceRenaming,
+        deviceUnpairing = uiState.deviceUnpairing,
+        protectionHistory = uiState.protectionHistory,
+        protectionHistoryLoading = uiState.protectionHistoryLoading,
+        protectionHistoryError = uiState.protectionHistoryError,
+        showAllProtectionHistory = uiState.showAllProtectionHistory,
+        protectionHistoryClearing = uiState.protectionHistoryClearing,
         onShowDevices = { uiState.showDevices = true },
         onRefreshStatus = {
           if (!uiState.refreshInProgress) {
@@ -1233,20 +1233,20 @@ fun ParentDashboardScreen(
     if (uiState.selectedTab == 0) {
       ParentOverviewTab(
         device = device,
-        uiState.pendingTimeRequest = uiState.pendingTimeRequest,
-        uiState.timeRequestResponding = uiState.timeRequestResponding,
-        uiState.timeRequestNotice = uiState.timeRequestNotice,
-        uiState.timeRequestError = uiState.timeRequestError,
-        uiState.commandInProgress = uiState.commandInProgress,
-        uiState.commandProgressMessage = uiState.commandProgressMessage,
-        uiState.commandNotice = uiState.commandNotice,
-        uiState.connectionTestInProgress = uiState.connectionTestInProgress,
-        uiState.connectionTestMessage = uiState.connectionTestMessage,
-        uiState.connectionTestError = uiState.connectionTestError,
-        uiState.appUsageDays = uiState.appUsageDays,
-        uiState.appUsageLoading = uiState.appUsageLoading,
-        uiState.appUsageError = uiState.appUsageError,
-        uiState.appUsageView = uiState.appUsageView,
+        pendingTimeRequest = uiState.pendingTimeRequest,
+        timeRequestResponding = uiState.timeRequestResponding,
+        timeRequestNotice = uiState.timeRequestNotice,
+        timeRequestError = uiState.timeRequestError,
+        commandInProgress = uiState.commandInProgress,
+        commandProgressMessage = uiState.commandProgressMessage,
+        commandNotice = uiState.commandNotice,
+        connectionTestInProgress = uiState.connectionTestInProgress,
+        connectionTestMessage = uiState.connectionTestMessage,
+        connectionTestError = uiState.connectionTestError,
+        appUsageDays = uiState.appUsageDays,
+        appUsageLoading = uiState.appUsageLoading,
+        appUsageError = uiState.appUsageError,
+        appUsageView = uiState.appUsageView,
         onRespondToTimeRequest = { request, approve ->
           respondToTimeRequest(request, approve)
         },
@@ -1260,10 +1260,10 @@ fun ParentDashboardScreen(
 
     if (uiState.selectedTab == 2) {
       ParentAppsTab(
-        uiState.allowedAppsLoading = uiState.allowedAppsLoading,
-        uiState.allowedAppsSaving = uiState.allowedAppsSaving,
-        uiState.commandInProgress = uiState.commandInProgress,
-        uiState.allowedAppsNotice = uiState.allowedAppsNotice,
+        allowedAppsLoading = uiState.allowedAppsLoading,
+        allowedAppsSaving = uiState.allowedAppsSaving,
+        commandInProgress = uiState.commandInProgress,
+        allowedAppsNotice = uiState.allowedAppsNotice,
         onManageAllowedApps = {
           if (!uiState.allowedAppsLoading) {
             val controlToken = settingsStore.controlToken(device.deviceId)
@@ -1306,12 +1306,12 @@ fun ParentDashboardScreen(
     if (uiState.selectedTab == 1) {
       ParentScheduleTab(
         device = device,
-        uiState.scheduleLoading = uiState.scheduleLoading,
-        uiState.commandInProgress = uiState.commandInProgress,
-        uiState.dailyLimitSaving = uiState.dailyLimitSaving,
-        uiState.dailyLimitNotice = uiState.dailyLimitNotice,
-        uiState.dailyLimitError = uiState.dailyLimitError,
-        uiState.scheduleNotice = uiState.scheduleNotice,
+        scheduleLoading = uiState.scheduleLoading,
+        commandInProgress = uiState.commandInProgress,
+        dailyLimitSaving = uiState.dailyLimitSaving,
+        dailyLimitNotice = uiState.dailyLimitNotice,
+        dailyLimitError = uiState.dailyLimitError,
+        scheduleNotice = uiState.scheduleNotice,
         onEditSchedule = {
           if (!uiState.scheduleLoading) {
             val controlToken = settingsStore.controlToken(device.deviceId)
