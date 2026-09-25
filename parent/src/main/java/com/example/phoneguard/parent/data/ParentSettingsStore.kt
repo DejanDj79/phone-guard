@@ -15,7 +15,10 @@ data class PairedChildDevice(
 
 class ParentSettingsStore(context: Context) {
   private val preferences =
-    context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    context.getSharedPreferences(
+      ParentAccountScopeStore(context).settingsPreferencesName(),
+      Context.MODE_PRIVATE,
+    )
   private val tokenCipher = ParentTokenCipher()
 
   /**
@@ -289,8 +292,6 @@ class ParentSettingsStore(context: Context) {
   }
 
   private companion object {
-    const val PREFERENCES_NAME = "phone_guard_parent_settings"
-
     const val KEY_PAIRED_DEVICES = "paired_devices_v2"
     const val KEY_SELECTED_DEVICE_ID = "selected_device_id"
 
