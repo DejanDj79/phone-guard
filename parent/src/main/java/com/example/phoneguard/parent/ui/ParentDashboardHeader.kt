@@ -22,23 +22,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -69,10 +68,10 @@ import com.example.phoneguard.core.ChildDevice
 
 internal val parentDashboardSections =
   listOf(
-    ParentDashboardSection("Home", Icons.Default.Home),
-    ParentDashboardSection("Schedule", Icons.Default.Schedule),
-    ParentDashboardSection("Apps", Icons.Default.Apps),
-    ParentDashboardSection("Device", Icons.Default.PhoneAndroid),
+    ParentDashboardSection("Home", Icons.Rounded.Home),
+    ParentDashboardSection("Schedule", Icons.Rounded.CalendarMonth),
+    ParentDashboardSection("Apps", Icons.Rounded.GridView),
+    ParentDashboardSection("Device", Icons.Rounded.Smartphone),
     ParentDashboardSection("Settings", Icons.Default.Settings),
   )
 
@@ -263,7 +262,6 @@ internal fun ParentDashboardShell(
           Modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
-            .navigationBarsPadding()
             .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
       )
     }
