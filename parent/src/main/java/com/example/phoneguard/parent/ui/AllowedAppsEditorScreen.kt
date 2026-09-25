@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -171,22 +174,42 @@ fun AllowedAppsEditorScreen(
           Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Button(
-          onClick = { onSave(selectedPackages) },
-          enabled = !saving && snapshot.installedApps.isNotEmpty(),
+        FloatingActionButton(
+          onClick = {
+            if (!saving && snapshot.installedApps.isNotEmpty()) {
+              onSave(selectedPackages)
+            }
+          },
           modifier =
             Modifier
               .align(Alignment.BottomEnd)
               .padding(end = 20.dp, bottom = 18.dp),
+          shape = androidx.compose.foundation.shape.CircleShape,
+          containerColor =
+            if (!saving && snapshot.installedApps.isNotEmpty()) {
+              ParentSectionHeaderColor
+            } else {
+              MaterialTheme.colorScheme.surfaceVariant
+            },
+          contentColor =
+            if (!saving && snapshot.installedApps.isNotEmpty()) {
+              MaterialTheme.colorScheme.onPrimary
+            } else {
+              MaterialTheme.colorScheme.onSurfaceVariant
+            },
         ) {
           if (saving) {
             CircularProgressIndicator(
-              modifier = Modifier.size(18.dp),
+              modifier = Modifier.size(20.dp),
               strokeWidth = 2.dp,
-              color = MaterialTheme.colorScheme.onPrimary,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           } else {
-            Text("SAVE")
+            Icon(
+              imageVector = Icons.Default.Check,
+              contentDescription = "Save allowed apps",
+              modifier = Modifier.size(24.dp),
+            )
           }
         }
       }
