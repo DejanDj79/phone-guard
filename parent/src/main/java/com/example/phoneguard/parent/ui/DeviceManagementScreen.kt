@@ -2,12 +2,11 @@ package com.example.phoneguard.parent.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -40,91 +39,85 @@ fun DeviceManagementScreen(
   val busy = renaming || unpairing
   val normalizedName = name.trim().replace(Regex("\\s+"), " ")
 
-  Surface(modifier = modifier.fillMaxSize()) {
+  Surface(
+    modifier = modifier.fillMaxSize(),
+    color = MaterialTheme.colorScheme.background,
+  ) {
     Column(
-      modifier =
-        Modifier
-          .fillMaxSize()
-          .statusBarsPadding()
-          .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 24.dp),
-      verticalArrangement = Arrangement.spacedBy(16.dp),
+      modifier = Modifier.fillMaxSize(),
     ) {
-      Text(
-        text = "Device management",
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
+      ParentDetailHeader(
+        title = "Device management",
+        onBack = onBack,
       )
 
-      Text(
-        text = "Rename the paired Child device or remove this Parent connection.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-
-      OutlinedTextField(
-        value = name,
-        onValueChange = { value ->
-          if (value.length <= 40) {
-            name = value
-          }
-        },
-        enabled = !busy,
-        label = { Text("Device name") },
-        singleLine = true,
-        supportingText = { Text("1–40 characters") },
-        modifier = Modifier.fillMaxWidth(),
-      )
-
-      Button(
-        onClick = { onRename(normalizedName) },
-        enabled =
-          !busy &&
-            normalizedName.isNotBlank() &&
-            normalizedName != currentName,
-        modifier = Modifier.fillMaxWidth(),
+      Column(
+        modifier =
+          Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
       ) {
-        Text(if (renaming) "SAVING…" else "SAVE NAME")
-      }
-
-      Spacer(modifier = Modifier.height(12.dp))
-
-      Text(
-        text = "Remove Parent connection",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-      )
-
-      Text(
-        text =
-          "Unpairing revokes this Parent app immediately. The Child keeps its current lock schedule and allowed-app rules until it is paired again.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-
-      OutlinedButton(
-        onClick = { showUnpairConfirmation = true },
-        enabled = !busy,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text("UNPAIR DEVICE")
-      }
-
-      errorMessage?.let { message ->
         Text(
-          text = message,
+          text = "Rename the paired Child device or remove this Parent connection.",
           style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.error,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-      }
 
-      Spacer(modifier = Modifier.weight(1f))
+        OutlinedTextField(
+          value = name,
+          onValueChange = { value ->
+            if (value.length <= 40) {
+              name = value
+            }
+          },
+          enabled = !busy,
+          label = { Text("Device name") },
+          singleLine = true,
+          supportingText = { Text("1–40 characters") },
+          modifier = Modifier.fillMaxWidth(),
+        )
 
-      OutlinedButton(
-        onClick = onBack,
-        enabled = !busy,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text("BACK")
+        Button(
+          onClick = { onRename(normalizedName) },
+          enabled =
+            !busy &&
+              normalizedName.isNotBlank() &&
+              normalizedName != currentName,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text(if (renaming) "SAVING…" else "SAVE NAME")
+        }
+
+        Text(
+          text = "Remove Parent connection",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+        )
+
+        Text(
+          text =
+            "Unpairing revokes this Parent app immediately. The Child keeps its current lock schedule and allowed-app rules until it is paired again.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        OutlinedButton(
+          onClick = { showUnpairConfirmation = true },
+          enabled = !busy,
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("UNPAIR DEVICE")
+        }
+
+        errorMessage?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+          )
+        }
       }
     }
   }
