@@ -13,11 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -123,27 +120,10 @@ fun AllowedAppsEditorScreen(
               verticalAlignment = Alignment.CenterVertically,
               horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-              Surface(
-                shape = RoundedCornerShape(14.dp),
-                color =
-                  if (selected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                  } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                  },
-              ) {
-                Icon(
-                  imageVector = Icons.Default.Apps,
-                  contentDescription = null,
-                  tint =
-                    if (selected) {
-                      MaterialTheme.colorScheme.primary
-                    } else {
-                      MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                  modifier = Modifier.padding(10.dp),
-                )
-              }
+              ParentAppIcon(
+                app = app,
+                modifier = Modifier.size(42.dp),
+              )
 
               Text(
                 text = app.label,
