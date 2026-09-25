@@ -174,7 +174,7 @@ internal fun ParentDashboardShell(
                     Icon(
                       imageVector = Icons.Default.ArrowBack,
                       contentDescription = "Back to Home",
-                      tint = ParentAccentColor,
+                      tint = MaterialTheme.colorScheme.onSurface,
                       modifier = Modifier.size(20.dp),
                     )
                   }
@@ -235,8 +235,8 @@ internal fun ParentDashboardShell(
           Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(30.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-            shadowElevation = 8.dp,
+            color = Color.Transparent,
+            shadowElevation = 10.dp,
           ) {
             Row(
               modifier =
@@ -259,7 +259,7 @@ internal fun ParentDashboardShell(
                     if (selected) {
                       ParentAccentColor
                     } else {
-                      MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
+                      MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
                     },
                 ) {
                   Box(
@@ -336,7 +336,7 @@ private fun ParentAccountMenuButton(
         Icon(
           imageVector = Icons.Default.AccountCircle,
           contentDescription = "Parent menu",
-          tint = ParentAccentColor,
+          tint = MaterialTheme.colorScheme.onSurface,
           modifier = Modifier.size(20.dp),
         )
       }
