@@ -509,7 +509,7 @@ private fun UsageViewSegment(
       modifier
         .height(40.dp)
         .clickable(onClick = onClick),
-    shape = RoundedCornerShape(20.dp),
+    shape = ParentActionShape,
     color =
       if (selected) {
         ParentAccentColor
