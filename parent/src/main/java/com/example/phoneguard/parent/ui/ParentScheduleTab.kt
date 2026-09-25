@@ -94,7 +94,8 @@ internal fun ParentScheduleTab(
         onClick = onEditSchedule,
         enabled = !scheduleLoading && !commandInProgress,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         if (scheduleLoading) {
           CircularProgressIndicator(
             modifier = Modifier.size(18.dp),
@@ -189,7 +190,8 @@ internal fun ParentScheduleTab(
         onClick = { onSetDailyLimit(dailyLimitMinutes ?: 120) },
         enabled = !dailyLimitSaving,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         if (dailyLimitSaving) {
           CircularProgressIndicator(
             modifier = Modifier.size(18.dp),
@@ -212,7 +214,8 @@ internal fun ParentScheduleTab(
           onClick = onDisableDailyLimit,
           enabled = !dailyLimitSaving,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("REMOVE DAILY LIMIT")
         }
       }
