@@ -90,6 +90,7 @@ internal fun ParentDashboardShell(
 
   Scaffold(
     modifier = modifier.fillMaxSize(),
+    containerColor = Color.Transparent,
     topBar = {
       AnimatedContent(
         targetState = selectedSection,
@@ -119,16 +120,11 @@ internal fun ParentDashboardShell(
         val isHome = sectionIndex == 0
         val headerContainerColor =
           if (isHome) {
-            MaterialTheme.colorScheme.background
+            Color.Transparent
           } else {
-            ParentSectionHeaderColor
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.90f)
           }
-        val headerContentColor =
-          if (isHome) {
-            MaterialTheme.colorScheme.onBackground
-          } else {
-            MaterialTheme.colorScheme.onPrimary
-          }
+        val headerContentColor = MaterialTheme.colorScheme.onSurface
 
         Surface(
           color = headerContainerColor,
@@ -165,7 +161,7 @@ internal fun ParentDashboardShell(
               } else {
                 Surface(
                   shape = CircleShape,
-                  color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                  color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
                   modifier =
                     Modifier
                       .padding(start = 10.dp)
@@ -178,7 +174,7 @@ internal fun ParentDashboardShell(
                     Icon(
                       imageVector = Icons.Default.ArrowBack,
                       contentDescription = "Back to Home",
-                      tint = ParentSectionHeaderColor,
+                      tint = ParentAccentColor,
                       modifier = Modifier.size(20.dp),
                     )
                   }
@@ -239,8 +235,8 @@ internal fun ParentDashboardShell(
           Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(30.dp),
-            color = ParentSectionHeaderColor,
-            shadowElevation = 10.dp,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+            shadowElevation = 8.dp,
           ) {
             Row(
               modifier =
@@ -261,9 +257,9 @@ internal fun ParentDashboardShell(
                   shape = CircleShape,
                   color =
                     if (selected) {
-                      Color.White
+                      ParentAccentColor
                     } else {
-                      Color.White.copy(alpha = 0.14f)
+                      MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
                     },
                 ) {
                   Box(
@@ -275,9 +271,9 @@ internal fun ParentDashboardShell(
                       contentDescription = section.label,
                       tint =
                         if (selected) {
-                          ParentSectionHeaderColor
-                        } else {
                           Color.White
+                        } else {
+                          MaterialTheme.colorScheme.onSurfaceVariant
                         },
                       modifier = Modifier.size(22.dp),
                     )
@@ -318,9 +314,9 @@ private fun ParentAccountMenuButton(
       shape = CircleShape,
       color =
         if (coloredHeader) {
-          MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
+          MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
         } else {
-          ParentSectionHeaderColor
+          MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
         },
       modifier =
         if (coloredHeader) {
@@ -340,12 +336,7 @@ private fun ParentAccountMenuButton(
         Icon(
           imageVector = Icons.Default.AccountCircle,
           contentDescription = "Parent menu",
-          tint =
-            if (coloredHeader) {
-              ParentSectionHeaderColor
-            } else {
-              Color.White
-            },
+          tint = ParentAccentColor,
           modifier = Modifier.size(20.dp),
         )
       }
