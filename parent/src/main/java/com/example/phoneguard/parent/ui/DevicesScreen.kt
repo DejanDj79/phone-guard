@@ -92,7 +92,8 @@ fun DevicesScreen(
                 onClick = { onSelectDevice(device) },
                 enabled = !busy,
                 modifier = Modifier.heightIn(min = 52.dp),
-              ) {
+      shape = ParentActionShape,
+    ) {
                 Text("SELECT DEVICE")
               }
             }
@@ -104,7 +105,8 @@ fun DevicesScreen(
         onClick = onAddDevice,
         enabled = !busy,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         Text("+ ADD DEVICE")
       }
 
