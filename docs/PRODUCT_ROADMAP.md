@@ -1,6 +1,6 @@
 # PhoneGuard Product Roadmap
 
-_Last updated: 2026-09-25_
+_Last updated: 2026-09-25 — modern UI direction approved_
 
 This document tracks product decisions for the future Play Store release, especially which features should remain available in the free version and which features are candidates for a paid/premium version.
 
@@ -130,6 +130,76 @@ PhoneGuard therefore treats `Precise timing` as a capability status reported by 
 During ADB diagnostics, package and UID AppOps could show different values, and the package permission still reported `SCHEDULE_EXACT_ALARM: granted=true`. This device-specific behavior should be kept in mind during future OEM testing rather than treating the Settings toggle itself as the source of truth.
 
 
+## UI / UX direction and implementation status
+
+**Design direction approved:** modern, minimalist Android UI rather than the current prototype/admin-panel appearance.
+
+### Global Parent app shell
+
+The Parent app should use:
+
+- A clean Material 3 top app bar.
+- Hamburger/menu icon on the left.
+- Current Child device context visible in the top bar.
+- Parent account/avatar icon on the right.
+- A navigation drawer instead of the current top tab row.
+- Main drawer destinations:
+  - Home
+  - Schedule
+  - Apps
+  - Device
+  - Settings
+- Account menu should expose the signed-in Parent identity and account actions such as Settings and Sign out.
+- Child switching remains a separate device-selection action and should not be confused with Parent account switching.
+
+### Parent Home
+
+Home is the main command center and should prioritize only information that matters now:
+
+1. Child status hero area
+   - Child name
+   - Online / last seen
+   - Available / locked / bonus-time state
+2. Primary controls
+   - Lock now or Unlock, depending on current state
+   - Add bonus time
+3. Compact daily summary
+   - Screen time today
+   - Daily limit / remaining time
+4. Contextual attention card
+   - Only shown when the Child is offline for a meaningful period or a protection capability needs attention
+5. Recent / relevant activity
+   - Time requests, recent control feedback and important protection events
+6. Detailed usage remains available without overwhelming the first viewport.
+
+### Visual rules
+
+- Prefer whitespace and typography over many bordered boxes.
+- Avoid repeating the same device status in multiple cards.
+- Keep only one obvious primary action in a section.
+- Use status colors only when they carry meaning.
+- Hide healthy-state warnings instead of showing permanent "all good" panels.
+- Avoid technical/backend language in normal product UI.
+- Keep Free and Premium visual treatment consistent; do not advertise unfinished Premium features in the Free dashboard.
+
+### UI implementation tracker
+
+- [x] Parent authentication / account-aware local storage
+- [x] Parent pairing flow redesign
+- [x] Child five-step setup wizard
+- [x] Clarified Child Change Parent flow
+- [ ] Parent modern app shell: top app bar + navigation drawer + account menu
+- [ ] Parent Home final minimalist redesign
+- [ ] Schedule screen redesign
+- [ ] Apps screen redesign
+- [ ] Device / protection screen redesign
+- [ ] Settings screen redesign
+- [ ] Pairing/setup visual polish pass after the main design system is established
+- [ ] Final accessibility, small-screen and dark-theme pass
+
+The current implementation should be updated incrementally against this tracker. When a UI phase is completed and physically reviewed, mark it complete here rather than relying only on chat history.
+
+
 ## Paid / Premium candidates
 
 ### 1. Per-app daily limits
@@ -226,8 +296,10 @@ Before publication we still need to decide:
 - The current reliability pass was completed before starting the planned Parent UI redesign.
 - **Per-app daily limits** were intentionally postponed and reserved as a Premium candidate.
 - **New app installed alerts** were intentionally postponed and reserved as a Premium candidate.
-- UI appearance will be redesigned later; current screens are functional prototypes.
+- The earlier prototype/admin-style dashboard was rejected in favor of a modern minimalist visual direction with a top app bar, navigation drawer and account menu.
 - Parent and Child will remain separate Android apps; there will be no Parent/Child role picker inside one APK.
 - Parent authentication is required and will support Google plus email/password through Supabase Auth.
 - Child devices will not have independent user accounts; they are enrolled through Parent pairing.
 - Parent onboarding/authentication is being implemented before the final Parent dashboard redesign.
+- Parent top tabs will be removed; the approved navigation direction is a hamburger drawer plus a Parent account/avatar action in the top app bar.
+- `docs/PRODUCT_ROADMAP.md` is the persistent source of truth for UI phases and should be updated as each phase is completed.
