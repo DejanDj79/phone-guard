@@ -90,8 +90,8 @@ internal fun ParentDetailHeader(
         }
 
         Text(
-          text = title,
-          style = MaterialTheme.typography.titleLarge,
+          text = title.uppercase(),
+          style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
           color = MaterialTheme.colorScheme.onPrimary,
           modifier = Modifier.align(Alignment.Center),
