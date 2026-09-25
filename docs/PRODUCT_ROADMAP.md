@@ -364,3 +364,7 @@ Before publication we still need to decide:
 - Parent buttons now use a taller content-sized action style: standard Button/OutlinedButton/TextButton controls target a 52dp minimum height and no longer stretch full-width unless they are intentional paired/segmented controls. Awaiting physical review.
 
 - Parent account icon now toggles its menu open/closed on repeated taps while keeping the non-focusable popup behavior that prevents native navigation controls from shifting the floating bottom bar.
+
+- Parent account menu now renders as an in-window overlay instead of Material DropdownMenu/Popup. Repeated taps on the account icon reliably toggle it open/closed, Back closes it, and it remains inside the immersive Parent window so native navigation controls should not reappear.
+
+- Action buttons now use a 12dp corner radius, retain the 52dp minimum height, and standalone actions are visually centered in their card/screen while staying content-width. Intentional paired controls keep their shared-row layout. Usage overview segments use the same compact radius. Awaiting physical review.
