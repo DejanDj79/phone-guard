@@ -1,23 +1,26 @@
 package com.example.phoneguard.parent.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
@@ -65,29 +69,37 @@ internal fun ParentDeviceTab(
   val protectionComplete =
     protectionKnown && protectionValues.all { it == true }
 
-  Text(
-    text = "Device",
-    style = MaterialTheme.typography.headlineSmall,
-    fontWeight = FontWeight.Bold,
-  )
-
   Surface(
     modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(28.dp),
-    color = MaterialTheme.colorScheme.secondaryContainer,
+    color = MaterialTheme.colorScheme.surface,
   ) {
     Column(
-      modifier = Modifier.padding(22.dp),
-      verticalArrangement = Arrangement.spacedBy(16.dp),
+      modifier = Modifier.padding(20.dp),
+      verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
       ) {
+        Surface(
+          modifier = Modifier.size(54.dp),
+          shape = CircleShape,
+          color = ParentSectionHeaderColor,
+        ) {
+          Icon(
+            imageVector = Icons.Default.PhoneAndroid,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(14.dp),
+          )
+        }
+
         Column(modifier = Modifier.weight(1f)) {
           Text(
             text = device.displayName,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
           )
           Text(
@@ -99,8 +111,9 @@ internal fun ParentDeviceTab(
 
         if (refreshInProgress) {
           CircularProgressIndicator(
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(20.dp),
             strokeWidth = 2.dp,
+            color = ParentSectionHeaderColor,
           )
         }
       }
@@ -109,40 +122,32 @@ internal fun ParentDeviceTab(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        OutlinedButton(
+        DeviceActionTile(
+          icon = Icons.Default.Devices,
+          label = "DEVICES",
+          detail = pairedDeviceCount.toString(),
+          enabled = !actionsBusy,
           onClick = onShowDevices,
-          enabled = !actionsBusy,
           modifier = Modifier.weight(1f),
-        ) {
-          Icon(
-            imageVector = Icons.Default.Devices,
-            contentDescription = null,
-          )
-          Text("  " + pairedDeviceCount)
-        }
+        )
 
-        OutlinedButton(
-          onClick = onRefreshStatus,
+        DeviceActionTile(
+          icon = Icons.Default.Refresh,
+          label = "REFRESH",
+          detail = if (refreshInProgress) "…" else "STATUS",
           enabled = !refreshInProgress,
+          onClick = onRefreshStatus,
           modifier = Modifier.weight(1f),
-        ) {
-          Icon(
-            imageVector = Icons.Default.Refresh,
-            contentDescription = null,
-          )
-          Text("  REFRESH")
-        }
+        )
 
-        OutlinedButton(
-          onClick = onManageDevice,
+        DeviceActionTile(
+          icon = Icons.Default.Settings,
+          label = "MANAGE",
+          detail = "DEVICE",
           enabled = !actionsBusy,
+          onClick = onManageDevice,
           modifier = Modifier.weight(1f),
-        ) {
-          Icon(
-            imageVector = Icons.Default.Settings,
-            contentDescription = null,
-          )
-        }
+        )
       }
     }
   }
@@ -158,8 +163,8 @@ internal fun ParentDeviceTab(
       },
   ) {
     Column(
-      modifier = Modifier.padding(22.dp),
-      verticalArrangement = Arrangement.spacedBy(14.dp),
+      modifier = Modifier.padding(20.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -177,49 +182,67 @@ internal fun ParentDeviceTab(
             if (protectionKnown && !protectionComplete) {
               MaterialTheme.colorScheme.onErrorContainer
             } else {
-              MaterialTheme.colorScheme.primary
+              ParentSectionHeaderColor
             },
         )
 
-        Text(
-          text =
-            when {
-              protectionComplete -> "Protection active"
-              protectionKnown -> "Protection needs attention"
-              else -> "Protection status"
-            },
-          style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.Bold,
-        )
+        Column {
+          Text(
+            text =
+              when {
+                protectionComplete -> "Protection active"
+                protectionKnown -> "Protection needs attention"
+                else -> "Protection status"
+              },
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            text =
+              if (protectionComplete) {
+                "All required Child protections are enabled."
+              } else {
+                "Current protection state reported by the Child device."
+              },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
       }
 
-      DeviceProtectionRow(
-        label = "Screen protection",
-        value = protection.accessibilityEnabled,
-        enabledText = "On",
-        disabledText = "Off",
-      )
-
-      DeviceProtectionRow(
-        label = "Background protection",
-        value = protection.batteryUnrestricted,
-        enabledText = "On",
-        disabledText = "Restricted",
-      )
-
-      DeviceProtectionRow(
-        label = "Precise timing",
-        value = protection.preciseTimingEnabled,
-        enabledText = "On",
-        disabledText = "Off",
-      )
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        ProtectionStatusTile(
+          label = "SCREEN",
+          value = protection.accessibilityEnabled,
+          enabledText = "ON",
+          disabledText = "OFF",
+          modifier = Modifier.weight(1f),
+        )
+        ProtectionStatusTile(
+          label = "BACKGROUND",
+          value = protection.batteryUnrestricted,
+          enabledText = "ON",
+          disabledText = "LIMITED",
+          modifier = Modifier.weight(1f),
+        )
+        ProtectionStatusTile(
+          label = "TIMING",
+          value = protection.preciseTimingEnabled,
+          enabledText = "ON",
+          disabledText = "OFF",
+          modifier = Modifier.weight(1f),
+        )
+      }
 
       if (
         devicePresenceState(device.lastSeenAt) ==
           DevicePresenceState.POSSIBLE_SHUTDOWN
       ) {
         Text(
-          text = "The Child phone has not checked in recently. These are the last known protection settings.",
+          text = "The Child phone has not checked in recently. These are the last known settings.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -233,28 +256,47 @@ internal fun ParentDeviceTab(
     color = MaterialTheme.colorScheme.surface,
   ) {
     Column(
-      modifier = Modifier.padding(22.dp),
-      verticalArrangement = Arrangement.spacedBy(14.dp),
+      modifier = Modifier.padding(20.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        Icon(
-          imageVector = Icons.Default.History,
-          contentDescription = null,
-          tint = MaterialTheme.colorScheme.primary,
-        )
+        Surface(
+          modifier = Modifier.size(36.dp),
+          shape = CircleShape,
+          color = ParentSectionHeaderColor.copy(alpha = 0.12f),
+        ) {
+          Icon(
+            imageVector = Icons.Default.History,
+            contentDescription = null,
+            tint = ParentSectionHeaderColor,
+            modifier = Modifier.padding(8.dp),
+          )
+        }
+
         Text(
           text = "Protection history",
-          style = MaterialTheme.typography.titleLarge,
+          modifier = Modifier
+            .weight(1f)
+            .padding(start = 10.dp),
+          style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
         )
+
+        if (protectionHistoryLoading && protectionHistory.isNotEmpty()) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(16.dp),
+            strokeWidth = 2.dp,
+          )
+        }
       }
 
       when {
         protectionHistoryLoading && protectionHistory.isEmpty() -> {
           Row(
+            modifier = Modifier.padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
           ) {
@@ -286,7 +328,12 @@ internal fun ParentDeviceTab(
               protectionHistory.take(PROTECTION_HISTORY_PREVIEW_COUNT)
             }
 
-          visibleEvents.forEach { event ->
+          visibleEvents.forEachIndexed { index, event ->
+            if (index > 0) {
+              Divider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+              )
+            }
             ProtectionHistoryRow(event)
           }
 
@@ -336,37 +383,106 @@ internal fun ParentDeviceTab(
 }
 
 @Composable
-private fun DeviceProtectionRow(
+private fun DeviceActionTile(
+  icon: androidx.compose.ui.graphics.vector.ImageVector,
+  label: String,
+  detail: String,
+  enabled: Boolean,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier =
+      modifier
+        .clickable(enabled = enabled, onClick = onClick),
+    shape = RoundedCornerShape(18.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+  ) {
+    Column(
+      modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+      Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint =
+          if (enabled) {
+            ParentSectionHeaderColor
+          } else {
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+          },
+        modifier = Modifier.size(20.dp),
+      )
+
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+      )
+
+      Text(
+        text = detail,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+      )
+    }
+  }
+}
+
+@Composable
+private fun ProtectionStatusTile(
   label: String,
   value: Boolean?,
   enabledText: String,
   disabledText: String,
+  modifier: Modifier = Modifier,
 ) {
-  Row(
-    modifier = Modifier.fillMaxWidth(),
-    verticalAlignment = Alignment.CenterVertically,
+  Surface(
+    modifier = modifier,
+    shape = RoundedCornerShape(18.dp),
+    color =
+      when (value) {
+        true -> ParentSectionHeaderColor.copy(alpha = 0.10f)
+        false -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
+        null -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+      },
   ) {
-    Text(
-      text = label,
-      style = MaterialTheme.typography.bodyMedium,
-      modifier = Modifier.weight(1f),
-    )
+    Column(
+      modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+      )
 
-    Text(
-      text =
-        when (value) {
-          true -> enabledText
-          false -> disabledText
-          null -> "—"
-        },
-      style = MaterialTheme.typography.labelLarge,
-      color =
-        if (value == false) {
-          MaterialTheme.colorScheme.error
-        } else {
-          MaterialTheme.colorScheme.onSurfaceVariant
-        },
-    )
+      Text(
+        text =
+          when (value) {
+            true -> enabledText
+            false -> disabledText
+            null -> "—"
+          },
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Bold,
+        color =
+          when (value) {
+            true -> ParentSectionHeaderColor
+            false -> MaterialTheme.colorScheme.error
+            null -> MaterialTheme.colorScheme.onSurfaceVariant
+          },
+        textAlign = TextAlign.Center,
+      )
+    }
   }
 }
 
@@ -375,9 +491,12 @@ private fun ProtectionHistoryRow(
   event: ProtectionHistoryEvent,
 ) {
   Row(
-    modifier = Modifier.fillMaxWidth(),
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .padding(vertical = 7.dp),
     horizontalArrangement = Arrangement.spacedBy(12.dp),
-    verticalAlignment = Alignment.Top,
+    verticalAlignment = Alignment.CenterVertically,
   ) {
     Text(
       text = formatProtectionEventTime(event.createdAt),
