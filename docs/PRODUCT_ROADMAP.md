@@ -310,3 +310,5 @@ Before publication we still need to decide:
 - Main Parent content and full-screen editors now use more top spacing / status-bar-aware padding.
 
 - Detail-page headers use the same animated teal surface with a circular Back control; the header slides in from the top when entering Schedule editor, Allowed Apps, Devices, and Device management.
+
+- Animated non-Home/detail headers now use `#9A71FC`, slightly increased vertical height, rounded bottom corners, and smaller circular Back/account controls.
