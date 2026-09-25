@@ -124,6 +124,9 @@ fun ParentDashboardScreen(
   var pendingCommandFeedback by remember { mutableStateOf<RemoteCommand?>(null) }
   var commandError by remember { mutableStateOf<String?>(null) }
   var refreshInProgress by remember { mutableStateOf(false) }
+  var connectionTestInProgress by remember { mutableStateOf(false) }
+  var connectionTestMessage by remember { mutableStateOf<String?>(null) }
+  var connectionTestError by remember { mutableStateOf<String?>(null) }
   var showBonusTimePicker by remember { mutableStateOf(false) }
   var selectedBonusMinutes by remember { mutableStateOf(15) }
   var scheduleEditorSchedule by remember {
@@ -181,6 +184,9 @@ fun ParentDashboardScreen(
     pairedDevice = settingsStore.loadPairedDevice()
     commandProgressMessage = null
     pendingCommandFeedback = null
+    connectionTestInProgress = false
+    connectionTestMessage = null
+    connectionTestError = null
     scheduleEditorSchedule = null
     scheduleError = null
     scheduleNotice = null
@@ -281,6 +287,7 @@ fun ParentDashboardScreen(
       selectedDeviceId = device.deviceId,
       busy =
         commandInProgress ||
+          connectionTestInProgress ||
           refreshInProgress ||
           scheduleLoading ||
           scheduleSaving ||
@@ -296,6 +303,9 @@ fun ParentDashboardScreen(
           commandProgressMessage = null
           commandError = null
           pendingCommandFeedback = null
+          connectionTestInProgress = false
+          connectionTestMessage = null
+          connectionTestError = null
           scheduleEditorSchedule = null
           scheduleError = null
           scheduleNotice = null
@@ -917,6 +927,107 @@ fun ParentDashboardScreen(
     }
   }
 
+  fun testConnection() {
+    if (connectionTestInProgress || commandInProgress) return
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      connectionTestError =
+        "Control token is missing. Re-pairing is required."
+      return
+    }
+
+    scope.launch {
+      connectionTestInProgress = true
+      connectionTestMessage = "Testing Parent → backend → Child connection…"
+      connectionTestError = null
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            commandGateway.send(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+              command = RemoteCommand.syncDailyLimit(),
+            )
+          }
+      ) {
+        is CommandResult.Success -> {
+          var deliveryStatus = result.deliveryStatus
+
+          for (attempt in 1..20) {
+            if (deliveryStatus == "APPLIED" || deliveryStatus == "FAILED") {
+              break
+            }
+
+            delay(500)
+
+            when (
+              val statusResult =
+                withContext(Dispatchers.IO) {
+                  commandGateway.status(
+                    deviceId = device.deviceId,
+                    controlToken = controlToken,
+                    commandId = result.commandId,
+                  )
+                }
+            ) {
+              is CommandDeliveryResult.Success -> {
+                deliveryStatus = statusResult.status
+
+                if (deliveryStatus == "APPLIED") {
+                  val updatedDevice =
+                    statusResult.device.copy(
+                      lastSeenAt =
+                        pairedDevice?.lastSeenAt ?: device.lastSeenAt,
+                    )
+                  pairedDevice = updatedDevice
+                  settingsStore.savePairing(
+                    device = updatedDevice,
+                    controlToken = controlToken,
+                  )
+                  pairedDevices = settingsStore.loadPairedDevices()
+                }
+              }
+
+              is CommandDeliveryResult.Error -> {
+                connectionTestError = statusResult.message
+                break
+              }
+            }
+          }
+
+          if (connectionTestError == null) {
+            when (deliveryStatus) {
+              "APPLIED" -> {
+                connectionTestMessage =
+                  "✓ Connection OK — Child received and confirmed the test."
+              }
+
+              "FAILED" -> {
+                connectionTestMessage = null
+                connectionTestError =
+                  "Child received the test, but could not complete it."
+              }
+
+              else -> {
+                connectionTestMessage =
+                  "Backend accepted the test, but Child has not confirmed it yet."
+              }
+            }
+          }
+        }
+
+        is CommandResult.Error -> {
+          connectionTestMessage = null
+          connectionTestError = result.message
+        }
+      }
+
+      connectionTestInProgress = false
+    }
+  }
+
   fun sendCommand(command: RemoteCommand) {
     if (commandInProgress) return
 
@@ -1071,7 +1182,10 @@ fun ParentDashboardScreen(
 
         OutlinedButton(
           onClick = { showDevices = true },
-          enabled = !commandInProgress && !refreshInProgress,
+          enabled =
+            !commandInProgress &&
+              !connectionTestInProgress &&
+              !refreshInProgress,
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text("CHANGE DEVICE")
@@ -1481,7 +1595,7 @@ fun ParentDashboardScreen(
   
           Button(
             onClick = { sendCommand(RemoteCommand.lock()) },
-            enabled = !commandInProgress && !isLocked,
+            enabled = !commandInProgress && !connectionTestInProgress && !isLocked,
             modifier = Modifier.fillMaxWidth(),
           ) {
             Text(if (isLocked) "LOCKED" else "LOCK NOW")
@@ -1489,7 +1603,7 @@ fun ParentDashboardScreen(
   
           OutlinedButton(
             onClick = { sendCommand(RemoteCommand.unlock()) },
-            enabled = !commandInProgress && !isUnlocked,
+            enabled = !commandInProgress && !connectionTestInProgress && !isUnlocked,
             modifier = Modifier.fillMaxWidth(),
           ) {
             Text(if (isUnlocked) "UNLOCKED" else "UNLOCK")
@@ -1517,10 +1631,40 @@ fun ParentDashboardScreen(
   
           OutlinedButton(
             onClick = { showBonusTimePicker = true },
-            enabled = !commandInProgress,
+            enabled = !commandInProgress && !connectionTestInProgress,
             modifier = Modifier.fillMaxWidth(),
           ) {
             Text("ADD TIME")
+          }
+
+          OutlinedButton(
+            onClick = { testConnection() },
+            enabled = !commandInProgress && !connectionTestInProgress,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(
+              if (connectionTestInProgress) {
+                "TESTING CONNECTION…"
+              } else {
+                "TEST CONNECTION"
+              },
+            )
+          }
+
+          connectionTestMessage?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+
+          connectionTestError?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
           }
   
           if (
