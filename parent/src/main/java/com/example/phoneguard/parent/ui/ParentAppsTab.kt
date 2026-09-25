@@ -185,7 +185,8 @@ internal fun ParentAppsTab(
           Modifier
             .padding(16.dp)
             .heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         if (allowedAppsLoading) {
           CircularProgressIndicator(
             modifier = Modifier.size(18.dp),
