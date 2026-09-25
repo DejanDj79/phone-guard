@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -229,7 +229,7 @@ private fun ParentPinSetupScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    Button(
+    OutlinedButton(
       onClick = {
         errorMessage =
           when {
@@ -283,7 +283,7 @@ private fun ParentPinUnlockScreen(
 
     Spacer(modifier = Modifier.height(20.dp))
 
-    Button(
+    OutlinedButton(
       onClick = {
         if (onUnlock(pin)) {
           pin = ""
@@ -303,7 +303,7 @@ private fun ParentPinUnlockScreen(
     if (biometricAvailable) {
       Spacer(modifier = Modifier.height(12.dp))
 
-      Button(
+      OutlinedButton(
         onClick = onBiometricUnlock,
         modifier = Modifier.fillMaxWidth(),
       ) {
