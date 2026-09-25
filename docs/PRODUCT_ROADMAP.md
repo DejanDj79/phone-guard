@@ -304,7 +304,7 @@ Before publication we still need to decide:
 - Parent top tabs will be removed; the approved navigation direction is a hamburger drawer plus a Parent account/avatar action in the top app bar.
 - `docs/PRODUCT_ROADMAP.md` is the persistent source of truth for UI phases and should be updated as each phase is completed.
 - First physical review of the new Parent shell confirmed the navigation direction is better, but the Home screen still felt too repetitive and admin-like.
-- Follow-up design requirements: centered page title; no Child subtitle in the top bar; Child name and last-seen aligned in the hero; avoid duplicate Available/Online messaging; replace command-status text with inline button progress indicators. Earlier warm yellow, cyan/teal, cyan+purple and indigo/blush experiments were rejected or superseded. Current visual experiment uses **Michroma** for display/header/label styles, **Manrope** for body text, a subtle `#F8F8F6 → #EEEEEB` background gradient, warm near-white surfaces and `#E83E1D` orange accents.
+- Follow-up design requirements: centered page title; no Child subtitle in the top bar; Child name and last-seen aligned in the hero; avoid duplicate Available/Online messaging; replace command-status text with inline button progress indicators. Earlier warm yellow, cyan/teal, cyan+purple and indigo/blush experiments were rejected or superseded. Current visual experiment uses **Michroma** for display/header/label styles, **Manrope** for body text, a subtle `#F2F2EF → #E4E4E0` background gradient, warm near-white surfaces and `#E83E1D` orange accents.
 
 - Android system Back navigation now follows Parent UI state: detail/edit screens return to their previous Parent screen, non-Home drawer sections return to Home first, and only Home without an open child screen exits normally.
 - Main Parent content and full-screen editors now use more top spacing / status-bar-aware padding.
@@ -338,3 +338,7 @@ Before publication we still need to decide:
 - Bottom navigation labels were removed. The floating bar now contains four circular icon-only destinations; selected destination uses a white circle with indigo icon, unselected destinations use translucent white circles with white icons. Awaiting physical review.
 
 - Michroma was bundled from the official Google Fonts repository with its OFL license. It is used for display/header/label typography; Manrope remains the body font for readability.
+
+- Warm Modern refinement: default actions are outline-only with neutral graphite text/borders; orange `#E83E1D` is reserved for active/selected states such as selected schedule day/time target, selected usage filter, checked switches, selected relock option and selected bottom-nav destination.
+
+- The floating bottom navigation base is transparent and contributes only a floating shadow; only the four circular icon buttons are visible. The background gradient was darkened slightly to `#F2F2EF → #E4E4E0` after physical feedback.
