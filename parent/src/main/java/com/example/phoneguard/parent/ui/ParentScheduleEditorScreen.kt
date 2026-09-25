@@ -224,7 +224,8 @@ fun ParentScheduleEditorScreen(
                     containerColor = ParentAccentColor,
                     contentColor = Color.White,
                   ),
-              ) {
+      shape = ParentActionShape,
+    ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
                     text = "FROM",
@@ -241,7 +242,8 @@ fun ParentScheduleEditorScreen(
                 onClick = { editingStart = true },
                 enabled = !saving,
                 modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-              ) {
+      shape = ParentActionShape,
+    ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
                     text = "FROM",
@@ -265,7 +267,8 @@ fun ParentScheduleEditorScreen(
                     containerColor = ParentAccentColor,
                     contentColor = Color.White,
                   ),
-              ) {
+      shape = ParentActionShape,
+    ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
                     text = "TO",
@@ -282,7 +285,8 @@ fun ParentScheduleEditorScreen(
                 onClick = { editingStart = false },
                 enabled = !saving,
                 modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-              ) {
+      shape = ParentActionShape,
+    ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                   Text(
                     text = "TO",
@@ -365,7 +369,8 @@ fun ParentScheduleEditorScreen(
               },
               enabled = !saving,
               modifier = Modifier.heightIn(min = 52.dp),
-            ) {
+      shape = ParentActionShape,
+    ) {
               Text("CLEAR DAY")
             }
           }
@@ -422,7 +427,8 @@ fun ParentScheduleEditorScreen(
         },
         enabled = !saving,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
         if (saving) {
           CircularProgressIndicator(
             modifier = Modifier.size(18.dp),
