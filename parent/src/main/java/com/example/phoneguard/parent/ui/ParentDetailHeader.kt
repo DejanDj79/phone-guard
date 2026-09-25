@@ -54,12 +54,8 @@ internal fun ParentDetailHeader(
     modifier = modifier.fillMaxWidth(),
   ) {
     Surface(
-      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-      shape =
-        RoundedCornerShape(
-          bottomStart = 28.dp,
-          bottomEnd = 28.dp,
-        ),
+      color = Color.Transparent,
+      shape = RoundedCornerShape(0.dp),
     ) {
       Box(
         modifier =
