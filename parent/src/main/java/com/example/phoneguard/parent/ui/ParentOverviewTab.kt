@@ -250,14 +250,15 @@ internal fun ParentOverviewTab(
     }
   }
 
+  val remainingMinutes = device.dailyScreenTime.remainingMinutes
   val remainingLabel =
     when {
       device.dailyScreenTime.limitMinutes == null ->
         "No limit"
       device.dailyScreenTime.limitReached ->
         "Limit reached"
-      device.dailyScreenTime.remainingMinutes != null ->
-        formatDurationMinutes(device.dailyScreenTime.remainingMinutes)
+      remainingMinutes != null ->
+        formatDurationMinutes(remainingMinutes)
       else ->
         "—"
     }
