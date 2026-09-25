@@ -314,3 +314,5 @@ Before publication we still need to decide:
 - Animated non-Home/detail headers now use `#9A71FC`, slightly increased vertical height, rounded bottom corners, and smaller circular Back/account controls.
 
 - Bottom navigation is reserved for the four primary Parent destinations: Home, Schedule, Apps and Device. Settings is intentionally secondary and is opened from the Parent account menu.
+
+- Bottom navigation height was physically reviewed on-device and accepted; keep the current height unless later layout changes require adjustment.
