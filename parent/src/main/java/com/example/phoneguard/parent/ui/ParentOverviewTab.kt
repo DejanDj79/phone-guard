@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -84,7 +85,7 @@ internal fun ParentOverviewTab(
 
   pendingTimeRequest?.let { request ->
     Surface(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
       shape = RoundedCornerShape(24.dp),
       color = MaterialTheme.colorScheme.primaryContainer,
     ) {
@@ -110,13 +111,13 @@ internal fun ParentOverviewTab(
         )
 
         Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.heightIn(min = 52.dp),
           horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
           OutlinedButton(
             onClick = { onRespondToTimeRequest(request, true) },
             enabled = !timeRequestResponding,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
           ) {
             if (timeRequestResponding) {
               CircularProgressIndicator(
@@ -132,7 +133,7 @@ internal fun ParentOverviewTab(
           OutlinedButton(
             onClick = { onRespondToTimeRequest(request, false) },
             enabled = !timeRequestResponding,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
           ) {
             Text("DENY")
           }
@@ -169,7 +170,7 @@ internal fun ParentOverviewTab(
       activeCommandType == RemoteCommandType.BONUS_TIME
 
   Surface(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.heightIn(min = 52.dp),
     shape = RoundedCornerShape(30.dp),
     color = MaterialTheme.colorScheme.secondaryContainer,
   ) {
@@ -178,7 +179,7 @@ internal fun ParentOverviewTab(
       verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top,
       ) {
@@ -187,12 +188,12 @@ internal fun ParentOverviewTab(
           style = MaterialTheme.typography.headlineSmall,
           fontWeight = FontWeight.Bold,
           color = MaterialTheme.colorScheme.onSecondaryContainer,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
 
         Column(
           horizontalAlignment = Alignment.End,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           Text(
             text = "LAST SEEN",
@@ -231,13 +232,13 @@ internal fun ParentOverviewTab(
       }
 
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         OutlinedButton(
           onClick = if (isLocked) onUnlock else onLock,
           enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           if (mainCommandLoading) {
             CircularProgressIndicator(
@@ -268,7 +269,7 @@ internal fun ParentOverviewTab(
         OutlinedButton(
           onClick = onAddBonusTime,
           enabled = !commandInProgress && !connectionTestInProgress,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         ) {
           if (bonusLoading) {
             CircularProgressIndicator(
@@ -302,19 +303,19 @@ internal fun ParentOverviewTab(
     }
 
   Row(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.heightIn(min = 52.dp),
     horizontalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     HomeMetric(
       label = "SCREEN TIME",
       value = formatUsageSeconds(device.dailyScreenTime.usedSeconds),
-      modifier = Modifier.weight(1f),
+      modifier = Modifier.weight(1f).heightIn(min = 52.dp),
     )
 
     HomeMetric(
       label = "REMAINING",
       value = remainingLabel,
-      modifier = Modifier.weight(1f),
+      modifier = Modifier.weight(1f).heightIn(min = 52.dp),
     )
   }
 
@@ -323,7 +324,7 @@ internal fun ParentOverviewTab(
     (protectionKnown && !protectionComplete)
   ) {
     Surface(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.heightIn(min = 52.dp),
       shape = RoundedCornerShape(22.dp),
       color = MaterialTheme.colorScheme.errorContainer,
     ) {
@@ -410,7 +411,7 @@ internal fun ParentOverviewTab(
     }
 
   Surface(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.heightIn(min = 52.dp),
     shape = RoundedCornerShape(24.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
@@ -419,26 +420,26 @@ internal fun ParentOverviewTab(
       verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         UsageViewSegment(
           text = "Today",
           selected = appUsageView == APP_USAGE_VIEW_TODAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_TODAY) },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
         UsageViewSegment(
           text = "Yesterday",
           selected = appUsageView == APP_USAGE_VIEW_YESTERDAY,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_YESTERDAY) },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
         UsageViewSegment(
           text = "7 days",
           selected = appUsageView == APP_USAGE_VIEW_WEEK,
           onClick = { onAppUsageViewChange(APP_USAGE_VIEW_WEEK) },
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
       }
 
@@ -604,7 +605,7 @@ private fun RecentUnlockedActivityTimeline(
       .orEmpty()
 
   Surface(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.heightIn(min = 52.dp),
     shape = RoundedCornerShape(24.dp),
     color = MaterialTheme.colorScheme.surface,
   ) {
@@ -612,7 +613,7 @@ private fun RecentUnlockedActivityTimeline(
       modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.heightIn(min = 52.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Text(
@@ -620,7 +621,7 @@ private fun RecentUnlockedActivityTimeline(
           style = MaterialTheme.typography.labelSmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           fontWeight = FontWeight.Bold,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
         )
 
         Text(
@@ -661,7 +662,7 @@ private fun RecentUnlockedActivityTimeline(
                 )
 
             Row(
-              modifier = Modifier.fillMaxWidth(),
+              modifier = Modifier.heightIn(min = 52.dp),
               verticalAlignment = Alignment.Top,
             ) {
               Column(
