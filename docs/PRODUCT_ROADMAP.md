@@ -190,7 +190,7 @@ Home is the main command center and should prioritize only information that matt
 - [x] Clarified Child Change Parent flow
 - [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting final physical UI approval
 - [ ] Parent Home final minimalist redesign — Manrope + `#88D9E0` pass implemented; awaiting final physical UI approval
-- [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a compact selected-day Material 3 dial picker. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
+- [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a compact selected-day Material 3 dial picker integrated directly into the selected-day card. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
 - [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
 - [ ] Device / protection screen redesign — implemented in new visual system; awaiting physical review
 - [ ] Settings screen redesign — implemented in new visual system; awaiting physical review
