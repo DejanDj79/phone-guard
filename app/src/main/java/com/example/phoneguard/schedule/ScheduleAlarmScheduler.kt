@@ -1,7 +1,10 @@
 package com.example.phoneguard.schedule
 
+import android.Manifest
 import android.app.AlarmManager
+import android.app.AppOpsManager
 import android.app.PendingIntent
+import android.content.pm.PackageManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -59,6 +62,44 @@ class ScheduleAlarmScheduler(context: Context) {
   fun hasExactAlarmAccess(): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
       alarmManager.canScheduleExactAlarms()
+
+  fun hasPreciseTimingPermission(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+
+    val appOpsManager =
+      appContext.getSystemService(AppOpsManager::class.java)
+    val uid = appContext.applicationInfo.uid
+    val mode =
+      if (Build.VERSION.SDK_INT >= 36) {
+        appOpsManager.checkOpNoThrow(
+          SCHEDULE_EXACT_ALARM_APP_OP,
+          uid,
+          appContext.packageName,
+        )
+      } else {
+        @Suppress("DEPRECATION")
+        appOpsManager.unsafeCheckOpNoThrow(
+          SCHEDULE_EXACT_ALARM_APP_OP,
+          uid,
+          appContext.packageName,
+        )
+      }
+
+    return when (mode) {
+      AppOpsManager.MODE_ALLOWED -> true
+      AppOpsManager.MODE_IGNORED,
+      AppOpsManager.MODE_ERRORED,
+      AppOpsManager.MODE_FOREGROUND -> false
+
+      AppOpsManager.MODE_DEFAULT ->
+        appContext.packageManager.checkPermission(
+          Manifest.permission.SCHEDULE_EXACT_ALARM,
+          appContext.packageName,
+        ) == PackageManager.PERMISSION_GRANTED
+
+      else -> false
+    }
+  }
 
   fun exactAlarmPermissionIntent(): Intent? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
@@ -157,6 +198,7 @@ class ScheduleAlarmScheduler(context: Context) {
     )
 
   private companion object {
+    const val SCHEDULE_EXACT_ALARM_APP_OP = "android:schedule_exact_alarm"
     const val REQUEST_CODE_SCHEDULE_TRANSITION = 4101
     const val REQUEST_CODE_TEMPORARY_ALLOWANCE = 4102
     const val REQUEST_CODE_PROTECTION_STATUS = 4103
