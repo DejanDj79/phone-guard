@@ -78,7 +78,7 @@ fun DeviceManagementScreen(
           label = { Text("Device name") },
           singleLine = true,
           supportingText = { Text("1–40 characters") },
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth(),
         )
 
         OutlinedButton(
