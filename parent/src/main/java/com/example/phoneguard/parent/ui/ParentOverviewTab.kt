@@ -1,11 +1,16 @@
 package com.example.phoneguard.parent.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -27,11 +32,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.phoneguard.core.AllowedAppsSnapshot
 import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.core.InstalledAppInfo
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.parent.data.AppUsageDay
 import com.example.phoneguard.parent.data.PendingTimeRequest
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 internal fun ParentOverviewTab(
@@ -46,6 +56,7 @@ internal fun ParentOverviewTab(
   connectionTestMessage: String?,
   connectionTestError: String?,
   appUsageDays: List<AppUsageDay>,
+  appInventorySnapshot: AllowedAppsSnapshot?,
   appUsageLoading: Boolean,
   appUsageError: String?,
   appUsageView: Int,
@@ -363,7 +374,24 @@ internal fun ParentOverviewTab(
   }
 
   Text(
-    text = "Activity",
+    text = "Recent activity",
+    style = MaterialTheme.typography.titleLarge,
+    fontWeight = FontWeight.SemiBold,
+  )
+
+  RecentUnlockedActivityTimeline(
+    day =
+      device.dailyScreenTime.usageDate
+        ?.let { date ->
+          appUsageDays.firstOrNull { it.usageDate == date }
+        }
+        ?: appUsageDays.firstOrNull(),
+    inventory = appInventorySnapshot,
+    loading = appUsageLoading,
+  )
+
+  Text(
+    text = "Usage overview",
     style = MaterialTheme.typography.titleLarge,
     fontWeight = FontWeight.SemiBold,
   )
@@ -524,3 +552,161 @@ private fun HomeMetric(
     }
   }
 }
+
+
+private data class HomeRecentActivityItem(
+  val packageName: String,
+  val label: String,
+  val startedAtMillis: Long,
+  val seconds: Int,
+)
+
+@Composable
+private fun RecentUnlockedActivityTimeline(
+  day: AppUsageDay?,
+  inventory: AllowedAppsSnapshot?,
+  loading: Boolean,
+) {
+  val recentItems =
+    day
+      ?.apps
+      .orEmpty()
+      .flatMap { app ->
+        app.sessions.map { session ->
+          HomeRecentActivityItem(
+            packageName = app.packageName,
+            label = app.label,
+            startedAtMillis = session.startedAtMillis,
+            seconds = session.seconds,
+          )
+        }
+      }
+      .sortedByDescending { it.startedAtMillis }
+      .take(6)
+
+  val installedByPackage =
+    inventory
+      ?.installedApps
+      ?.associateBy { it.packageName }
+      .orEmpty()
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(24.dp),
+    color = MaterialTheme.colorScheme.surface,
+  ) {
+    Column(
+      modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          text = "UNLOCKED PHONE",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.primary,
+          fontWeight = FontWeight.Bold,
+          modifier = Modifier.weight(1f),
+        )
+
+        Text(
+          text = "TODAY",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+
+      when {
+        loading && recentItems.isEmpty() -> {
+          Text(
+            text = "Loading recent activity…",
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        recentItems.isEmpty() -> {
+          Text(
+            text = "No unlocked app activity has been recorded yet.",
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+
+        else -> {
+          recentItems.forEachIndexed { index, item ->
+            val app =
+              installedByPackage[item.packageName]
+                ?: InstalledAppInfo(
+                  packageName = item.packageName,
+                  label = item.label,
+                )
+
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.Top,
+            ) {
+              Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+              ) {
+                ParentAppIcon(
+                  app = app,
+                  modifier = Modifier.size(38.dp),
+                )
+
+                if (index < recentItems.lastIndex) {
+                  Box(
+                    modifier =
+                      Modifier
+                        .width(2.dp)
+                        .height(24.dp)
+                        .background(
+                          MaterialTheme.colorScheme.outlineVariant,
+                          CircleShape,
+                        ),
+                  )
+                }
+              }
+
+              Column(
+                modifier =
+                  Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp, top = 2.dp),
+              ) {
+                Text(
+                  text = item.label,
+                  style = MaterialTheme.typography.bodyLarge,
+                  fontWeight = FontWeight.Bold,
+                  maxLines = 1,
+                )
+                Text(
+                  text = formatRecentActivityTime(item.startedAtMillis),
+                  style = MaterialTheme.typography.bodySmall,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
+
+              Text(
+                text = formatUsageSeconds(item.seconds),
+                modifier = Modifier.padding(top = 3.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.End,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+private fun formatRecentActivityTime(epochMillis: Long): String =
+  runCatching {
+    SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(epochMillis))
+  }.getOrDefault("—")
