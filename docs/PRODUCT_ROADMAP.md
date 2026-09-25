@@ -47,6 +47,48 @@ The current implementation already includes the main foundation that should rema
 
 The visual design and final UX are still to be redesigned before release.
 
+## Reliability / protection validation
+
+The current prototype has also passed the following physical reliability checks:
+
+- Reboot recovery
+  - Child recovers without manually opening PhoneGuard.
+  - Parent `TEST CONNECTION` succeeds after reboot.
+  - Remote `LOCK NOW` still works after reboot.
+- Offline command recovery
+  - A Parent command sent while the Child is offline is applied after network connectivity returns.
+  - No manual Child app launch is required.
+- Accessibility protection
+  - Disabling Accessibility is detected and reported to Parent.
+  - Restoring Accessibility recovers normal command handling.
+- App Info protection
+  - Opening PhoneGuard App Info is detected.
+  - Opening ordinary Android Settings no longer creates a false App Info / Clear data alert.
+  - Returning to App Info after cancelling a dialog does not create a duplicate App Info event.
+- Clear data protection
+  - A real Clear data / Clear storage attempt is detected.
+  - Cancelling the confirmation does not create a duplicate App Info event.
+- Force stop protection
+  - A real Force stop attempt is detected.
+  - Cancelling the confirmation does not create a duplicate App Info event.
+- Battery optimization protection
+  - Removing PhoneGuard from unrestricted/background-protected mode is detected.
+  - Parent notification, status and Protection History update correctly.
+- Parent protection refresh
+  - Parent protection status/history polling was shortened from 15 seconds to 5 seconds while the relevant screen is open.
+- Parent connection test semantics
+  - `TEST CONNECTION` verifies the Parent -> backend -> Child -> ACK communication path.
+  - It can still return OK when an individual protection capability is disabled; protection capability state is reported separately.
+
+### Exact alarm / precise timing note
+
+Physical testing on the current Xiaomi/HyperOS Child device showed that the visible Android `Alarms & reminders` switch and AppOps output do not always map one-to-one to the effective result returned by Android's exact-alarm capability API.
+
+PhoneGuard therefore treats `Precise timing` as a capability status reported by the Child (`AlarmManager.canScheduleExactAlarms()`), rather than mirroring the visible Settings switch position.
+
+During ADB diagnostics, package and UID AppOps could show different values, and the package permission still reported `SCHEDULE_EXACT_ALARM: granted=true`. This device-specific behavior should be kept in mind during future OEM testing rather than treating the Settings toggle itself as the source of truth.
+
+
 ## Paid / Premium candidates
 
 ### 1. Per-app daily limits
@@ -134,6 +176,13 @@ Before publication we still need to decide:
 - Parent end-to-end connection test was completed and physically tested.
 - Parent notification category controls were completed and physically tested.
 - App Info protection detection was hardened for Android/MIUI variants after physical testing.
+- Reboot recovery and offline command recovery were physically tested successfully.
+- Accessibility disable/restore protection was physically tested successfully.
+- App Info / Clear data / Force stop protection false positives were fixed and physically retested.
+- Battery optimization protection notification, status and history were physically tested successfully.
+- Parent protection status/history refresh was reduced to 5 seconds while the relevant screen is open.
+- Exact-alarm / Precise timing behavior on Xiaomi/HyperOS was documented as an Android capability check rather than a direct mirror of the visible Settings toggle.
+- The current reliability pass was completed before starting the planned Parent UI redesign.
 - **Per-app daily limits** were intentionally postponed and reserved as a Premium candidate.
 - **New app installed alerts** were intentionally postponed and reserved as a Premium candidate.
 - UI appearance will be redesigned later; current screens are functional prototypes.
