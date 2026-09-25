@@ -332,3 +332,7 @@ Before publication we still need to decide:
 - The cyan + purple palette was rejected after physical review. New trial palette: warm blush background `#F4E9E7`, deep indigo navigation/primary `#2F4FA3`, dusty pink secondary `#D47B94`, and warm off-white surfaces. Awaiting physical approval.
 
 - Home now includes a Recent activity timeline for unlocked-phone usage only. Child records individual app sessions (start/end/duration) only while PhoneGuard is effectively unlocked, heartbeat stores those sessions inside the existing daily app-usage JSON, and Parent shows up to six newest sessions with app icons, start time and duration. Existing aggregate Today/Yesterday/7 days view remains as Usage overview. Awaiting physical review with updated Child + Parent APKs.
+
+- Usage overview now presents the top five apps as individual cards with real app icons and usage duration for Today/Yesterday. The 7-day view adds a real Compose bar chart plus the same top-five cards; the previous text-based bar visualization is superseded. Awaiting physical review.
+
+- Bottom navigation labels were removed. The floating bar now contains four circular icon-only destinations; selected destination uses a white circle with indigo icon, unselected destinations use translucent white circles with white icons. Awaiting physical review.
