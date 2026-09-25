@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -368,7 +369,7 @@ fun ParentScheduleEditorScreen(
                 validationError = null
               },
               enabled = !saving,
-              modifier = Modifier.heightIn(min = 52.dp),
+              modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
               Text("CLEAR DAY")
@@ -426,7 +427,7 @@ fun ParentScheduleEditorScreen(
           }
         },
         enabled = !saving,
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
         if (saving) {
