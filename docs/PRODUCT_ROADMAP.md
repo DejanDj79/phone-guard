@@ -188,7 +188,7 @@ Home is the main command center and should prioritize only information that matt
 - [x] Parent pairing flow redesign
 - [x] Child five-step setup wizard
 - [x] Clarified Child Change Parent flow
-- [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented. Non-Home sections now use a teal animated top header that slides in from above with a circular Back action; detail screens reuse the same animated header pattern. Awaiting final physical UI approval
+- [ ] Parent modern app shell: drawer/hamburger replaced by `#9A71FC` Material 3 bottom navigation with Home, Schedule, Apps and Device. Parent menu now lives in the top account icon and contains Manage children, Settings and Sign out. Non-Home/detail screens keep the animated rounded `#9A71FC` Back header. Awaiting final physical UI approval
 - [ ] Parent Home final minimalist redesign — Manrope + `#88D9E0` pass implemented; awaiting final physical UI approval
 - [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a compact selected-day Material 3 dial picker integrated directly into the selected-day card. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
 - [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
@@ -312,3 +312,5 @@ Before publication we still need to decide:
 - Detail-page headers use the same animated teal surface with a circular Back control; the header slides in from the top when entering Schedule editor, Allowed Apps, Devices, and Device management.
 
 - Animated non-Home/detail headers now use `#9A71FC`, slightly increased vertical height, rounded bottom corners, and smaller circular Back/account controls.
+
+- Bottom navigation is reserved for the four primary Parent destinations: Home, Schedule, Apps and Device. Settings is intentionally secondary and is opened from the Parent account menu.
