@@ -197,6 +197,7 @@ internal fun BonusTimeWheelDialog(
 @Composable
 internal fun PairDeviceScreen(
   onPair: suspend (String) -> PairingResult,
+  onSwitchAccount: suspend () -> String?,
   onCancel: (() -> Unit)? = null,
   modifier: Modifier = Modifier,
 ) {
@@ -205,6 +206,7 @@ internal fun PairDeviceScreen(
   var pairingCode by remember { mutableStateOf("") }
   var errorMessage by remember { mutableStateOf<String?>(null) }
   var pairingInProgress by remember { mutableStateOf(false) }
+  var switchingAccount by remember { mutableStateOf(false) }
 
   Column(
     modifier =
@@ -249,7 +251,7 @@ internal fun PairDeviceScreen(
       },
       label = { Text("Pairing code") },
       singleLine = true,
-      enabled = !pairingInProgress,
+      enabled = !pairingInProgress && !switchingAccount,
       keyboardOptions =
         KeyboardOptions(
           capitalization = KeyboardCapitalization.Characters,
@@ -303,7 +305,7 @@ internal fun PairDeviceScreen(
     onCancel?.let {
       OutlinedButton(
         onClick = it,
-        enabled = !pairingInProgress,
+        enabled = !pairingInProgress && !switchingAccount,
         modifier = Modifier.fillMaxWidth(),
       ) {
         Text("CANCEL")
@@ -311,6 +313,29 @@ internal fun PairDeviceScreen(
 
       Spacer(modifier = Modifier.height(16.dp))
     }
+
+    OutlinedButton(
+      onClick = {
+        scope.launch {
+          switchingAccount = true
+          errorMessage = null
+          errorMessage = onSwitchAccount()
+          switchingAccount = false
+        }
+      },
+      enabled = !pairingInProgress && !switchingAccount,
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Text(
+        if (switchingAccount) {
+          "SWITCHING…"
+        } else {
+          "SWITCH ACCOUNT"
+        },
+      )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
 
     Text(
       text = "The code is verified by the PhoneGuard backend and can only be used while it is active.",
