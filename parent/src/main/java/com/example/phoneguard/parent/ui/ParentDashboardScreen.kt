@@ -977,6 +977,7 @@ fun ParentDashboardScreen(
 
     scope.launch {
       uiState.commandInProgress = true
+      uiState.activeCommandType = command.type
       uiState.commandProgressMessage = commandSendingLabel(command, device.isOnline)
       uiState.commandNotice = null
       uiState.pendingCommandFeedback = null
@@ -1068,6 +1069,7 @@ fun ParentDashboardScreen(
       }
 
       uiState.commandProgressMessage = null
+      uiState.activeCommandType = null
       uiState.commandInProgress = false
     }
   }
@@ -1199,8 +1201,7 @@ fun ParentDashboardScreen(
         timeRequestNotice = uiState.timeRequestNotice,
         timeRequestError = uiState.timeRequestError,
         commandInProgress = uiState.commandInProgress,
-        commandProgressMessage = uiState.commandProgressMessage,
-        commandNotice = uiState.commandNotice,
+        activeCommandType = uiState.activeCommandType,
         connectionTestInProgress = uiState.connectionTestInProgress,
         connectionTestMessage = uiState.connectionTestMessage,
         connectionTestError = uiState.connectionTestError,
