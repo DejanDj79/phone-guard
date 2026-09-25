@@ -113,6 +113,7 @@ fun ParentDashboardScreen(
     uiState.scheduleEditorSchedule = null
     uiState.scheduleError = null
     uiState.scheduleNotice = null
+    uiState.allowedAppsSnapshot = null
     uiState.allowedAppsEditorSnapshot = null
     uiState.allowedAppsError = null
     uiState.allowedAppsNotice = null
@@ -262,7 +263,8 @@ fun ParentDashboardScreen(
           uiState.scheduleEditorSchedule = null
           uiState.scheduleError = null
           uiState.scheduleNotice = null
-          uiState.allowedAppsEditorSnapshot = null
+          uiState.allowedAppsSnapshot = null
+    uiState.allowedAppsEditorSnapshot = null
           uiState.allowedAppsError = null
           uiState.allowedAppsNotice = null
           uiState.showBonusTimePicker = false
@@ -408,7 +410,8 @@ fun ParentDashboardScreen(
 
   uiState.allowedAppsEditorSnapshot?.let { snapshot ->
     BackHandler(enabled = !uiState.allowedAppsSaving) {
-      uiState.allowedAppsEditorSnapshot = null
+      uiState.allowedAppsSnapshot = null
+    uiState.allowedAppsEditorSnapshot = null
       uiState.allowedAppsError = null
     }
 
@@ -439,7 +442,8 @@ fun ParentDashboardScreen(
                   }
               ) {
                 is AllowedAppsSaveResult.Success -> {
-                  uiState.allowedAppsEditorSnapshot = null
+                  uiState.allowedAppsSnapshot = null
+    uiState.allowedAppsEditorSnapshot = null
                   uiState.allowedAppsNotice =
                     if (device.isOnline) {
                       "Allowed apps saved and sent to the Child device."
@@ -460,7 +464,8 @@ fun ParentDashboardScreen(
       },
       onCancel = {
         if (!uiState.allowedAppsSaving) {
-          uiState.allowedAppsEditorSnapshot = null
+          uiState.allowedAppsSnapshot = null
+    uiState.allowedAppsEditorSnapshot = null
           uiState.allowedAppsError = null
         }
       },
@@ -581,7 +586,9 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "app-usage-poll") {
-    if (uiState.selectedTab != 0) return@LaunchedEffect
+    if (uiState.selectedTab != 0 && uiState.selectedTab != 2) {
+      return@LaunchedEffect
+    }
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
@@ -625,6 +632,43 @@ fun ParentDashboardScreen(
       uiState.appUsageLoading = false
       delay(30_000)
     }
+  }
+
+  LaunchedEffect(device.deviceId, uiState.selectedTab, "allowed-apps-overview") {
+    if (uiState.selectedTab != 2) return@LaunchedEffect
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      uiState.allowedAppsError =
+        "Control token is missing. Re-pairing is required."
+      return@LaunchedEffect
+    }
+
+    if (uiState.allowedAppsSnapshot == null) {
+      uiState.allowedAppsLoading = true
+    }
+    uiState.allowedAppsError = null
+
+    when (
+      val result =
+        withContext(Dispatchers.IO) {
+          allowedAppsGateway.fetch(
+            deviceId = device.deviceId,
+            controlToken = controlToken,
+          )
+        }
+    ) {
+      is AllowedAppsFetchResult.Success -> {
+        uiState.allowedAppsSnapshot = result.snapshot
+        uiState.allowedAppsError = null
+      }
+
+      is AllowedAppsFetchResult.Error -> {
+        uiState.allowedAppsError = result.message
+      }
+    }
+
+    uiState.allowedAppsLoading = false
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "protection-history-poll") {
@@ -1257,10 +1301,14 @@ fun ParentDashboardScreen(
 
     if (uiState.selectedTab == 2) {
       ParentAppsTab(
+        snapshot = uiState.allowedAppsSnapshot,
+        todayUsage = uiState.appUsageDays.firstOrNull(),
         allowedAppsLoading = uiState.allowedAppsLoading,
+        appUsageLoading = uiState.appUsageLoading,
         allowedAppsSaving = uiState.allowedAppsSaving,
         commandInProgress = uiState.commandInProgress,
         allowedAppsNotice = uiState.allowedAppsNotice,
+        allowedAppsError = uiState.allowedAppsError,
         onManageAllowedApps = {
           if (!uiState.allowedAppsLoading) {
             val controlToken = settingsStore.controlToken(device.deviceId)
@@ -1284,6 +1332,7 @@ fun ParentDashboardScreen(
                     }
                 ) {
                   is AllowedAppsFetchResult.Success -> {
+                    uiState.allowedAppsSnapshot = result.snapshot
                     uiState.allowedAppsEditorSnapshot = result.snapshot
                   }
 
