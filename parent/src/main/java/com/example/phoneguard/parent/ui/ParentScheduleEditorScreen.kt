@@ -136,7 +136,7 @@ fun ParentScheduleEditorScreen(
             color =
               when {
                 selected -> ParentAccentColor
-                row.isActive() -> MaterialTheme.colorScheme.primaryContainer
+                row.isActive() -> ParentAccentColor.copy(alpha = 0.12f)
                 else -> MaterialTheme.colorScheme.surface
               },
           ) {
@@ -153,7 +153,7 @@ fun ParentScheduleEditorScreen(
               color =
                 when {
                   selected -> Color.White
-                  row.isActive() -> MaterialTheme.colorScheme.onPrimaryContainer
+                  row.isActive() -> ParentAccentColor
                   else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
               textAlign = TextAlign.Center,
