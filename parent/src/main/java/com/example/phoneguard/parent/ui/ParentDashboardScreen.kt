@@ -171,6 +171,9 @@ fun ParentDashboardScreen(
                 device = result.device,
                 controlToken = token,
               )
+              settingsStore.markBackendOwnershipConfirmed(
+                result.device.deviceId,
+              )
               settingsStore.selectDevice(result.device.deviceId)
               uiState.pairedDevices = settingsStore.loadPairedDevices()
               uiState.pairedDevice = result.device
