@@ -118,7 +118,8 @@ internal fun ParentOverviewTab(
             onClick = { onRespondToTimeRequest(request, true) },
             enabled = !timeRequestResponding,
             modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-          ) {
+      shape = ParentActionShape,
+    ) {
             if (timeRequestResponding) {
               CircularProgressIndicator(
                 modifier = Modifier.size(18.dp),
@@ -134,7 +135,8 @@ internal fun ParentOverviewTab(
             onClick = { onRespondToTimeRequest(request, false) },
             enabled = !timeRequestResponding,
             modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-          ) {
+      shape = ParentActionShape,
+    ) {
             Text("DENY")
           }
         }
@@ -239,7 +241,8 @@ internal fun ParentOverviewTab(
           onClick = if (isLocked) onUnlock else onLock,
           enabled = !commandInProgress && !connectionTestInProgress,
           modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           if (mainCommandLoading) {
             CircularProgressIndicator(
               modifier = Modifier.size(19.dp),
@@ -270,7 +273,8 @@ internal fun ParentOverviewTab(
           onClick = onAddBonusTime,
           enabled = !commandInProgress && !connectionTestInProgress,
           modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           if (bonusLoading) {
             CircularProgressIndicator(
               modifier = Modifier.size(19.dp),
@@ -370,7 +374,8 @@ internal fun ParentOverviewTab(
         TextButton(
           onClick = onOpenDevice,
           modifier = Modifier.heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("VIEW DEVICE STATUS")
         }
       }
