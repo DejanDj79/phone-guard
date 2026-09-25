@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -292,7 +293,7 @@ internal fun PairDeviceScreen(
             }
           },
           enabled = !pairingInProgress && !switchingAccount,
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
           Text(
@@ -390,7 +391,7 @@ internal fun PairDeviceScreen(
         pairingCode.length == 6 &&
           !pairingInProgress &&
           !switchingAccount,
-      modifier = Modifier.heightIn(min = 52.dp),
+      modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
       Text(
@@ -406,7 +407,7 @@ internal fun PairDeviceScreen(
       OutlinedButton(
         onClick = it,
         enabled = !pairingInProgress && !switchingAccount,
-        modifier = Modifier.heightIn(min = 52.dp),
+        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
         Text("BACK TO DEVICES")
