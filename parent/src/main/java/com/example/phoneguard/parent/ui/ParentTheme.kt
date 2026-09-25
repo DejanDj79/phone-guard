@@ -29,8 +29,8 @@ private val MichromaFamily =
   )
 
 internal val ParentAccentColor = Color(0xFFE83E1D)
-internal val ParentGradientTop = Color(0xFFF2F2EF)
-internal val ParentGradientBottom = Color(0xFFE4E4E0)
+internal val ParentGradientEdge = Color(0xFFDEDEDA)
+internal val ParentGradientCenter = Color(0xFFF3F3F0)
 
 private val ParentColors =
   lightColorScheme(
