@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
 import com.example.phoneguard.core.PairingIdentity
+import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -12,6 +13,15 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+
+data class ChildRecentAppSession(
+  val packageName: String,
+  val startedAtMillis: Long,
+  val endedAtMillis: Long,
+) {
+  val durationMillis: Long
+    get() = (endedAtMillis - startedAtMillis).coerceAtLeast(0L)
+}
 
 class ChildSettingsStore(context: Context) {
   private val preferences =
@@ -209,6 +219,106 @@ class ChildSettingsStore(context: Context) {
       .edit()
       .putString(KEY_APP_USAGE_DATE, date)
       .putString(KEY_APP_USAGE_MILLIS_JSON, json.toString())
+      .commit()
+  }
+
+
+  fun recentAppSessionsForToday(
+    nowMillis: Long = System.currentTimeMillis(),
+  ): List<ChildRecentAppSession> {
+    val today = currentLocalDateKey(nowMillis)
+    if (preferences.getString(KEY_RECENT_APP_ACTIVITY_DATE, null) != today) {
+      return emptyList()
+    }
+
+    val encoded =
+      preferences.getString(KEY_RECENT_APP_ACTIVITY_JSON, null)
+        ?.takeIf { it.isNotBlank() }
+        ?: return emptyList()
+
+    return runCatching {
+      val json = JSONArray(encoded)
+      buildList {
+        for (index in 0 until json.length()) {
+          val item = json.optJSONObject(index) ?: continue
+          val packageName = item.optString("packageName").trim()
+          val startedAtMillis = item.optLong("startedAtMillis", 0L)
+          val endedAtMillis = item.optLong("endedAtMillis", 0L)
+
+          if (
+            packageName.isNotBlank() &&
+            startedAtMillis > 0L &&
+            endedAtMillis >= startedAtMillis
+          ) {
+            add(
+              ChildRecentAppSession(
+                packageName = packageName,
+                startedAtMillis = startedAtMillis,
+                endedAtMillis = endedAtMillis,
+              ),
+            )
+          }
+        }
+      }
+    }.getOrDefault(emptyList())
+  }
+
+  fun upsertRecentAppSession(
+    packageName: String,
+    startedAtMillis: Long,
+    endedAtMillis: Long,
+  ): Boolean {
+    val normalizedPackage = packageName.trim()
+    if (
+      normalizedPackage.isBlank() ||
+      startedAtMillis <= 0L ||
+      endedAtMillis <= startedAtMillis ||
+      endedAtMillis - startedAtMillis < MIN_RECENT_APP_SESSION_MS
+    ) {
+      return false
+    }
+
+    val date = currentLocalDateKey(endedAtMillis)
+    val existing =
+      if (preferences.getString(KEY_RECENT_APP_ACTIVITY_DATE, null) == date) {
+        recentAppSessionsForToday(endedAtMillis)
+      } else {
+        emptyList()
+      }
+
+    val updated =
+      buildList {
+        add(
+          ChildRecentAppSession(
+            packageName = normalizedPackage,
+            startedAtMillis = startedAtMillis,
+            endedAtMillis = endedAtMillis,
+          ),
+        )
+        addAll(
+          existing.filterNot { session ->
+            session.packageName == normalizedPackage &&
+              session.startedAtMillis == startedAtMillis
+          },
+        )
+      }
+        .sortedByDescending { it.startedAtMillis }
+        .take(MAX_RECENT_APP_SESSIONS)
+
+    val json = JSONArray()
+    updated.forEach { session ->
+      json.put(
+        JSONObject()
+          .put("packageName", session.packageName)
+          .put("startedAtMillis", session.startedAtMillis)
+          .put("endedAtMillis", session.endedAtMillis),
+      )
+    }
+
+    return preferences
+      .edit()
+      .putString(KEY_RECENT_APP_ACTIVITY_DATE, date)
+      .putString(KEY_RECENT_APP_ACTIVITY_JSON, json.toString())
       .commit()
   }
 
@@ -512,7 +622,11 @@ class ChildSettingsStore(context: Context) {
     const val KEY_DAILY_USAGE_MILLIS = "daily_usage_millis"
     const val KEY_APP_USAGE_DATE = "app_usage_date"
     const val KEY_APP_USAGE_MILLIS_JSON = "app_usage_millis_json"
+    const val KEY_RECENT_APP_ACTIVITY_DATE = "recent_app_activity_date"
+    const val KEY_RECENT_APP_ACTIVITY_JSON = "recent_app_activity_json"
     const val MAX_TRACKED_APP_USAGE_PACKAGES = 100
+    const val MAX_RECENT_APP_SESSIONS = 20
+    const val MIN_RECENT_APP_SESSION_MS = 1_000L
     const val MAX_APPLIED_REMOTE_COMMAND_IDS = 100
     const val SALT_SIZE_BYTES = 16
     const val PAIRING_CODE_LENGTH = 6
