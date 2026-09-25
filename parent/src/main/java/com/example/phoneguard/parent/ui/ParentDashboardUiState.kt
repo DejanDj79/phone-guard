@@ -33,6 +33,7 @@ internal class ParentDashboardUiState(
   var refreshInProgress by mutableStateOf(false)
 
   var connectionTestInProgress by mutableStateOf(false)
+  var connectionTestSucceeded by mutableStateOf<Boolean?>(null)
   var connectionTestMessage by mutableStateOf<String?>(null)
   var connectionTestError by mutableStateOf<String?>(null)
 
