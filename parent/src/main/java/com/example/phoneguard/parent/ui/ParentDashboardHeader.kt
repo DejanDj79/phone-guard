@@ -118,25 +118,12 @@ internal fun ParentDashboardShell(
         label = "ParentSectionHeader",
       ) { sectionIndex ->
         val isHome = sectionIndex == 0
-        val headerContainerColor =
-          if (isHome) {
-            Color.Transparent
-          } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.90f)
-          }
+        val headerContainerColor = Color.Transparent
         val headerContentColor = MaterialTheme.colorScheme.onSurface
 
         Surface(
           color = headerContainerColor,
-          shape =
-            if (isHome) {
-              RoundedCornerShape(0.dp)
-            } else {
-              RoundedCornerShape(
-                bottomStart = 32.dp,
-                bottomEnd = 32.dp,
-              )
-            },
+          shape = RoundedCornerShape(0.dp),
         ) {
           CenterAlignedTopAppBar(
             modifier =
@@ -235,8 +222,9 @@ internal fun ParentDashboardShell(
           Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(30.dp),
-            color = Color.Transparent,
-            shadowElevation = 10.dp,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+            shadowElevation = 12.dp,
+            tonalElevation = 0.dp,
           ) {
             Row(
               modifier =
@@ -259,7 +247,7 @@ internal fun ParentDashboardShell(
                     if (selected) {
                       ParentAccentColor
                     } else {
-                      MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
+                      Color.Transparent
                     },
                 ) {
                   Box(
