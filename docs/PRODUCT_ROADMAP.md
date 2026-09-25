@@ -354,3 +354,9 @@ Before publication we still need to decide:
 - Home connection test moved into the top-right header as a compact status action: neutral gray refresh icon when idle, spinner while testing, green check on confirmed success, red X on failure/timeout, then automatic reset to idle after about 3 seconds. Textual Test Connection controls/results were removed from Home content. Awaiting physical review.
 
 - Usage overview filters now use custom equal-width centered segments so Today/Yesterday/7 days fit cleanly with Michroma. Top-five app cards no longer show rank numbers. Recent activity's UNLOCKED PHONE label is neutral and the app timeline starts with more breathing room below the header. Awaiting physical review.
+
+- Bottom navigation icons now use rounded modern variants: Home, CalendarMonth, GridView and Smartphone. Awaiting physical review.
+
+- Device Protection history preview is capped at 5 events. Longer history opens in a dedicated Protection history screen with its own Back header and clear-history action. Awaiting physical review.
+
+- Floating bottom-nav position is no longer tied to navigation-bar insets. The Parent account dropdown is non-focusable so opening it should not surface Android native navigation controls or make the floating bar jump vertically. Awaiting physical verification.
