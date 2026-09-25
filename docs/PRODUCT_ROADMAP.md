@@ -33,6 +33,16 @@ The current implementation already includes the main foundation that should rema
   - 7 days
   - Top apps
   - Daily usage overview
+- Child Setup / Protection wizard
+  - Screen protection check
+  - Background protection check
+  - Exact timing check
+  - Parent connection check
+  - Re-runnable setup check from Child dashboard
+- Parent end-to-end connection test
+- Parent notification category settings
+  - Time requests
+  - Protection alerts
 - Reboot recovery / background protection handling
 
 The visual design and final UX are still to be redesigned before release.
@@ -120,6 +130,10 @@ Before publication we still need to decide:
 ### 2026-09-25
 
 - App usage tracking was completed as part of the base product.
+- Child Setup / Protection wizard was completed and physically tested.
+- Parent end-to-end connection test was completed and physically tested.
+- Parent notification category controls were completed and physically tested.
+- App Info protection detection was hardened for Android/MIUI variants after physical testing.
 - **Per-app daily limits** were intentionally postponed and reserved as a Premium candidate.
 - **New app installed alerts** were intentionally postponed and reserved as a Premium candidate.
 - UI appearance will be redesigned later; current screens are functional prototypes.
