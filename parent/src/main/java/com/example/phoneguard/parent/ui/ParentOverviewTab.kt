@@ -455,6 +455,7 @@ internal fun ParentOverviewTab(
           AppUsageDayContent(
             day = todayUsage,
             emptyMessage = "No app usage has been recorded today.",
+            inventory = appInventorySnapshot,
           )
         }
 
@@ -462,6 +463,7 @@ internal fun ParentOverviewTab(
           AppUsageDayContent(
             day = yesterdayUsage,
             emptyMessage = "No app usage was recorded yesterday.",
+            inventory = appInventorySnapshot,
           )
         }
 
@@ -469,6 +471,7 @@ internal fun ParentOverviewTab(
           AppUsageWeekContent(
             days = appUsageDays,
             referenceDate = referenceDate,
+            inventory = appInventorySnapshot,
           )
         }
       }
