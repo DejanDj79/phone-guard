@@ -115,7 +115,7 @@ internal fun DailyLimitWheelDialog(
       }
     },
     confirmButton = {
-      Button(onClick = { onConfirm(selectedMinutes) }) {
+      OutlinedButton(onClick = { onConfirm(selectedMinutes) }) {
         Text("SAVE")
       }
     },
@@ -193,7 +193,7 @@ internal fun BonusTimeWheelDialog(
       }
     },
     confirmButton = {
-      Button(
+      OutlinedButton(
         onClick = { onConfirm(selectedMinutes) },
       ) {
         Text("ADD")
@@ -356,7 +356,7 @@ internal fun PairDeviceScreen(
       )
     }
 
-    Button(
+    OutlinedButton(
       onClick = {
         scope.launch {
           pairingInProgress = true
