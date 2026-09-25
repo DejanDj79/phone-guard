@@ -28,15 +28,9 @@ internal fun ParentDashboardHeader(
   onTabSelected: (Int) -> Unit,
 ) {
   Text(
-    text = "PhoneGuard Parent",
+    text = "PhoneGuard",
     style = MaterialTheme.typography.headlineMedium,
     fontWeight = FontWeight.Bold,
-  )
-
-  Text(
-    text = "Parental control",
-    style = MaterialTheme.typography.titleMedium,
-    color = MaterialTheme.colorScheme.onSurfaceVariant,
   )
 
   ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -57,10 +51,7 @@ internal fun ParentDashboardHeader(
       )
 
       Text(
-        text =
-          devicePresenceSummary(device.lastSeenAt) +
-            " · " +
-            deviceStateLabel(device).removePrefix("● ").removePrefix("○ "),
+        text = devicePresenceSummary(device.lastSeenAt),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
