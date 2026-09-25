@@ -137,7 +137,8 @@ internal fun ParentProtectionHistoryScreen(
               onClick = { showClearConfirmation = true },
               enabled = !clearing,
               modifier = Modifier.heightIn(min = 52.dp),
-            ) {
+      shape = ParentActionShape,
+    ) {
               if (clearing) {
                 CircularProgressIndicator(
                   strokeWidth = 2.dp,
@@ -179,7 +180,8 @@ internal fun ParentProtectionHistoryScreen(
           },
           enabled = !clearing,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
           Text("CLEAR")
         }
       },
@@ -188,7 +190,8 @@ internal fun ParentProtectionHistoryScreen(
           onClick = { showClearConfirmation = false },
           enabled = !clearing,
         modifier = Modifier.heightIn(min = 52.dp),
-      ) {
+      shape = ParentActionShape,
+    ) {
           Text("CANCEL")
         }
       },
