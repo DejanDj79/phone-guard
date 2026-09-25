@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Apps
@@ -217,7 +219,7 @@ internal fun ParentDashboardShell(
             if (isHome) {
               MaterialTheme.colorScheme.background
             } else {
-              MaterialTheme.colorScheme.primary
+              ParentSectionHeaderColor
             }
           val headerContentColor =
             if (isHome) {
@@ -226,8 +228,26 @@ internal fun ParentDashboardShell(
               MaterialTheme.colorScheme.onPrimary
             }
 
-          CenterAlignedTopAppBar(
-            navigationIcon = {
+          Surface(
+            color = headerContainerColor,
+            shape =
+              if (isHome) {
+                RoundedCornerShape(0.dp)
+              } else {
+                RoundedCornerShape(
+                  bottomStart = 32.dp,
+                  bottomEnd = 32.dp,
+                )
+              },
+          ) {
+            CenterAlignedTopAppBar(
+              modifier =
+                if (isHome) {
+                  Modifier
+                } else {
+                  Modifier.padding(bottom = 8.dp)
+                },
+              navigationIcon = {
               if (isHome) {
                 IconButton(
                   onClick = {
@@ -244,15 +264,20 @@ internal fun ParentDashboardShell(
                 Surface(
                   shape = CircleShape,
                   color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                  modifier = Modifier.padding(start = 8.dp),
+                  modifier =
+                    Modifier
+                      .padding(start = 10.dp)
+                      .size(38.dp),
                 ) {
                   IconButton(
                     onClick = { onSectionSelected(0) },
+                    modifier = Modifier.size(38.dp),
                   ) {
                     Icon(
                       imageVector = Icons.Default.ArrowBack,
                       contentDescription = "Back to Home",
-                      tint = MaterialTheme.colorScheme.primary,
+                      tint = ParentSectionHeaderColor,
+                      modifier = Modifier.size(20.dp),
                     )
                   }
                 }
@@ -280,9 +305,24 @@ internal fun ParentDashboardShell(
                     } else {
                       MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                     },
-                  modifier = Modifier.padding(end = 8.dp),
+                  modifier =
+                    if (isHome) {
+                      Modifier.padding(end = 8.dp)
+                    } else {
+                      Modifier
+                        .padding(end = 10.dp)
+                        .size(38.dp)
+                    },
                 ) {
-                  IconButton(onClick = { accountMenuExpanded = true }) {
+                  IconButton(
+                    onClick = { accountMenuExpanded = true },
+                    modifier =
+                      if (isHome) {
+                        Modifier
+                      } else {
+                        Modifier.size(38.dp)
+                      },
+                  ) {
                     Icon(
                       imageVector = Icons.Default.AccountCircle,
                       contentDescription = "Parent account",
@@ -290,7 +330,13 @@ internal fun ParentDashboardShell(
                         if (isHome) {
                           headerContentColor
                         } else {
-                          MaterialTheme.colorScheme.primary
+                          ParentSectionHeaderColor
+                        },
+                      modifier =
+                        if (isHome) {
+                          Modifier
+                        } else {
+                          Modifier.size(20.dp)
                         },
                     )
                   }
@@ -356,12 +402,13 @@ internal fun ParentDashboardShell(
             },
             colors =
               TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = headerContainerColor,
+                containerColor = Color.Transparent,
                 navigationIconContentColor = headerContentColor,
                 titleContentColor = headerContentColor,
                 actionIconContentColor = headerContentColor,
               ),
-          )
+            )
+          }
         }
       },
     ) { innerPadding ->
