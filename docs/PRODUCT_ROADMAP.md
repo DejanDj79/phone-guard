@@ -188,7 +188,7 @@ Home is the main command center and should prioritize only information that matt
 - [x] Parent pairing flow redesign
 - [x] Child five-step setup wizard
 - [x] Clarified Child Change Parent flow
-- [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented, awaiting final physical UI approval
+- [ ] Parent modern app shell: top app bar + navigation drawer + account menu — implemented. Non-Home sections now use a teal animated top header that slides in from above with a circular Back action; detail screens reuse the same animated header pattern. Awaiting final physical UI approval
 - [ ] Parent Home final minimalist redesign — Manrope + `#88D9E0` pass implemented; awaiting final physical UI approval
 - [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a compact selected-day Material 3 dial picker integrated directly into the selected-day card. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
 - [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
@@ -308,3 +308,5 @@ Before publication we still need to decide:
 
 - Android system Back navigation now follows Parent UI state: detail/edit screens return to their previous Parent screen, non-Home drawer sections return to Home first, and only Home without an open child screen exits normally.
 - Main Parent content and full-screen editors now use more top spacing / status-bar-aware padding.
+
+- Detail-page headers use the same animated teal surface with a circular Back control; the header slides in from the top when entering Schedule editor, Allowed Apps, Devices, and Device management.
