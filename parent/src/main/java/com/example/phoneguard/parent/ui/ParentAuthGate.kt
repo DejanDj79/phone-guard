@@ -215,6 +215,7 @@ private fun ParentWelcomeScreen(
     Button(
       onClick = onContinueWithGoogle,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text("CONTINUE WITH GOOGLE")
     }
@@ -224,6 +225,7 @@ private fun ParentWelcomeScreen(
     OutlinedButton(
       onClick = onContinueWithEmail,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text("CONTINUE WITH EMAIL")
     }
@@ -293,6 +295,7 @@ private fun ParentGoogleSignInScreen(
       },
       enabled = !inProgress,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text(
         if (inProgress) {
@@ -309,6 +312,7 @@ private fun ParentGoogleSignInScreen(
       onClick = onBack,
       enabled = !inProgress,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text("BACK")
     }
@@ -352,7 +356,8 @@ private fun ParentEmailAuthScreen(
         Button(
           onClick = { mode = ParentEmailMode.SIGN_IN },
           modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("SIGN IN")
         }
       } else {
@@ -363,7 +368,8 @@ private fun ParentEmailAuthScreen(
             noticeMessage = null
           },
           modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("SIGN IN")
         }
       }
@@ -372,7 +378,8 @@ private fun ParentEmailAuthScreen(
         Button(
           onClick = { mode = ParentEmailMode.CREATE_ACCOUNT },
           modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("CREATE")
         }
       } else {
@@ -383,7 +390,8 @@ private fun ParentEmailAuthScreen(
             noticeMessage = null
           },
           modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-        ) {
+      shape = ParentActionShape,
+    ) {
           Text("CREATE")
         }
       }
@@ -520,6 +528,7 @@ private fun ParentEmailAuthScreen(
           passwordValid &&
           confirmationValid,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text(
         when {
@@ -545,6 +554,7 @@ private fun ParentEmailAuthScreen(
       onClick = onBack,
       enabled = !inProgress,
       modifier = Modifier.heightIn(min = 52.dp),
+      shape = ParentActionShape,
     ) {
       Text("BACK")
     }
