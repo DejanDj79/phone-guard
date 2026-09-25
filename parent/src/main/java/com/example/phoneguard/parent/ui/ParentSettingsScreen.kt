@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -188,7 +189,7 @@ fun ParentSettingsScreen(
             }
           },
           enabled = !signOutInProgress,
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
           if (signOutInProgress) {
@@ -298,7 +299,7 @@ fun ParentSettingsScreen(
             currentPin.length in 4..6 &&
               newPin.length in 4..6 &&
               confirmPin.length in 4..6,
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
           Text("CHANGE PIN")
@@ -476,7 +477,7 @@ fun ParentSettingsScreen(
               }
             context.startActivity(intent)
           },
-          modifier = Modifier.heightIn(min = 52.dp),
+          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
           Text("ANDROID NOTIFICATION SETTINGS")
