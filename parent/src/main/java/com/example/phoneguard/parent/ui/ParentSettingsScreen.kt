@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.phoneguard.parent.data.ParentNotificationSettingsStore
 import com.example.phoneguard.parent.data.ParentSecurityStore
 
 @Composable
@@ -45,6 +46,10 @@ fun ParentSettingsScreen(
   val securityStore =
     remember(context) {
       ParentSecurityStore(context.applicationContext)
+    }
+  val notificationSettingsStore =
+    remember(context) {
+      ParentNotificationSettingsStore(context.applicationContext)
     }
 
   val biometricAuthenticators =
@@ -62,6 +67,16 @@ fun ParentSettingsScreen(
   }
   var relockDelay by remember {
     mutableStateOf(securityStore.relockAfterBackgroundMillis())
+  }
+  var timeRequestNotificationsEnabled by remember {
+    mutableStateOf(
+      notificationSettingsStore.timeRequestNotificationsEnabled(),
+    )
+  }
+  var protectionAlertNotificationsEnabled by remember {
+    mutableStateOf(
+      notificationSettingsStore.protectionAlertNotificationsEnabled(),
+    )
   }
 
   var currentPin by remember { mutableStateOf("") }
@@ -301,10 +316,66 @@ fun ParentSettingsScreen(
         )
 
         Text(
-          text = "Time requests from Child devices use these notifications.",
+          text =
+            "Choose which PhoneGuard events should create notifications on this Parent phone. Events are still kept in the app even when a notification category is disabled.",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = "Time requests",
+              style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+              text = "Notify when a Child asks for more screen time.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+
+          Switch(
+            checked = timeRequestNotificationsEnabled,
+            onCheckedChange = { enabled ->
+              timeRequestNotificationsEnabled = enabled
+              notificationSettingsStore
+                .setTimeRequestNotificationsEnabled(enabled)
+            },
+          )
+        }
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = "Protection alerts",
+              style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+              text =
+                "Notify about disabled protection and PhoneGuard bypass attempts.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+
+          Switch(
+            checked = protectionAlertNotificationsEnabled,
+            onCheckedChange = { enabled ->
+              protectionAlertNotificationsEnabled = enabled
+              notificationSettingsStore
+                .setProtectionAlertNotificationsEnabled(enabled)
+            },
+          )
+        }
 
         OutlinedButton(
           onClick = {
