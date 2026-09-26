@@ -44,11 +44,13 @@ Initial Parent flow:
 
 Initial Child flow:
 
-1. Welcome
-2. Connect to Parent by pairing code / QR
-3. Grant required protection permissions
-4. Verify Parent connection
-5. Setup complete / Child dashboard
+1. Welcome / local Parent PIN setup
+2. Grant Accessibility protection
+3. Confirm background / battery-unrestricted protection
+4. Confirm precise timing capability
+5. Connect to Parent with the temporary 6-character pairing code
+6. Verify Parent connection / setup complete
+7. Child dashboard
 
 
 ## Free version — current foundation
@@ -487,4 +489,4 @@ Before publication we still need to decide:
 
 - Before publication, record the source/license metadata for the externally supplied icon set (including any required Flaticon attribution) in the project documentation/app credits as applicable.
 
-- Roadmap tracker was consolidated on 2026-09-26 so the current accepted Warm Modern shell, button system, biometric entry screen, custom icon migration and remaining pre-release work are visible in one authoritative checklist. Older decision-log entries remain historical and can describe superseded UI directions.
+- Roadmap tracker was consolidated on 2026-09-26. The later “Free v1 scope closed” entry above is the authoritative current UI/product status; older visual experiments remain only as historical context.
