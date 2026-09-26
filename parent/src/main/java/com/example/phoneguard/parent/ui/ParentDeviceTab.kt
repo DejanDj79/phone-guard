@@ -167,12 +167,14 @@ internal fun ParentDeviceTab(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         Icon(
-          imageVector =
-            if (protectionComplete) {
-              Icons.Default.CheckCircle
-            } else {
-              Icons.Default.Warning
-            },
+          painter =
+            painterResource(
+              if (protectionComplete) {
+                R.drawable.pg_icon_shield
+              } else {
+                R.drawable.pg_icon_warning
+              },
+            ),
           contentDescription = null,
           tint =
             if (protectionKnown && !protectionComplete) {
