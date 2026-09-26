@@ -1,6 +1,6 @@
 # PhoneGuard Product Roadmap
 
-_Last updated: 2026-09-25 — modern UI direction approved_
+_Last updated: 2026-09-26 — Warm Modern Parent UI in final polish phase_
 
 This document tracks product decisions for the future Play Store release, especially which features should remain available in the free version and which features are candidates for a paid/premium version.
 
@@ -136,21 +136,27 @@ During ADB diagnostics, package and UID AppOps could show different values, and 
 
 ### Global Parent app shell
 
-The Parent app should use:
+The current approved Parent shell uses:
 
-- A clean Material 3 top app bar.
-- Hamburger/menu icon on the left.
-- Current Child device context visible in the top bar.
-- Parent account/avatar icon on the right.
-- A navigation drawer instead of the current top tab row.
-- Main drawer destinations:
+- A transparent rounded top header that lets the center-lit horizontal root gradient continue behind it.
+- A thin darker header outline; no separate filled header panel.
+- Home: Parent/account control on the left and connection-test status action on the right.
+- Schedule / Apps / Device: Back control on the left and Parent/account control on the right.
+- Parent account menu is an in-window overlay rather than a Material popup. It contains:
+  - Parent identity
+  - currently managed Child
+  - Manage children
+  - Settings
+  - Sign out
+- Primary navigation is a floating, icon-only bottom bar with:
   - Home
   - Schedule
   - Apps
   - Device
-  - Settings
-- Account menu should expose the signed-in Parent identity and account actions such as Settings and Sign out.
-- Child switching remains a separate device-selection action and should not be confused with Parent account switching.
+- The selected bottom destination uses one orange circular indicator that slides with a spring/bounce animation.
+- Settings is intentionally secondary and is opened from the Parent account menu.
+- Android native navigation controls remain hidden during normal use; the floating Parent navigation is fixed and no longer follows navigation-bar inset changes.
+- Current top and bottom navigation structure has been physically reviewed and accepted.
 
 ### Parent Home
 
@@ -184,20 +190,79 @@ Home is the main command center and should prioritize only information that matt
 
 ### UI implementation tracker
 
-- [x] Parent authentication / account-aware local storage
-- [x] Parent pairing flow redesign
-- [x] Child five-step setup wizard
-- [x] Clarified Child Change Parent flow
-- [ ] Parent modern app shell: drawer/hamburger replaced by floating icon-only bottom navigation with Home, Schedule, Apps and Device. Parent menu lives in the top account icon and contains Manage children, Settings and Sign out. Chrome now follows the Warm Modern light-surface + orange-accent direction. Awaiting final physical UI approval
-- [ ] Parent Home final minimalist redesign — Warm Modern palette + Michroma/Manrope typography pass implemented; awaiting final physical UI approval
-- [ ] Schedule screen redesign — overview implemented; editor uses one Mon–Sun strip and a compact selected-day Material 3 dial picker integrated directly into the selected-day card. There is no separate day enable switch: `00:00–00:00` means inactive; changing either time activates the day. Awaiting physical review
-- [ ] Apps screen redesign — overview and allowed-app editor implemented in new visual system; awaiting physical review
-- [ ] Device / protection screen redesign — implemented in new visual system; awaiting physical review
-- [ ] Settings screen redesign — implemented in new visual system; awaiting physical review
-- [ ] Pairing/setup visual polish pass after the main design system is established
-- [ ] Final accessibility, small-screen and dark-theme pass
+#### Completed / physically accepted
 
-The current implementation should be updated incrementally against this tracker. When a UI phase is completed and physically reviewed, mark it complete here rather than relying only on chat history.
+- [x] Parent authentication / account-aware local storage
+- [x] Parent pairing foundation
+- [x] Child five-step setup / protection wizard
+- [x] Clarified Child Change Parent flow
+- [x] Warm Modern Parent design system
+  - center-lit horizontal gradient
+  - warm near-white surfaces
+  - graphite text
+  - orange active-state accent
+  - Michroma display/labels + Manrope body
+- [x] Parent top header and floating bottom navigation
+- [x] Account menu converted to an in-window overlay; repeated account-icon tap closes it correctly
+- [x] Bottom-navigation jump caused by Android navigation-bar insets fixed
+- [x] Parent action-button system
+  - 52dp minimum height
+  - content-width standalone actions
+  - centered standalone actions
+  - 12dp corner radius
+  - paired/segmented controls keep shared-row width
+- [x] Startup Parent security / biometric screen redesigned in the Warm Modern style
+  - custom fingerprint/lock screen first
+  - native Android BiometricPrompt opens only after explicit biometric action
+  - PIN remains fallback
+- [x] Parent connection-test action moved to Home header with idle/loading/success/failure visual states
+- [x] Device Protection history preview limited to five events, with dedicated full History screen
+
+#### Implemented — keep under physical review while polishing
+
+- [ ] Parent Home final visual pass
+  - Recent unlocked activity timeline
+  - Usage overview Today / Yesterday / 7 days
+  - top-five real app cards
+  - real weekly bar chart
+- [ ] Schedule overview/editor final visual review
+- [ ] Apps overview / Allowed Apps editor final visual review
+- [ ] Device / protection page final visual review
+- [ ] Settings page final visual review
+- [ ] Devices / Device management secondary-screen visual review
+
+#### Icon system
+
+- [x] User-supplied custom outline SVG icon set converted to Android VectorDrawable resources and integrated across most Parent UI.
+- [x] Text action buttons intentionally remain text-only; button icons were removed where not needed.
+- [ ] Replace the three remaining temporary Material icons when matching custom SVGs are supplied:
+  - Protection history
+  - Edit schedule / calendar
+  - Notifications / bell
+- [ ] Before release, record Flaticon/source/license/attribution metadata for every externally supplied icon as required.
+
+#### Still to do before release
+
+- [ ] Pairing / authentication / setup visual polish pass using the finalized Warm Modern system
+- [ ] Small-screen layout pass
+- [ ] Accessibility pass
+  - touch targets
+  - TalkBack/content descriptions
+  - contrast
+  - text scaling
+- [ ] Decide whether a dark theme is required for v1; if yes, implement and physically review it
+- [ ] Full Parent + Child regression test after the UI/icon pass
+- [ ] Final Free vs Premium feature gating implementation
+  - Per-app daily limits remain Premium candidate
+  - New-app-installed alerts remain Premium candidate
+- [ ] Release preparation
+  - icon/font/license credits
+  - versioning/signing verification
+  - Play Store assets/listing/privacy requirements
+  - release build smoke test
+
+The tracker above is the current source of truth. Older entries in the Decision log are retained as history and may describe directions that were later superseded.
+
 
 
 ## Paid / Premium candidates
@@ -374,3 +439,5 @@ Before publication we still need to decide:
 - Custom Parent outline icon set imported from user-supplied SVGs and converted to Android VectorDrawable resources. Header, bottom navigation, account menu, connection test states, biometric screen, protection status, Settings icons, Back controls, app fallback icon and icon-only save now use the custom set. Text action buttons were simplified to text-only. Three temporary Material icons remain until matching SVGs are supplied: Protection history, Edit schedule/calendar and Notifications/bell. Awaiting physical review.
 
 - Before publication, record the source/license metadata for the externally supplied icon set (including any required Flaticon attribution) in the project documentation/app credits as applicable.
+
+- Roadmap tracker was consolidated on 2026-09-26 so the current accepted Warm Modern shell, button system, biometric entry screen, custom icon migration and remaining pre-release work are visible in one authoritative checklist. Older decision-log entries remain historical and can describe superseded UI directions.
