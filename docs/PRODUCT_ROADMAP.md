@@ -368,3 +368,5 @@ Before publication we still need to decide:
 - Parent account menu now renders as an in-window overlay instead of Material DropdownMenu/Popup. Repeated taps on the account icon reliably toggle it open/closed, Back closes it, and it remains inside the immersive Parent window so native navigation controls should not reappear.
 
 - Action buttons now use a 12dp corner radius, retain the 52dp minimum height, and standalone actions are visually centered in their card/screen while staying content-width. Intentional paired controls keep their shared-row layout. Usage overview segments use the same compact radius. Awaiting physical review.
+
+- Startup biometric unlock now has a dedicated Warm Modern screen: the shared Parent gradient remains visible, a centered bordered card presents a fingerprint/lock visual, Michroma headings and compact 12dp-radius actions. Biometric unlock is now explicitly triggered from the custom screen instead of auto-opening the native Android prompt immediately; PIN remains the secondary fallback. The native BiometricPrompt text was simplified to match. Awaiting physical review.
