@@ -1,6 +1,7 @@
 package com.example.phoneguard.parent.ui
 
 import com.example.phoneguard.parent.R
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -344,12 +347,40 @@ fun ParentScheduleEditorScreen(
               modifier =
                 Modifier
                   .fillMaxWidth()
-                  .padding(vertical = 2.dp),
+                  .background(
+                    brush =
+                      Brush.horizontalGradient(
+                        colors =
+                          listOf(
+                            Color(0xFF576688),
+                            Color(0xFF465371),
+                          ),
+                      ),
+                    shape = RoundedCornerShape(24.dp),
+                  )
+                  .padding(horizontal = 8.dp, vertical = 10.dp),
               contentAlignment = Alignment.Center,
             ) {
               TimePicker(
                 state = pickerState,
                 modifier = Modifier.scale(0.78f),
+                colors =
+                  TimePickerDefaults.colors(
+                    containerColor = Color.Transparent,
+                    clockDialColor = Color.Transparent,
+                    selectorColor = ParentAccentColor,
+                    clockDialSelectedContentColor =
+                      MaterialTheme.colorScheme.onPrimary,
+                    clockDialContentColor =
+                      MaterialTheme.colorScheme.onSurface,
+                    timeSelectorSelectedContainerColor =
+                      ParentAccentColor,
+                    timeSelectorContainerColor = Color.Transparent,
+                    timeSelectorSelectedContentColor =
+                      MaterialTheme.colorScheme.onPrimary,
+                    timeSelectorContentColor =
+                      MaterialTheme.colorScheme.onSurface,
+                  ),
               )
             }
           }
