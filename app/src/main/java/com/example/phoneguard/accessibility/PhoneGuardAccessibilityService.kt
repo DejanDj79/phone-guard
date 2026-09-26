@@ -716,13 +716,13 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun showOverlay() {
     if (overlayView != null) return
 
-    val accent = Color.rgb(243, 87, 2)
-    val graphite = Color.rgb(48, 49, 50)
-    val secondaryText = Color.rgb(127, 128, 130)
-    val surface = Color.rgb(246, 246, 243)
-    val surfaceVariant = Color.rgb(233, 233, 229)
-    val outline = Color.rgb(211, 211, 206)
-    val errorColor = Color.rgb(164, 61, 61)
+    val accent = Color.rgb(254, 93, 13)
+    val graphite = Color.rgb(71, 71, 71)
+    val secondaryText = Color.rgb(106, 106, 106)
+    val surface = Color.rgb(244, 244, 244)
+    val surfaceVariant = Color.rgb(233, 233, 233)
+    val outline = Color.rgb(207, 207, 207)
+    val errorColor = Color.rgb(200, 72, 8)
     val michroma = ResourcesCompat.getFont(this, R.font.michroma) ?: Typeface.DEFAULT
     val manrope = ResourcesCompat.getFont(this, R.font.manrope) ?: Typeface.DEFAULT
 
@@ -761,11 +761,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
             intArrayOf(
-              Color.rgb(222, 222, 218),
-              Color.rgb(231, 231, 227),
-              Color.rgb(243, 243, 240),
-              Color.rgb(231, 231, 227),
-              Color.rgb(222, 222, 218),
+              Color.rgb(233, 233, 233),
+              Color.rgb(239, 239, 239),
+              Color.rgb(244, 244, 244),
+              Color.rgb(239, 239, 239),
+              Color.rgb(233, 233, 233),
             ),
           )
         addView(
@@ -781,7 +781,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       ImageView(this).apply {
         setImageResource(R.drawable.pg_child_lock)
         imageTintList = ColorStateList.valueOf(accent)
-        background = circleBackground(surface)
+        background = circleBackground(surfaceVariant)
         setPadding(dp(21), dp(21), dp(21), dp(21))
         layoutParams =
           LinearLayout.LayoutParams(dp(82), dp(82)).apply {
@@ -834,7 +834,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         ImageButton(this).apply {
           setImageDrawable(packageManager.getApplicationIcon(applicationInfo))
           contentDescription = label
-          background = roundedBackground(surface, radiusDp = 14)
+          background = roundedBackground(surfaceVariant, radiusDp = 14)
           scaleType = ImageView.ScaleType.CENTER_INSIDE
           setPadding(dp(8), dp(8), dp(8), dp(8))
           layoutParams =
@@ -934,15 +934,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           when {
             !enabled -> surfaceVariant
             selected -> accent
-            else -> surface
+            else -> surfaceVariant
           },
         )
       button.imageTintList =
         ColorStateList.valueOf(
           when {
-            !enabled -> Color.rgb(170, 170, 166)
-            selected -> Color.WHITE
-            else -> graphite
+            !enabled -> secondaryText
+            selected -> surface
+            else -> accent
           },
         )
     }
