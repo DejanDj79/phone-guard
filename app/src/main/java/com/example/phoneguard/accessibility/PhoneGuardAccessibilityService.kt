@@ -2,8 +2,11 @@ package com.example.phoneguard.accessibility
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.graphics.PixelFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
@@ -23,9 +26,13 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import com.example.phoneguard.R
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.remote.AppInventorySyncer
 import com.example.phoneguard.remote.ChildBackendClient
@@ -708,18 +715,56 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun showOverlay() {
     if (overlayView != null) return
 
+    val accent = Color.rgb(154, 113, 252)
+    val graphite = Color.rgb(48, 49, 50)
+    val secondaryText = Color.rgb(127, 128, 130)
+    val surface = Color.rgb(246, 246, 243)
+    val surfaceVariant = Color.rgb(233, 233, 229)
+    val outline = Color.rgb(211, 211, 206)
+    val errorColor = Color.rgb(164, 61, 61)
+
+    fun roundedBackground(
+      fillColor: Int,
+      radiusDp: Int = 12,
+      strokeColor: Int? = null,
+      strokeWidthDp: Int = 1,
+    ): GradientDrawable =
+      GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = dp(radiusDp).toFloat()
+        setColor(fillColor)
+        strokeColor?.let { setStroke(dp(strokeWidthDp), it) }
+      }
+
+    fun circleBackground(fillColor: Int): GradientDrawable =
+      GradientDrawable().apply {
+        shape = GradientDrawable.OVAL
+        setColor(fillColor)
+      }
+
     val content =
       LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER
-        setPadding(dp(32), dp(48), dp(32), dp(48))
-        setBackgroundColor(Color.rgb(18, 18, 20))
+        minimumHeight = resources.displayMetrics.heightPixels
+        setPadding(dp(28), dp(44), dp(28), dp(36))
       }
 
     val root =
       ScrollView(this).apply {
         isFillViewport = true
-        setBackgroundColor(Color.rgb(18, 18, 20))
+        isVerticalScrollBarEnabled = false
+        background =
+          GradientDrawable(
+            GradientDrawable.Orientation.LEFT_RIGHT,
+            intArrayOf(
+              Color.rgb(222, 222, 218),
+              Color.rgb(231, 231, 227),
+              Color.rgb(243, 243, 240),
+              Color.rgb(231, 231, 227),
+              Color.rgb(222, 222, 218),
+            ),
+          )
         addView(
           content,
           FrameLayout.LayoutParams(
@@ -730,77 +775,69 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       }
 
     val lockIcon =
-      TextView(this).apply {
-        text = "🔒"
-        textSize = 48f
-        gravity = Gravity.CENTER
-        setTextColor(Color.WHITE)
+      ImageView(this).apply {
+        setImageResource(R.drawable.pg_child_lock)
+        imageTintList = ColorStateList.valueOf(accent)
+        background = circleBackground(surface)
+        setPadding(dp(21), dp(21), dp(21), dp(21))
+        layoutParams =
+          LinearLayout.LayoutParams(dp(82), dp(82)).apply {
+            bottomMargin = dp(16)
+          }
+        contentDescription = "Locked"
       }
 
     val title =
       TextView(this).apply {
-        text = "Phone is currently locked"
-        textSize = 24f
+        text = "LOCKED"
+        textSize = 30f
         gravity = Gravity.CENTER
-        setTextColor(Color.WHITE)
-        setPadding(0, dp(20), 0, dp(8))
-      }
-
-    val subtitle =
-      TextView(this).apply {
-        text =
-          when {
-            settingsStore.isScheduleLockActive() ->
-              settingsStore.currentScheduledUnlockLabel()?.let {
-                "Available again at $it"
-              } ?: "Locked by schedule"
-            settingsStore.isDailyLimitLockActive() ->
-              "Daily limit reached"
-            else ->
-              "Locked manually"
+        setTextColor(graphite)
+        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        letterSpacing = 0.08f
+        layoutParams =
+          LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+          ).apply {
+            bottomMargin = dp(26)
           }
-        textSize = 18f
-        gravity = Gravity.CENTER
-        setTextColor(Color.LTGRAY)
-        setPadding(0, 0, 0, dp(28))
       }
 
     val allowedPackages = settingsStore.allowedPackages().sorted()
-    val allowedTitle =
-      if (allowedPackages.isNotEmpty()) {
-        TextView(this).apply {
-          text = "Allowed apps"
-          textSize = 16f
-          gravity = Gravity.CENTER
-          setTextColor(Color.WHITE)
-          setPadding(0, 0, 0, dp(8))
-        }
-      } else {
-        null
+    val allowedAppsRow =
+      LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
       }
 
-    val allowedButtons =
-      allowedPackages.mapNotNull { packageName ->
-        val launchIntent =
-          packageManager.getLaunchIntentForPackage(packageName)
-            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            ?: return@mapNotNull null
+    allowedPackages.forEach { packageName ->
+      val launchIntent =
+        packageManager.getLaunchIntentForPackage(packageName)
+          ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          ?: return@forEach
 
-        val label =
-          runCatching {
-            val applicationInfo =
-              packageManager.getApplicationInfo(packageName, 0)
-            packageManager.getApplicationLabel(applicationInfo).toString()
-          }.getOrDefault(packageName)
+      val applicationInfo =
+        runCatching {
+          packageManager.getApplicationInfo(packageName, 0)
+        }.getOrNull() ?: return@forEach
 
-        Button(this).apply {
-          text = label
+      val label =
+        runCatching {
+          packageManager.getApplicationLabel(applicationInfo).toString()
+        }.getOrDefault(packageName)
+
+      allowedAppsRow.addView(
+        ImageButton(this).apply {
+          setImageDrawable(packageManager.getApplicationIcon(applicationInfo))
+          contentDescription = label
+          background = roundedBackground(surface, radiusDp = 14)
+          scaleType = ImageView.ScaleType.CENTER_INSIDE
+          setPadding(dp(8), dp(8), dp(8), dp(8))
           layoutParams =
-            LinearLayout.LayoutParams(
-              LinearLayout.LayoutParams.MATCH_PARENT,
-              LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply {
-              bottomMargin = dp(6)
+            LinearLayout.LayoutParams(dp(58), dp(58)).apply {
+              marginStart = dp(6)
+              marginEnd = dp(6)
             }
           setOnClickListener {
             runCatching {
@@ -809,67 +846,32 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
               Log.w(TAG, "Failed to launch allowed app: " + packageName, error)
             }
           }
-        }
-      }
-
-    val audioManager = getSystemService(AudioManager::class.java)
-
-    val soundTitle =
-      TextView(this).apply {
-        text = "Sound"
-        textSize = 16f
-        gravity = Gravity.CENTER
-        setTextColor(Color.WHITE)
-        setPadding(0, dp(16), 0, dp(8))
-      }
-
-    val soundStatus =
-      TextView(this).apply {
-        text = ringerModeLabel(audioManager.ringerMode)
-        textSize = 14f
-        gravity = Gravity.CENTER
-        setTextColor(Color.LTGRAY)
-        setPadding(0, 0, 0, dp(8))
-      }
-
-    val soundControls =
-      LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER
-        layoutParams =
-          LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-          )
-      }
-
-    listOf(
-      "SOUND" to AudioManager.RINGER_MODE_NORMAL,
-      "VIBRATE" to AudioManager.RINGER_MODE_VIBRATE,
-    ).forEach { (label, mode) ->
-      soundControls.addView(
-        Button(this).apply {
-          text = label
-          layoutParams =
-            LinearLayout.LayoutParams(
-              0,
-              LinearLayout.LayoutParams.WRAP_CONTENT,
-              1f,
-            ).apply {
-              marginStart = dp(3)
-              marginEnd = dp(3)
-            }
-          setOnClickListener {
-            applyRingerMode(
-              audioManager = audioManager,
-              mode = mode,
-              statusView = soundStatus,
-            )
-          }
         },
       )
     }
 
+    val allowedAppsScroller =
+      HorizontalScrollView(this).apply {
+        isHorizontalScrollBarEnabled = false
+        isFillViewport = true
+        visibility = if (allowedAppsRow.childCount == 0) View.GONE else View.VISIBLE
+        layoutParams =
+          LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+          ).apply {
+            bottomMargin = dp(24)
+          }
+        addView(
+          allowedAppsRow,
+          FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+          ),
+        )
+      }
+
+    val audioManager = getSystemService(AudioManager::class.java)
     val cameraManager = getSystemService(CameraManager::class.java)
     val torchCameraId =
       runCatching {
@@ -882,66 +884,158 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     var flashlightEnabled = false
 
-    val flashlightStatus =
+    val systemMessage =
       TextView(this).apply {
-        text =
-          if (torchCameraId == null) {
-            "Flashlight is unavailable on this device."
-          } else {
-            "Flashlight is off"
-          }
-        textSize = 14f
+        textSize = 12f
         gravity = Gravity.CENTER
-        setTextColor(Color.LTGRAY)
-        setPadding(0, dp(12), 0, dp(8))
-      }
-
-    val flashlightButton =
-      Button(this).apply {
-        text = "FLASHLIGHT ON"
-        isEnabled = torchCameraId != null
+        setTextColor(secondaryText)
+        visibility = View.GONE
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT,
-          )
-        setOnClickListener {
-          val cameraId = torchCameraId ?: return@setOnClickListener
-          val nextEnabled = !flashlightEnabled
-
-          runCatching {
-            cameraManager.setTorchMode(cameraId, nextEnabled)
-          }.onSuccess {
-            flashlightEnabled = nextEnabled
-            text =
-              if (flashlightEnabled) {
-                "FLASHLIGHT OFF"
-              } else {
-                "FLASHLIGHT ON"
-              }
-            flashlightStatus.text =
-              if (flashlightEnabled) {
-                "Flashlight is on"
-              } else {
-                "Flashlight is off"
-              }
-            flashlightStatus.setTextColor(Color.LTGRAY)
-          }.onFailure { error ->
-            Log.w(TAG, "Flashlight change failed", error)
-            flashlightStatus.text = "Flashlight is currently unavailable."
-            flashlightStatus.setTextColor(Color.rgb(255, 170, 100))
+          ).apply {
+            topMargin = dp(10)
           }
-        }
+      }
+
+    fun controlButton(
+      iconRes: Int,
+      description: String,
+    ): ImageButton =
+      ImageButton(this).apply {
+        setImageResource(iconRes)
+        contentDescription = description
+        scaleType = ImageView.ScaleType.CENTER_INSIDE
+        setPadding(dp(15), dp(15), dp(15), dp(15))
+        layoutParams =
+          LinearLayout.LayoutParams(dp(56), dp(56)).apply {
+            marginStart = dp(9)
+            marginEnd = dp(9)
+          }
+      }
+
+    val soundButton = controlButton(R.drawable.pg_child_sound, "Sound")
+    val vibrateButton = controlButton(R.drawable.pg_child_vibrate, "Vibrate")
+    val flashlightButton = controlButton(R.drawable.pg_child_flashlight, "Flashlight")
+
+    fun styleControlButton(
+      button: ImageButton,
+      selected: Boolean,
+      enabled: Boolean = true,
+    ) {
+      button.isEnabled = enabled
+      button.background =
+        circleBackground(
+          when {
+            !enabled -> surfaceVariant
+            selected -> accent
+            else -> surface
+          },
+        )
+      button.imageTintList =
+        ColorStateList.valueOf(
+          when {
+            !enabled -> Color.rgb(170, 170, 166)
+            selected -> Color.WHITE
+            else -> graphite
+          },
+        )
+    }
+
+    fun refreshSoundControls() {
+      val mode = audioManager.ringerMode
+      styleControlButton(
+        soundButton,
+        selected = mode == AudioManager.RINGER_MODE_NORMAL,
+      )
+      styleControlButton(
+        vibrateButton,
+        selected = mode == AudioManager.RINGER_MODE_VIBRATE,
+      )
+    }
+
+    refreshSoundControls()
+    styleControlButton(
+      flashlightButton,
+      selected = flashlightEnabled,
+      enabled = torchCameraId != null,
+    )
+
+    soundButton.setOnClickListener {
+      runCatching {
+        audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
+      }.onSuccess {
+        systemMessage.visibility = View.GONE
+        refreshSoundControls()
+      }.onFailure { error ->
+        Log.w(TAG, "Ringer mode change blocked", error)
+        systemMessage.text = "Android did not allow this sound change."
+        systemMessage.setTextColor(errorColor)
+        systemMessage.visibility = View.VISIBLE
+      }
+    }
+
+    vibrateButton.setOnClickListener {
+      runCatching {
+        audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+      }.onSuccess {
+        systemMessage.visibility = View.GONE
+        refreshSoundControls()
+      }.onFailure { error ->
+        Log.w(TAG, "Ringer mode change blocked", error)
+        systemMessage.text = "Android did not allow this sound change."
+        systemMessage.setTextColor(errorColor)
+        systemMessage.visibility = View.VISIBLE
+      }
+    }
+
+    flashlightButton.setOnClickListener {
+      val cameraId = torchCameraId ?: return@setOnClickListener
+      val nextEnabled = !flashlightEnabled
+
+      runCatching {
+        cameraManager.setTorchMode(cameraId, nextEnabled)
+      }.onSuccess {
+        flashlightEnabled = nextEnabled
+        systemMessage.visibility = View.GONE
+        styleControlButton(
+          flashlightButton,
+          selected = flashlightEnabled,
+          enabled = true,
+        )
+      }.onFailure { error ->
+        Log.w(TAG, "Flashlight change failed", error)
+        systemMessage.text = "Flashlight is currently unavailable."
+        systemMessage.setTextColor(errorColor)
+        systemMessage.visibility = View.VISIBLE
+      }
+    }
+
+    val utilityControls =
+      LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
+        layoutParams =
+          LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+          ).apply {
+            bottomMargin = dp(24)
+          }
+        addView(soundButton)
+        addView(vibrateButton)
+        addView(flashlightButton)
       }
 
     val timeRequestStatus =
       TextView(this).apply {
         val feedback = settingsStore.timeRequestFeedback()
         text = feedback.orEmpty()
-        textSize = 14f
+        textSize = 12f
         gravity = Gravity.CENTER
-        setTextColor(Color.rgb(255, 120, 120))
-        setPadding(0, dp(10), 0, dp(10))
+        setTextColor(errorColor)
+        setPadding(0, dp(8), 0, dp(8))
         visibility = if (feedback.isNullOrBlank()) View.GONE else View.VISIBLE
       }
     overlayTimeRequestFeedbackView = timeRequestStatus
@@ -955,19 +1049,26 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT,
-          )
+          ).apply {
+            topMargin = dp(8)
+          }
       }
 
     val requestMoreTimeButton =
       Button(this).apply {
         text = "REQUEST MORE TIME"
+        textSize = 12f
+        letterSpacing = 0.04f
+        setTextColor(Color.WHITE)
+        setAllCaps(false)
+        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        backgroundTintList = null
+        background = roundedBackground(accent)
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-          ).apply {
-            topMargin = dp(16)
-          }
+            dp(54),
+          )
         setOnClickListener {
           timeRequestOptions.visibility =
             if (timeRequestOptions.visibility == View.VISIBLE) {
@@ -982,15 +1083,19 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       timeRequestOptions.addView(
         Button(this).apply {
           text = minutes.toString() + " MIN"
+          textSize = 11f
+          setTextColor(graphite)
+          setAllCaps(false)
+          backgroundTintList = null
+          background = roundedBackground(surface, strokeColor = outline)
           layoutParams =
             LinearLayout.LayoutParams(
               0,
-              LinearLayout.LayoutParams.WRAP_CONTENT,
+              dp(44),
               1f,
             ).apply {
-              topMargin = dp(4)
-              marginStart = dp(3)
-              marginEnd = dp(3)
+              marginStart = dp(4)
+              marginEnd = dp(4)
             }
 
           setOnClickListener {
@@ -999,7 +1104,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
             timeRequestOptions.visibility = View.GONE
             settingsStore.setTimeRequestFeedback(null)
             timeRequestStatus.visibility = View.VISIBLE
-            timeRequestStatus.setTextColor(Color.LTGRAY)
+            timeRequestStatus.setTextColor(secondaryText)
             timeRequestStatus.text = "Sending request…"
 
             Thread {
@@ -1020,7 +1125,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
                 when (result) {
                   is ChildTimeRequestResult.Success -> {
-                    timeRequestStatus.setTextColor(Color.LTGRAY)
+                    timeRequestStatus.setTextColor(secondaryText)
                     timeRequestStatus.text =
                       if (result.alreadyPending) {
                         "A request is already waiting for Parent approval."
@@ -1032,7 +1137,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
                   }
 
                   is ChildTimeRequestResult.Failure -> {
-                    timeRequestStatus.setTextColor(Color.rgb(255, 120, 120))
+                    timeRequestStatus.setTextColor(errorColor)
                     timeRequestStatus.text = result.message
                   }
                 }
@@ -1043,48 +1148,52 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       )
     }
 
-    val disclosure =
-      TextView(this).apply {
-        text = "Unlocking requires the parent PIN."
-        textSize = 14f
-        gravity = Gravity.CENTER
-        setTextColor(Color.LTGRAY)
-        setPadding(0, 0, 0, dp(16))
-      }
-
     val pinInput =
       EditText(this).apply {
         hint = "Parent PIN"
+        textSize = 15f
         inputType =
           InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
         filters = arrayOf(InputFilter.LengthFilter(6))
-        setTextColor(Color.WHITE)
-        setHintTextColor(Color.GRAY)
+        setTextColor(graphite)
+        setHintTextColor(secondaryText)
         gravity = Gravity.CENTER
+        setSingleLine(true)
+        background = roundedBackground(surface, strokeColor = outline)
+        setPadding(dp(16), 0, dp(16), 0)
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-          )
+            dp(56),
+          ).apply {
+            topMargin = dp(18)
+          }
       }
 
     val error =
       TextView(this).apply {
-        textSize = 14f
+        textSize = 12f
         gravity = Gravity.CENTER
-        setTextColor(Color.rgb(255, 120, 120))
-        setPadding(0, dp(8), 0, dp(8))
+        setTextColor(errorColor)
+        setPadding(0, dp(8), 0, 0)
       }
 
     val unlockButton =
       Button(this).apply {
         text = "UNLOCK"
+        textSize = 12f
+        letterSpacing = 0.04f
+        setTextColor(graphite)
+        setAllCaps(false)
+        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        backgroundTintList = null
+        background = roundedBackground(surface, strokeColor = Color.rgb(141, 141, 137))
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
+            dp(54),
           ).apply {
-            topMargin = dp(8)
+            topMargin = dp(12)
           }
 
         setOnClickListener {
@@ -1104,18 +1213,12 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     content.addView(lockIcon)
     content.addView(title)
-    content.addView(subtitle)
-    allowedTitle?.let(content::addView)
-    allowedButtons.forEach(content::addView)
-    content.addView(soundTitle)
-    content.addView(soundStatus)
-    content.addView(soundControls)
-    content.addView(flashlightStatus)
-    content.addView(flashlightButton)
+    content.addView(allowedAppsScroller)
+    content.addView(utilityControls)
+    content.addView(systemMessage)
     content.addView(requestMoreTimeButton)
     content.addView(timeRequestOptions)
     content.addView(timeRequestStatus)
-    content.addView(disclosure)
     content.addView(pinInput)
     content.addView(error)
     content.addView(unlockButton)
