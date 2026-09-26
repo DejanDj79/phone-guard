@@ -227,7 +227,7 @@ export default {
 
     const { data: device, error: deviceError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_id, display_name, fcm_token, access_state, temporary_allow_until")
+      .select("device_id, display_name, fcm_token, access_state, temporary_allow_until, battery_level_percent")
       .eq("device_id", deviceId)
       .eq("parent_user_id", parentUserId)
       .eq("control_token_hash", controlTokenHash)
@@ -382,6 +382,10 @@ export default {
         deviceId: device.device_id,
         displayName: device.display_name,
         state: accessState,
+        batteryLevelPercent:
+          typeof device.battery_level_percent === "number"
+            ? device.battery_level_percent
+            : null,
         temporaryAccessMinutesRemaining:
           accessState === "TEMPORARILY_ALLOWED" &&
             temporaryAllowUntil !== null
