@@ -165,7 +165,7 @@ fun AllowedAppsEditorScreen(
                 enabled = !saving,
                 colors =
                   SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
+                    checkedThumbColor = MaterialTheme.colorScheme.onSurface,
                     checkedTrackColor = ParentAccentColor,
                   ),
               )
@@ -198,7 +198,7 @@ fun AllowedAppsEditorScreen(
           colors =
             ButtonDefaults.buttonColors(
               containerColor = ParentAccentColor,
-              contentColor = Color.White,
+              contentColor = MaterialTheme.colorScheme.onPrimary,
               disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
               disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
@@ -213,7 +213,7 @@ fun AllowedAppsEditorScreen(
             Icon(
               painter = painterResource(R.drawable.pg_icon_check),
               contentDescription = "Save allowed apps",
-              tint = Color.White,
+              tint = MaterialTheme.colorScheme.onPrimary,
               modifier = Modifier.size(24.dp),
             )
           }
