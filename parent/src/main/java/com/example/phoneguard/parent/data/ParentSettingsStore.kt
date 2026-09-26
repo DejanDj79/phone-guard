@@ -178,6 +178,8 @@ class ParentSettingsStore(context: Context) {
                   displayName = json.getString("displayName"),
                   state = state,
                   temporaryAccessMinutesRemaining = temporaryMinutes,
+                  temporaryAccessGrantedMinutes =
+                    json.optNullableInt("temporaryGrantedMinutes"),
                   isOnline = json.optBoolean("isOnline", true),
                   lastSeenAt = json.optNullableString("lastSeenAt"),
                   batteryLevelPercent = json.optNullableInt("batteryLevelPercent"),
@@ -223,6 +225,9 @@ class ParentSettingsStore(context: Context) {
 
       device.temporaryAccessMinutesRemaining?.let {
         json.put("temporaryMinutes", it)
+      }
+      device.temporaryAccessGrantedMinutes?.let {
+        json.put("temporaryGrantedMinutes", it)
       }
       device.lastSeenAt?.let { json.put("lastSeenAt", it) }
       device.batteryLevelPercent?.let { json.put("batteryLevelPercent", it) }
