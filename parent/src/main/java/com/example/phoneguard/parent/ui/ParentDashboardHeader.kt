@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -139,7 +140,7 @@ internal fun ParentDashboardShell(
                   val leftShoulder = size.width * 0.34f
                   val rightShoulder = size.width * 0.66f
 
-                  val path =
+                  val borderPath =
                     Path().apply {
                       moveTo(0f, shoulderY)
                       lineTo(leftShoulder, shoulderY)
@@ -162,8 +163,47 @@ internal fun ParentDashboardShell(
                       lineTo(size.width, shoulderY)
                     }
 
+                  val maskPath =
+                    Path().apply {
+                      moveTo(0f, 0f)
+                      lineTo(0f, shoulderY)
+                      lineTo(leftShoulder, shoulderY)
+                      cubicTo(
+                        size.width * 0.40f,
+                        shoulderY,
+                        size.width * 0.41f,
+                        size.height,
+                        size.width * 0.50f,
+                        size.height,
+                      )
+                      cubicTo(
+                        size.width * 0.59f,
+                        size.height,
+                        size.width * 0.60f,
+                        shoulderY,
+                        rightShoulder,
+                        shoulderY,
+                      )
+                      lineTo(size.width, shoulderY)
+                      lineTo(size.width, 0f)
+                      close()
+                    }
+
                   drawPath(
-                    path = path,
+                    path = maskPath,
+                    brush =
+                      Brush.horizontalGradient(
+                        colors =
+                          listOf(
+                            ParentGradientEdge,
+                            ParentGradientCenter,
+                            ParentGradientEdge,
+                          ),
+                      ),
+                  )
+
+                  drawPath(
+                    path = borderPath,
                     color = ParentBorderColor,
                     style = Stroke(width = 1.dp.toPx()),
                   )
@@ -276,12 +316,9 @@ internal fun ParentDashboardShell(
           }
         }
       },
-    ) { innerPadding ->
+    ) {
       Box(
-        modifier =
-          Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
+        modifier = Modifier.fillMaxSize(),
       ) {
         content()
       }
