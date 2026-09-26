@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -226,6 +227,7 @@ internal fun BonusTimeWheelDialog(
   )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PairDeviceScreen(
   parentEmail: String?,
