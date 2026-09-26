@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -350,7 +351,10 @@ private fun ParentPinSetupScreen(
   var pin by remember { mutableStateOf("") }
   var confirmation by remember { mutableStateOf("") }
   var errorMessage by remember { mutableStateOf<String?>(null) }
-  Surface(modifier = modifier.fillMaxSize()) {
+  Surface(
+    modifier = modifier.fillMaxSize(),
+    color = Color.Transparent,
+  ) {
     Column(
       modifier = Modifier.fillMaxSize().padding(32.dp),
       verticalArrangement = Arrangement.Center,
