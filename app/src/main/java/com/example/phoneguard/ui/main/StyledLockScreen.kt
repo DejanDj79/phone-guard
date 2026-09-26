@@ -72,14 +72,16 @@ import com.example.phoneguard.remote.ChildTimeRequestResult
 import com.example.phoneguard.theme.ChildAccent
 import com.example.phoneguard.theme.ChildDark
 import com.example.phoneguard.theme.ChildLight
+import com.example.phoneguard.theme.ChildGradientEdge
+import com.example.phoneguard.theme.ChildGradientCenter
 import com.example.phoneguard.theme.ChildOutline
 import com.example.phoneguard.theme.ChildSurfaceMuted
 import com.example.phoneguard.theme.ChildTextSecondary
 import kotlinx.coroutines.launch
 
 private val LockAccent = ChildAccent
-private val LockGradientEdge = Color(0xFFD2D2D2)
-private val LockGradientCenter = ChildLight
+private val LockGradientEdge = ChildGradientEdge
+private val LockGradientCenter = ChildGradientCenter
 private val LockActionShape = RoundedCornerShape(12.dp)
 private val LockHeadlineFamily = FontFamily(Font(R.font.michroma, FontWeight.Normal))
 private val LockBodyFamily = FontFamily(Font(R.font.manrope, FontWeight.Normal))
@@ -141,9 +143,9 @@ internal fun StyledLockScreen(
       Brush.horizontalGradient(
         colorStops = arrayOf(
           0f to LockGradientEdge,
-          0.22f to Color(0xFFE3E3E3),
+          0.24f to Color(0xFF4D5970),
           0.5f to LockGradientCenter,
-          0.78f to Color(0xFFE3E3E3),
+          0.76f to Color(0xFF4D5970),
           1f to LockGradientEdge,
         ),
       ),
@@ -167,7 +169,7 @@ internal fun StyledLockScreen(
         fontWeight = FontWeight.Normal,
         fontSize = 38.sp,
         letterSpacing = 1.1.sp,
-        color = ChildDark,
+        color = ChildLight,
       )
 
       if (unlockTimeLabel != null) {
@@ -230,7 +232,7 @@ internal fun StyledLockScreen(
         border = BorderStroke(1.dp, ChildOutline),
         colors =
           ButtonDefaults.outlinedButtonColors(
-            contentColor = ChildDark,
+            contentColor = ChildLight,
             disabledContentColor = ChildTextSecondary,
           ),
       ) {
@@ -362,7 +364,7 @@ private fun LockRoundAction(
     modifier = Modifier.size(56.dp),
     colors = IconButtonDefaults.iconButtonColors(
       containerColor = if (selected) LockAccent else ChildSurfaceMuted,
-      contentColor = if (selected) ChildLight else LockAccent,
+      contentColor = if (selected) ChildDark else LockAccent,
       disabledContainerColor = ChildSurfaceMuted,
       disabledContentColor = ChildTextSecondary,
     ),
