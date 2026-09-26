@@ -71,7 +71,7 @@ import com.example.phoneguard.R
 import com.example.phoneguard.remote.ChildTimeRequestResult
 import kotlinx.coroutines.launch
 
-private val LockAccent = Color(0xFFF28A2E)
+private val LockAccent = Color(0xFFF35702)
 private val LockGradientEdge = Color(0xFFDEDEDA)
 private val LockGradientCenter = Color(0xFFF3F3F0)
 private val LockActionShape = RoundedCornerShape(12.dp)
@@ -171,30 +171,6 @@ internal fun StyledLockScreen(
       } else if (dailyLimitReached) {
         Spacer(Modifier.height(10.dp))
         Text("DAILY LIMIT REACHED", style = MaterialTheme.typography.labelMedium, color = Color(0xFF7F8082))
-      }
-
-      if (allowedApps.isNotEmpty()) {
-        Spacer(Modifier.height(28.dp))
-        Row(
-          modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-          horizontalArrangement = Arrangement.Center,
-        ) {
-          allowedApps.forEach { app ->
-            Column(
-              modifier = Modifier.width(72.dp).clickable {
-                runCatching { context.startActivity(Intent(app.launchIntent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                  .onFailure { systemMessage = "This app could not be opened." }
-              },
-              horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-              Image(
-                bitmap = app.icon.toBitmap(96, 96).asImageBitmap(),
-                contentDescription = app.label,
-                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(13.dp)),
-              )
-            }
-          }
-        }
       }
 
       Spacer(Modifier.height(28.dp))
@@ -315,6 +291,31 @@ internal fun StyledLockScreen(
         Text("UNLOCK", fontFamily = LockHeadlineFamily, fontSize = 11.sp)
       }
       Spacer(Modifier.height(20.dp))
+
+      if (allowedApps.isNotEmpty()) {
+        Spacer(Modifier.height(24.dp))
+        Row(
+          modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+          horizontalArrangement = Arrangement.Center,
+        ) {
+          allowedApps.forEach { app ->
+            Column(
+              modifier = Modifier.width(72.dp).clickable {
+                runCatching { context.startActivity(Intent(app.launchIntent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                  .onFailure { systemMessage = "This app could not be opened." }
+              },
+              horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+              Image(
+                bitmap = app.icon.toBitmap(96, 96).asImageBitmap(),
+                contentDescription = app.label,
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(13.dp)),
+              )
+            }
+          }
+        }
+        Spacer(Modifier.height(20.dp))
+      }
     }
   }
 
