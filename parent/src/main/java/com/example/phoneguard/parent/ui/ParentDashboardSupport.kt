@@ -584,17 +584,23 @@ private fun AppUsageTodayBarChart(
       .maxOfOrNull { app -> (app.seconds + 59) / 60 }
       ?.coerceAtLeast(1)
       ?: 1
+  val tickStepMinutes =
+    when {
+      maxMinutes <= 120 -> 30
+      maxMinutes <= 300 -> 60
+      else -> 120
+    }
   val axisMaxMinutes =
-    (((maxMinutes + 29) / 30) * 30)
-      .coerceAtLeast(30)
-  val tickCount = axisMaxMinutes / 30
+    (((maxMinutes + tickStepMinutes - 1) / tickStepMinutes) * tickStepMinutes)
+      .coerceAtLeast(tickStepMinutes)
+  val tickCount = axisMaxMinutes / tickStepMinutes
   val chartHeight =
-    (tickCount * 30)
+    (tickCount * 36)
       .coerceIn(180, 330)
       .dp
   val ticks =
     (0..tickCount)
-      .map { index -> index * 30 }
+      .map { index -> index * tickStepMinutes }
       .reversed()
 
   Surface(
