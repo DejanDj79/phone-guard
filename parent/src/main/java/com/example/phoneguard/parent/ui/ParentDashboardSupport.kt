@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -26,6 +27,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -232,197 +235,174 @@ internal fun PairDeviceScreen(
   modifier: Modifier = Modifier,
 ) {
   val scope = rememberCoroutineScope()
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
   var pairingCode by remember { mutableStateOf("") }
   var errorMessage by remember { mutableStateOf<String?>(null) }
   var pairingInProgress by remember { mutableStateOf(false) }
   var switchingAccount by remember { mutableStateOf(false) }
 
-  Column(
-    modifier =
-      modifier
-        .fillMaxSize()
-        .verticalScroll(rememberScrollState())
-        .statusBarsPadding()
-        .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 32.dp),
-    verticalArrangement = Arrangement.spacedBy(18.dp),
+  ModalBottomSheet(
+    onDismissRequest = {
+      if (!pairingInProgress && !switchingAccount) {
+        onCancel?.invoke()
+      }
+    },
+    sheetState = sheetState,
+    containerColor = MaterialTheme.colorScheme.surface,
+    contentColor = MaterialTheme.colorScheme.onSurface,
+    scrimColor = MaterialTheme.colorScheme.background.copy(alpha = 0.72f),
+    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+    dragHandle = {
+      Surface(
+        modifier = Modifier.padding(top = 10.dp, bottom = 8.dp).size(width = 44.dp, height = 4.dp),
+        shape = RoundedCornerShape(999.dp),
+        color = ParentAccentColor.copy(alpha = 0.78f),
+      ) {}
+    },
   ) {
-    Text(
-      text = "Pair a Child phone",
-      style = MaterialTheme.typography.headlineMedium,
-      fontWeight = FontWeight.Bold,
-    )
-
-    Text(
-      text =
-        "Connect a Child phone to this Parent account. Existing Child devices on this account will stay connected.",
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-      ) {
-        Text(
-          text = "Parent account",
-          style = MaterialTheme.typography.labelLarge,
-          fontWeight = FontWeight.SemiBold,
-        )
-
-        Text(
-          text =
-            parentEmail
-              ?.takeIf { it.isNotBlank() }
-              ?: "Signed in Parent account",
-          style = MaterialTheme.typography.bodyLarge,
-          fontWeight = FontWeight.Medium,
-        )
-
-        Text(
-          text = "The paired Child phone will belong to this account.",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        OutlinedButton(
-          onClick = {
-            scope.launch {
-              switchingAccount = true
-              errorMessage = null
-              errorMessage = onSwitchAccount()
-              switchingAccount = false
-            }
-          },
-          enabled = !pairingInProgress && !switchingAccount,
-          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
-      shape = ParentActionShape,
+    Column(
+      modifier =
+        modifier
+          .fillMaxWidth()
+          .heightIn(max = 720.dp)
+          .verticalScroll(rememberScrollState())
+          .navigationBarsPadding()
+          .padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 26.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+      Text(
+        text = "ADD CHILD PHONE",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+      )
+
+      Text(
+        text = "Enter the temporary 6-character code shown in PhoneGuard on the Child phone.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+
+      Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, ParentBorderColor),
+      ) {
+        Column(
+          modifier = Modifier.padding(16.dp),
+          verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
           Text(
-            if (switchingAccount) {
-              "SWITCHING…"
-            } else {
-              "SWITCH ACCOUNT"
-            },
+            text = "PARENT ACCOUNT",
+            style = MaterialTheme.typography.labelSmall,
+            color = ParentAccentColor,
+          )
+          Text(
+            text = parentEmail?.takeIf { it.isNotBlank() } ?: "Signed in Parent account",
+            style = MaterialTheme.typography.bodyLarge,
+          )
+          Text(
+            text = "The new Child phone will be added to this account. Existing devices stay connected.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
       }
-    }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+      Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.32f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, ParentBorderColor.copy(alpha = 0.7f)),
       ) {
-        PairingStep(
-          number = "1",
-          title = "Open PhoneGuard on the Child phone",
-          description = "Keep the Child pairing screen open.",
-        )
-
-        PairingStep(
-          number = "2",
-          title = "Find the 6-character code",
-          description = "The code is temporary and is verified by the PhoneGuard backend.",
-        )
-
-        PairingStep(
-          number = "3",
-          title = "Enter the code here",
-          description = "Letters and numbers are accepted.",
-        )
-      }
-    }
-
-    OutlinedTextField(
-      value = pairingCode,
-      onValueChange = { value ->
-        pairingCode =
-          value
-            .uppercase()
-            .filter(Char::isLetterOrDigit)
-            .take(6)
-        errorMessage = null
-      },
-      label = { Text("6-character pairing code") },
-      supportingText = {
-        Text(
-          if (pairingCode.isEmpty()) {
-            "Example: AB12CD"
-          } else {
-            pairingCode.length.toString() + " / 6"
-          },
-        )
-      },
-      singleLine = true,
-      enabled = !pairingInProgress && !switchingAccount,
-      keyboardOptions =
-        KeyboardOptions(
-          capitalization = KeyboardCapitalization.Characters,
-          keyboardType = KeyboardType.Ascii,
-        ),
-      modifier = Modifier.fillMaxWidth(),
-    )
-
-    errorMessage?.let { message ->
-      Text(
-        text = message,
-        color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodyMedium,
-      )
-    }
-
-    OutlinedButton(
-      onClick = {
-        scope.launch {
-          pairingInProgress = true
-          errorMessage = null
-
-          when (val result = onPair(pairingCode)) {
-            is PairingResult.Success -> Unit
-            is PairingResult.InvalidCode ->
-              errorMessage = result.message
-            is PairingResult.Error ->
-              errorMessage = result.message
-          }
-
-          pairingInProgress = false
+        Column(
+          modifier = Modifier.padding(16.dp),
+          verticalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+          PairingStep("1", "Open PhoneGuard on the Child phone", "Keep the pairing code visible.")
+          PairingStep("2", "Find the 6-character code", "The code is temporary and verified by the backend.")
+          PairingStep("3", "Enter it below", "Letters and numbers are accepted.")
         }
-      },
-      enabled =
-        pairingCode.length == 6 &&
-          !pairingInProgress &&
-          !switchingAccount,
-      modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
-      shape = ParentActionShape,
-    ) {
-      Text(
-        if (pairingInProgress) {
-          "PAIRING…"
-        } else {
-          "PAIR CHILD PHONE"
-        },
-      )
-    }
+      }
 
-    onCancel?.let {
-      OutlinedButton(
-        onClick = it,
+      OutlinedTextField(
+        value = pairingCode,
+        onValueChange = { value ->
+          pairingCode = value.uppercase().filter(Char::isLetterOrDigit).take(6)
+          errorMessage = null
+        },
+        label = { Text("PAIRING CODE") },
+        supportingText = {
+          Text(if (pairingCode.isEmpty()) "Example: AB12CD" else pairingCode.length.toString() + " / 6")
+        },
+        singleLine = true,
         enabled = !pairingInProgress && !switchingAccount,
-        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
-      shape = ParentActionShape,
-    ) {
-        Text("BACK TO DEVICES")
+        keyboardOptions =
+          KeyboardOptions(
+            capitalization = KeyboardCapitalization.Characters,
+            keyboardType = KeyboardType.Ascii,
+          ),
+        modifier = Modifier.fillMaxWidth(),
+        shape = ParentActionShape,
+      )
+
+      errorMessage?.let { message ->
+        Text(
+          text = message,
+          color = MaterialTheme.colorScheme.error,
+          style = MaterialTheme.typography.bodySmall,
+        )
+      }
+
+      OutlinedButton(
+        onClick = {
+          scope.launch {
+            pairingInProgress = true
+            errorMessage = null
+            when (val result = onPair(pairingCode)) {
+              is PairingResult.Success -> Unit
+              is PairingResult.InvalidCode -> errorMessage = result.message
+              is PairingResult.Error -> errorMessage = result.message
+            }
+            pairingInProgress = false
+          }
+        },
+        enabled = pairingCode.length == 6 && !pairingInProgress && !switchingAccount,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
+        shape = ParentActionShape,
+        border = androidx.compose.foundation.BorderStroke(1.dp, ParentAccentColor),
+      ) {
+        Text(if (pairingInProgress) "PAIRING…" else "PAIR CHILD PHONE")
+      }
+
+      OutlinedButton(
+        onClick = {
+          scope.launch {
+            switchingAccount = true
+            errorMessage = null
+            errorMessage = onSwitchAccount()
+            switchingAccount = false
+          }
+        },
+        enabled = !pairingInProgress && !switchingAccount,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+        shape = ParentActionShape,
+      ) {
+        Text(if (switchingAccount) "SWITCHING…" else "SWITCH ACCOUNT")
+      }
+
+      onCancel?.let {
+        OutlinedButton(
+          onClick = it,
+          enabled = !pairingInProgress && !switchingAccount,
+          modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+          shape = ParentActionShape,
+        ) {
+          Text("CANCEL")
+        }
       }
     }
-
-    Text(
-      text =
-        "Pairing a new Child does not remove devices already connected to this Parent account.",
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
   }
 }
 
