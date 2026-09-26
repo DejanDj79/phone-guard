@@ -62,6 +62,7 @@ fun AllowedAppsEditorScreen(
     ) {
       ParentDetailHeader(
         title = "Allowed apps",
+        iconRes = R.drawable.pg_icon_apps,
         onBack = onCancel,
       )
 
