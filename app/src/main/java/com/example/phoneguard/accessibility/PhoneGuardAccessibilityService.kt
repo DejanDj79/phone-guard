@@ -32,6 +32,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.content.res.ResourcesCompat
 import com.example.phoneguard.R
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.remote.AppInventorySyncer
@@ -715,13 +716,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun showOverlay() {
     if (overlayView != null) return
 
-    val accent = Color.rgb(154, 113, 252)
+    val accent = Color.rgb(232, 62, 29)
     val graphite = Color.rgb(48, 49, 50)
     val secondaryText = Color.rgb(127, 128, 130)
     val surface = Color.rgb(246, 246, 243)
     val surfaceVariant = Color.rgb(233, 233, 229)
     val outline = Color.rgb(211, 211, 206)
     val errorColor = Color.rgb(164, 61, 61)
+    val michroma = ResourcesCompat.getFont(this, R.font.michroma) ?: Typeface.DEFAULT
+    val manrope = ResourcesCompat.getFont(this, R.font.manrope) ?: Typeface.DEFAULT
 
     fun roundedBackground(
       fillColor: Int,
@@ -790,11 +793,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     val title =
       TextView(this).apply {
         text = "LOCKED"
-        textSize = 30f
+        textSize = 38f
         gravity = Gravity.CENTER
         setTextColor(graphite)
-        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-        letterSpacing = 0.08f
+        typeface = michroma
+        letterSpacing = 0.03f
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -888,6 +891,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
       TextView(this).apply {
         textSize = 12f
         gravity = Gravity.CENTER
+        typeface = manrope
         setTextColor(secondaryText)
         visibility = View.GONE
         layoutParams =
@@ -1034,6 +1038,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         text = feedback.orEmpty()
         textSize = 12f
         gravity = Gravity.CENTER
+        typeface = manrope
         setTextColor(errorColor)
         setPadding(0, dp(8), 0, dp(8))
         visibility = if (feedback.isNullOrBlank()) View.GONE else View.VISIBLE
@@ -1059,15 +1064,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         text = "REQUEST MORE TIME"
         textSize = 12f
         letterSpacing = 0.04f
-        setTextColor(Color.WHITE)
+        setTextColor(graphite)
         setAllCaps(false)
-        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        typeface = michroma
         backgroundTintList = null
-        background = roundedBackground(accent)
+        background = roundedBackground(surface, strokeColor = outline, strokeWidthDp = 1)
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            dp(54),
+            dp(64),
           )
         setOnClickListener {
           timeRequestOptions.visibility =
@@ -1151,23 +1156,33 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     val pinInput =
       EditText(this).apply {
         hint = "Parent PIN"
-        textSize = 15f
+        textSize = 16f
         inputType =
           InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
         filters = arrayOf(InputFilter.LengthFilter(6))
         setTextColor(graphite)
         setHintTextColor(secondaryText)
+        typeface = manrope
         gravity = Gravity.CENTER
         setSingleLine(true)
-        background = roundedBackground(surface, strokeColor = outline)
-        setPadding(dp(16), 0, dp(16), 0)
+        backgroundTintList = null
+        background = roundedBackground(surface, strokeColor = outline, strokeWidthDp = 1)
+        setPadding(dp(18), 0, dp(18), 0)
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            dp(56),
+            dp(64),
           ).apply {
             topMargin = dp(18)
           }
+        setOnFocusChangeListener { _, hasFocus ->
+          background =
+            if (hasFocus) {
+              roundedBackground(surface, strokeColor = accent, strokeWidthDp = 2)
+            } else {
+              roundedBackground(surface, strokeColor = outline, strokeWidthDp = 1)
+            }
+        }
       }
 
     val error =
@@ -1183,15 +1198,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         text = "UNLOCK"
         textSize = 12f
         letterSpacing = 0.04f
-        setTextColor(graphite)
+        setTextColor(accent)
         setAllCaps(false)
-        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        typeface = michroma
         backgroundTintList = null
-        background = roundedBackground(surface, strokeColor = Color.rgb(141, 141, 137))
+        background = roundedBackground(surface, strokeColor = accent, strokeWidthDp = 2)
         layoutParams =
           LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            dp(54),
+            dp(64),
           ).apply {
             topMargin = dp(12)
           }
