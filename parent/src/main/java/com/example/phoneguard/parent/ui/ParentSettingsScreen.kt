@@ -20,10 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,11 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.auth.ParentSupabase
 import com.example.phoneguard.parent.data.ParentAccountScopeStore
 import com.example.phoneguard.parent.data.ParentNotificationSettingsStore
@@ -141,7 +140,7 @@ fun ParentSettingsScreen(
           horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
           Icon(
-            imageVector = Icons.Default.AccountCircle,
+            painter = painterResource(R.drawable.pg_icon_user),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
           )
@@ -218,7 +217,7 @@ fun ParentSettingsScreen(
           horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
           Icon(
-            imageVector = Icons.Default.Security,
+            painter = painterResource(R.drawable.pg_icon_shield),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
           )
@@ -321,7 +320,7 @@ fun ParentSettingsScreen(
           horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
           Icon(
-            imageVector = Icons.Default.Lock,
+            painter = painterResource(R.drawable.pg_icon_lock),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
           )
