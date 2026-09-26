@@ -227,7 +227,7 @@ export default {
 
     const { data: device, error: deviceError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_id, display_name, fcm_token, access_state, temporary_allow_until, battery_level_percent")
+      .select("device_id, display_name, fcm_token, access_state, temporary_allow_until, temporary_allow_granted_minutes, battery_level_percent")
       .eq("device_id", deviceId)
       .eq("parent_user_id", parentUserId)
       .eq("control_token_hash", controlTokenHash)
@@ -353,6 +353,18 @@ export default {
     if (commandSentError) {
       return json({ error: "command_status_update_failed" }, 500);
     }
+    if (command === "BONUS_TIME") {
+      await ctx.supabaseAdmin
+        .from("child_devices")
+        .update({ temporary_allow_granted_minutes: bonusMinutes })
+        .eq("device_id", deviceId);
+    } else if (command === "LOCK" || command === "UNLOCK") {
+      await ctx.supabaseAdmin
+        .from("child_devices")
+        .update({ temporary_allow_granted_minutes: null })
+        .eq("device_id", deviceId);
+    }
+
     let accessState =
       typeof device.access_state === "string" ? device.access_state : "ALLOWED";
     let temporaryAllowUntil =
@@ -385,6 +397,14 @@ export default {
         batteryLevelPercent:
           typeof device.battery_level_percent === "number"
             ? device.battery_level_percent
+            : null,
+        temporaryAccessGrantedMinutes:
+          accessState === "TEMPORARILY_ALLOWED"
+            ? (command === "BONUS_TIME"
+                ? bonusMinutes
+                : typeof device.temporary_allow_granted_minutes === "number"
+                  ? device.temporary_allow_granted_minutes
+                  : null)
             : null,
         temporaryAccessMinutesRemaining:
           accessState === "TEMPORARILY_ALLOWED" &&
