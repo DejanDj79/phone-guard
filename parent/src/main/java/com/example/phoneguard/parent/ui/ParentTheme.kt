@@ -32,6 +32,7 @@ private val MichromaFamily =
 
 internal val ParentAccentColor = Color(0xFF69DEFF)
 internal val ParentBorderColor = Color(0xFF7382A3)
+internal val ParentHeaderIconColor = Color(0xFF95A4C5)
 internal val ParentActionShape = RoundedCornerShape(12.dp)
 internal val ParentGradientEdge = Color(0xFF3E4759)
 internal val ParentGradientCenter = Color(0xFF5C6B8A)
