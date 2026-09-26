@@ -107,6 +107,7 @@ class HttpCommandGateway : CommandGateway {
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              batteryLevelPercent = deviceJson.nullableInt("batteryLevelPercent"),
               protectionStatus = deviceJson.protectionStatus(),
             ),
           commandId = json.getString("commandId"),
@@ -199,6 +200,7 @@ class HttpCommandGateway : CommandGateway {
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              batteryLevelPercent = deviceJson.nullableInt("batteryLevelPercent"),
               protectionStatus = deviceJson.protectionStatus(),
             ),
         )
@@ -252,3 +254,7 @@ private fun JSONObject.protectionStatus(): DeviceProtectionStatus {
 
 private fun JSONObject.nullableBoolean(name: String): Boolean? =
   if (isNull(name)) null else getBoolean(name)
+
+
+private fun JSONObject.nullableInt(name: String): Int? =
+  if (isNull(name)) null else getInt(name)
