@@ -76,6 +76,12 @@ class HttpPairingGateway(
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              batteryLevelPercent =
+                if (deviceJson.isNull("batteryLevelPercent")) {
+                  null
+                } else {
+                  deviceJson.getInt("batteryLevelPercent")
+                },
             ),
           controlToken = json.getString("controlToken"),
         )
