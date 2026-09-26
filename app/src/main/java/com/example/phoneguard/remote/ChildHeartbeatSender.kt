@@ -20,6 +20,8 @@ class ChildHeartbeatSender(context: Context) {
     val identity = settingsStore.getOrCreatePairingIdentity()
     val now = System.currentTimeMillis()
     val temporaryAllowanceUntil = settingsStore.temporaryAllowanceUntilMillis()
+    val temporaryAllowanceGrantedMinutes =
+      settingsStore.temporaryAllowanceGrantedMinutes()
     val dailyUsageDate = settingsStore.currentLocalDateKey(now)
     val dailyUsageSeconds = settingsStore.dailyUsageSecondsForToday(now)
     val appUsageMillis = settingsStore.appUsageMillisForToday(now)
@@ -117,6 +119,8 @@ class ChildHeartbeatSender(context: Context) {
           accessState = accessState,
           temporaryAllowUntilMillis =
             temporaryAllowanceUntil.takeIf { temporaryAllowanceActive },
+          temporaryAccessGrantedMinutes =
+            temporaryAllowanceGrantedMinutes.takeIf { temporaryAllowanceActive },
           accessibilityEnabled = accessibilityEnabled,
           preciseTimingEnabled = preciseTimingEnabled,
           batteryUnrestricted = batteryUnrestricted,
