@@ -1,6 +1,7 @@
 package com.example.phoneguard.parent.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -29,19 +30,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.GridView
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Smartphone
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -61,26 +49,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.parent.R
 
 internal val parentDashboardSections =
   listOf(
-    ParentDashboardSection("Home", Icons.Rounded.Home),
-    ParentDashboardSection("Schedule", Icons.Rounded.CalendarMonth),
-    ParentDashboardSection("Apps", Icons.Rounded.GridView),
-    ParentDashboardSection("Device", Icons.Rounded.Smartphone),
-    ParentDashboardSection("Settings", Icons.Default.Settings),
+    ParentDashboardSection("Home", R.drawable.pg_icon_home),
+    ParentDashboardSection("Schedule", R.drawable.pg_icon_timer),
+    ParentDashboardSection("Apps", R.drawable.pg_icon_apps),
+    ParentDashboardSection("Device", R.drawable.pg_icon_device),
+    ParentDashboardSection("Settings", R.drawable.pg_icon_settings),
   )
 
 private val parentBottomSections = parentDashboardSections.take(4)
 
 internal data class ParentDashboardSection(
   val label: String,
-  val icon: ImageVector,
+  @DrawableRes val iconRes: Int,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -185,7 +174,7 @@ internal fun ParentDashboardShell(
                       modifier = Modifier.size(38.dp),
                     ) {
                       Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        painter = painterResource(R.drawable.pg_icon_back),
                         contentDescription = "Back to Home",
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp),
@@ -365,7 +354,7 @@ private fun ParentFloatingBottomNavigation(
             contentAlignment = Alignment.Center,
           ) {
             Icon(
-              imageVector = section.icon,
+              painter = painterResource(section.iconRes),
               contentDescription = section.label,
               tint =
                 if (selected) {
@@ -413,7 +402,7 @@ private fun ParentConnectionTestAction(
 
         succeeded == true -> {
           Icon(
-            imageVector = Icons.Default.Check,
+            painter = painterResource(R.drawable.pg_icon_check),
             contentDescription = "Connection OK",
             tint = Color(0xFF3E7C4E),
             modifier = Modifier.size(21.dp),
@@ -422,7 +411,7 @@ private fun ParentConnectionTestAction(
 
         succeeded == false -> {
           Icon(
-            imageVector = Icons.Default.Close,
+            painter = painterResource(R.drawable.pg_icon_close),
             contentDescription = "Connection failed",
             tint = MaterialTheme.colorScheme.error,
             modifier = Modifier.size(21.dp),
@@ -431,7 +420,7 @@ private fun ParentConnectionTestAction(
 
         else -> {
           Icon(
-            imageVector = Icons.Default.Refresh,
+            painter = painterResource(R.drawable.pg_icon_test),
             contentDescription = "Test connection",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp),
@@ -497,13 +486,13 @@ private fun ParentAccountMenuOverlay(
       Divider()
 
       ParentAccountMenuRow(
-        icon = Icons.Default.Devices,
+        iconRes = R.drawable.pg_icon_device,
         label = "Manage children",
         enabled = !actionsBusy,
         onClick = onChangeDevice,
       )
       ParentAccountMenuRow(
-        icon = Icons.Default.Settings,
+        iconRes = R.drawable.pg_icon_settings,
         label = "Settings",
         onClick = onOpenSettings,
       )
@@ -511,7 +500,7 @@ private fun ParentAccountMenuOverlay(
       Divider()
 
       ParentAccountMenuRow(
-        icon = Icons.Default.Logout,
+        iconRes = R.drawable.pg_icon_logout,
         label = "Sign out",
         onClick = onSignOut,
       )
@@ -521,7 +510,7 @@ private fun ParentAccountMenuOverlay(
 
 @Composable
 private fun ParentAccountMenuRow(
-  icon: ImageVector,
+  @DrawableRes iconRes: Int,
   label: String,
   enabled: Boolean = true,
   onClick: () -> Unit,
@@ -536,7 +525,7 @@ private fun ParentAccountMenuRow(
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Icon(
-      imageVector = icon,
+      painter = painterResource(iconRes),
       contentDescription = null,
       tint =
         if (enabled) {
@@ -596,7 +585,7 @@ private fun ParentAccountMenuButton(
         modifier = Modifier.size(38.dp),
       ) {
         Icon(
-          imageVector = Icons.Default.AccountCircle,
+          painter = painterResource(R.drawable.pg_icon_user),
           contentDescription = "Parent menu",
           tint = MaterialTheme.colorScheme.onSurface,
           modifier = Modifier.size(20.dp),
