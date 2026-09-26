@@ -41,6 +41,15 @@ export default {
       typeof payload.temporaryAllowUntilMillis === "number"
         ? payload.temporaryAllowUntilMillis
         : null;
+    const hasTemporaryAccessGrantedMinutes =
+      Object.prototype.hasOwnProperty.call(
+        payload,
+        "temporaryAccessGrantedMinutes",
+      );
+    const temporaryAccessGrantedMinutes =
+      typeof payload.temporaryAccessGrantedMinutes === "number"
+        ? Math.trunc(payload.temporaryAccessGrantedMinutes)
+        : null;
     const accessibilityEnabled =
       typeof payload.accessibilityEnabled === "boolean"
         ? payload.accessibilityEnabled
@@ -98,6 +107,17 @@ export default {
       )
     ) {
       return json({ error: "temporary_allow_until_invalid" }, 400);
+    }
+    if (
+      hasTemporaryAccessGrantedMinutes &&
+      (
+        temporaryAccessGrantedMinutes === null ||
+        !Number.isFinite(temporaryAccessGrantedMinutes) ||
+        temporaryAccessGrantedMinutes < 1 ||
+        temporaryAccessGrantedMinutes > 1440
+      )
+    ) {
+      return json({ error: "temporary_granted_minutes_invalid" }, 400);
     }
     if (
       batteryLevelPercent !== null &&
@@ -306,6 +326,14 @@ export default {
           accessState === "TEMPORARILY_ALLOWED"
             ? new Date(temporaryAllowUntilMillis!).toISOString()
             : null,
+        ...(accessState !== "TEMPORARILY_ALLOWED"
+          ? { temporary_allow_granted_minutes: null }
+          : hasTemporaryAccessGrantedMinutes
+            ? {
+                temporary_allow_granted_minutes:
+                  temporaryAccessGrantedMinutes,
+              }
+            : {}),
         accessibility_enabled: accessibilityEnabled,
         precise_timing_enabled: preciseTimingEnabled,
         battery_unrestricted: batteryUnrestricted,
