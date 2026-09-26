@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import com.example.phoneguard.parent.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +45,7 @@ fun DevicesScreen(
     ) {
       ParentDetailHeader(
         title = "Devices",
+        iconRes = R.drawable.pg_icon_device,
         onBack = onBack,
       )
 
