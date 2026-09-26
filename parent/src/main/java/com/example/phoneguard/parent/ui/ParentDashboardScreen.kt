@@ -806,12 +806,34 @@ fun ParentDashboardScreen(
       ) {
         is TimeRequestResponseResult.Success -> {
           uiState.pendingTimeRequest = null
-          uiState.timeRequestNotice =
-            if (result.approved) {
+
+          if (result.approved) {
+            val currentDevice = uiState.pairedDevice ?: device
+            val existingRemaining =
+              if (currentDevice.state == DeviceAccessState.TEMPORARILY_ALLOWED) {
+                currentDevice.temporaryAccessMinutesRemaining ?: 0
+              } else {
+                0
+              }
+            val updatedDevice =
+              currentDevice.copy(
+                state = DeviceAccessState.TEMPORARILY_ALLOWED,
+                temporaryAccessMinutesRemaining =
+                  existingRemaining + result.requestedMinutes,
+                temporaryAccessGrantedMinutes = result.requestedMinutes,
+              )
+
+            uiState.pairedDevice = updatedDevice
+            settingsStore.savePairing(
+              device = updatedDevice,
+              controlToken = controlToken,
+            )
+            uiState.pairedDevices = settingsStore.loadPairedDevices()
+            uiState.timeRequestNotice =
               "Approved " + result.requestedMinutes + " minutes."
-            } else {
-              "Time request denied."
-            }
+          } else {
+            uiState.timeRequestNotice = "Time request denied."
+          }
         }
 
         is TimeRequestResponseResult.Error -> {
@@ -1147,6 +1169,13 @@ fun ParentDashboardScreen(
                     statusResult.device.copy(
                       lastSeenAt =
                         uiState.pairedDevice?.lastSeenAt ?: device.lastSeenAt,
+                      temporaryAccessGrantedMinutes =
+                        if (command.type == RemoteCommandType.BONUS_TIME) {
+                          command.bonusMinutes
+                            ?: statusResult.device.temporaryAccessGrantedMinutes
+                        } else {
+                          statusResult.device.temporaryAccessGrantedMinutes
+                        },
                     )
                   uiState.pairedDevice = updatedDevice
                   settingsStore.savePairing(
