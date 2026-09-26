@@ -761,11 +761,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
             intArrayOf(
-              Color.rgb(233, 233, 233),
-              Color.rgb(239, 239, 239),
+              Color.rgb(220, 220, 220),
+              Color.rgb(232, 232, 232),
               Color.rgb(244, 244, 244),
-              Color.rgb(239, 239, 239),
-              Color.rgb(233, 233, 233),
+              Color.rgb(232, 232, 232),
+              Color.rgb(220, 220, 220),
             ),
           )
         addView(
@@ -836,9 +836,9 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           contentDescription = label
           background = roundedBackground(surfaceVariant, radiusDp = 14)
           scaleType = ImageView.ScaleType.CENTER_INSIDE
-          setPadding(dp(8), dp(8), dp(8), dp(8))
+          setPadding(dp(6), dp(6), dp(6), dp(6))
           layoutParams =
-            LinearLayout.LayoutParams(dp(58), dp(58)).apply {
+            LinearLayout.LayoutParams(dp(66), dp(66)).apply {
               marginStart = dp(6)
               marginEnd = dp(6)
             }
@@ -863,6 +863,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT,
           ).apply {
+            topMargin = dp(36)
             bottomMargin = dp(24)
           }
         addView(
