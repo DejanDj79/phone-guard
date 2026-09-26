@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import com.example.phoneguard.parent.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -12,8 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -87,7 +87,7 @@ internal fun ParentDetailHeader(
             modifier = Modifier.size(36.dp),
           ) {
             Icon(
-              imageVector = Icons.Default.ArrowBack,
+              painter = painterResource(R.drawable.pg_icon_back),
               contentDescription = "Back",
               tint = MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.size(19.dp),
