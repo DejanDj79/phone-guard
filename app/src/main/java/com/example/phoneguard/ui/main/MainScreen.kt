@@ -8,16 +8,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,6 +70,9 @@ import com.example.phoneguard.theme.PhoneGuardTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val ChildActionShape = RoundedCornerShape(12.dp)
+private val ChildCardShape = RoundedCornerShape(20.dp)
 
 @Composable
 fun MainScreen(
@@ -423,7 +430,7 @@ private fun ParentPinSetupScreen(
 
       Spacer(modifier = Modifier.height(24.dp))
 
-      Button(
+      OutlinedButton(
         onClick = {
           errorMessage =
             when {
@@ -435,8 +442,9 @@ private fun ParentPinSetupScreen(
               }
             }
         },
-        modifier = Modifier.fillMaxWidth(),
-      ) {
+        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+      
+        shape = ChildActionShape,) {
         Text("SAVE PIN")
       }
     }
@@ -457,6 +465,17 @@ private fun PinField(
     visualTransformation = PasswordVisualTransformation(),
     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
     modifier = Modifier.fillMaxWidth(),
+    shape = ChildActionShape,
+    colors =
+      OutlinedTextFieldDefaults.colors(
+        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        focusedLabelColor = MaterialTheme.colorScheme.primary,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        cursorColor = MaterialTheme.colorScheme.primary,
+      ),
   )
 }
 
@@ -531,7 +550,16 @@ private fun ChildSetupWizard(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(
+      modifier = Modifier.fillMaxWidth(),
+      shape = ChildCardShape,
+      colors =
+        CardDefaults.elevatedCardColors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+      elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+    ) {
       Column(
         modifier = Modifier.padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -570,7 +598,16 @@ private fun ChildSetupWizard(
       }
     }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(
+      modifier = Modifier.fillMaxWidth(),
+      shape = ChildCardShape,
+      colors =
+        CardDefaults.elevatedCardColors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+      elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+    ) {
       Column(
         modifier = Modifier.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -593,10 +630,11 @@ private fun ChildSetupWizard(
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(
+            OutlinedButton(
               onClick = onEnableAccessibility,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text("OPEN ACCESSIBILITY SETTINGS")
             }
           }
@@ -618,10 +656,11 @@ private fun ChildSetupWizard(
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(
+            OutlinedButton(
               onClick = onOpenBatterySettings,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text("OPEN BATTERY SETTINGS")
             }
           }
@@ -643,10 +682,11 @@ private fun ChildSetupWizard(
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(
+            OutlinedButton(
               onClick = onRequestExactAlarmAccess,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text("ALLOW PRECISE TIMING")
             }
           }
@@ -695,11 +735,12 @@ private fun ChildSetupWizard(
               textAlign = TextAlign.Center,
             )
 
-            Button(
+            OutlinedButton(
               onClick = onRetryRegistration,
               enabled = !registrationInProgress,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text(
                 if (registrationInProgress) {
                   "CHECKING…"
@@ -712,8 +753,9 @@ private fun ChildSetupWizard(
             OutlinedButton(
               onClick = onRegeneratePairingCode,
               enabled = !registrationInProgress,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text("GENERATE NEW CODE")
             }
           }
@@ -736,10 +778,11 @@ private fun ChildSetupWizard(
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(
+            OutlinedButton(
               onClick = onFinish,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text("FINISH SETUP")
             }
           }
@@ -843,7 +886,16 @@ private fun ChildDashboard(
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(
+      modifier = Modifier.fillMaxWidth(),
+      shape = ChildCardShape,
+      colors =
+        CardDefaults.elevatedCardColors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+      elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+    ) {
       Column(
         modifier = Modifier.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -909,8 +961,9 @@ private fun ChildDashboard(
         if (!accessibilityEnabled) {
           OutlinedButton(
             onClick = onEnableAccessibility,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+          
+        shape = ChildActionShape,) {
             Text("ENABLE SCREEN PROTECTION")
           }
         }
@@ -918,8 +971,9 @@ private fun ChildDashboard(
         if (!batteryOptimizationIgnored) {
           OutlinedButton(
             onClick = onOpenBatterySettings,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+          
+        shape = ChildActionShape,) {
             Text("ALLOW BACKGROUND PROTECTION")
           }
         }
@@ -927,22 +981,33 @@ private fun ChildDashboard(
         if (!exactAlarmAccess) {
           OutlinedButton(
             onClick = onRequestExactAlarmAccess,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+          
+        shape = ChildActionShape,) {
             Text("ALLOW EXACT TIMING")
           }
         }
 
         OutlinedButton(
           onClick = onRunSetupCheck,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
+          modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+        
+        shape = ChildActionShape,) {
           Text("RUN SETUP CHECK")
         }
       }
     }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(
+      modifier = Modifier.fillMaxWidth(),
+      shape = ChildCardShape,
+      colors =
+        CardDefaults.elevatedCardColors(
+          containerColor = MaterialTheme.colorScheme.surface,
+          contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+      elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp),
+    ) {
       Column(
         modifier = Modifier.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -986,8 +1051,9 @@ private fun ChildDashboard(
                 resetPin = ""
                 resetError = null
               },
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text("CHANGE PARENT")
             }
           } else {
@@ -1014,7 +1080,7 @@ private fun ChildDashboard(
               )
             }
 
-            Button(
+            OutlinedButton(
               onClick = {
                 pairingScope.launch {
                   resetInProgress = true
@@ -1036,8 +1102,9 @@ private fun ChildDashboard(
                 }
               },
               enabled = resetPin.length in 4..6 && !resetInProgress,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text(
                 if (resetInProgress) {
                   "UPDATING…"
@@ -1054,8 +1121,9 @@ private fun ChildDashboard(
                 resetError = null
               },
               enabled = !resetInProgress,
-              modifier = Modifier.fillMaxWidth(),
-            ) {
+              modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            
+        shape = ChildActionShape,) {
               Text("CANCEL")
             }
           }
@@ -1083,8 +1151,9 @@ private fun ChildDashboard(
           OutlinedButton(
             onClick = onRegeneratePairingCode,
             enabled = !registrationInProgress,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+          
+        shape = ChildActionShape,) {
             Text("GENERATE NEW CODE")
           }
         }
@@ -1092,8 +1161,9 @@ private fun ChildDashboard(
         if (registrationFailure != null) {
           OutlinedButton(
             onClick = onRetryRegistration,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+          
+        shape = ChildActionShape,) {
             Text("TRY AGAIN")
           }
         }
