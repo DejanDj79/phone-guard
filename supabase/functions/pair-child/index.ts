@@ -92,7 +92,7 @@ export default {
     const { data: candidate, error: lookupError } = await ctx.supabaseAdmin
       .from("child_devices")
       .select(
-        "device_id, display_name, access_state, temporary_allow_until, parent_user_id",
+        "device_id, display_name, access_state, temporary_allow_until, battery_level_percent, parent_user_id",
       )
       .eq("pairing_code_hash", pairingCodeHash)
       .gt("pairing_expires_at", now)
@@ -143,7 +143,7 @@ export default {
 
     const { data: pairedDevice, error: pairError } = await updateQuery
       .select(
-        "device_id, display_name, access_state, temporary_allow_until, parent_user_id",
+        "device_id, display_name, access_state, temporary_allow_until, battery_level_percent, parent_user_id",
       )
       .maybeSingle();
 
@@ -184,6 +184,10 @@ export default {
         displayName: pairedDevice.display_name,
         state: pairedDevice.access_state,
         temporaryAccessMinutesRemaining,
+        batteryLevelPercent:
+          typeof pairedDevice.battery_level_percent === "number"
+            ? pairedDevice.battery_level_percent
+            : null,
       },
       controlToken,
     });
