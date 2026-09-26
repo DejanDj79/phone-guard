@@ -358,7 +358,7 @@ private fun ParentFloatingBottomNavigation(
               contentDescription = section.label,
               tint =
                 if (selected) {
-                  Color.White
+                  MaterialTheme.colorScheme.onPrimary
                 } else {
                   MaterialTheme.colorScheme.onSurfaceVariant
                 },
