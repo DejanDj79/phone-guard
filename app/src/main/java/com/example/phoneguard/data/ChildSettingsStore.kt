@@ -83,6 +83,11 @@ class ChildSettingsStore(context: Context) {
   fun temporaryAllowanceUntilMillis(): Long =
     preferences.getLong(KEY_TEMPORARY_ALLOW_UNTIL, 0L)
 
+  fun temporaryAllowanceGrantedMinutes(): Int? =
+    preferences
+      .getInt(KEY_TEMPORARY_ALLOW_GRANTED_MINUTES, 0)
+      .takeIf { it > 0 }
+
   fun isTemporaryAllowanceActive(nowMillis: Long = System.currentTimeMillis()): Boolean =
     temporaryAllowanceUntilMillis() > nowMillis
 
@@ -98,13 +103,18 @@ class ChildSettingsStore(context: Context) {
     preferences
       .edit()
       .putLong(KEY_TEMPORARY_ALLOW_UNTIL, until)
+      .putInt(KEY_TEMPORARY_ALLOW_GRANTED_MINUTES, minutes)
       .apply()
 
     return until
   }
 
   fun clearTemporaryAllowance() {
-    preferences.edit().remove(KEY_TEMPORARY_ALLOW_UNTIL).apply()
+    preferences
+      .edit()
+      .remove(KEY_TEMPORARY_ALLOW_UNTIL)
+      .remove(KEY_TEMPORARY_ALLOW_GRANTED_MINUTES)
+      .apply()
   }
 
   fun dailyLimitMinutes(): Int? =
@@ -378,6 +388,7 @@ class ChildSettingsStore(context: Context) {
       .putBoolean(KEY_MANUAL_LOCKED, false)
       .putBoolean(KEY_SCHEDULE_LOCKED, false)
       .remove(KEY_TEMPORARY_ALLOW_UNTIL)
+      .remove(KEY_TEMPORARY_ALLOW_GRANTED_MINUTES)
       .apply()
   }
 
@@ -614,6 +625,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_DEVICE_SECRET = "device_secret"
     const val KEY_DEVICE_SECRET_ENCRYPTED = "device_secret_encrypted"
     const val KEY_TEMPORARY_ALLOW_UNTIL = "temporary_allow_until"
+    const val KEY_TEMPORARY_ALLOW_GRANTED_MINUTES = "temporary_allow_granted_minutes"
     const val KEY_APPLIED_REMOTE_COMMAND_IDS = "applied_remote_command_ids"
     const val KEY_TIME_REQUEST_FEEDBACK = "time_request_feedback"
     const val KEY_DAILY_LIMIT_MINUTES = "daily_limit_minutes"
