@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Fingerprint
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -48,6 +46,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.ParentSecurityStore
 
 @Composable
@@ -283,12 +282,14 @@ private fun ParentPinUnlockScreen(
           contentAlignment = Alignment.Center,
         ) {
           Icon(
-            imageVector =
-              if (biometricAvailable) {
-                Icons.Rounded.Fingerprint
-              } else {
-                Icons.Rounded.Lock
-              },
+            painter =
+              painterResource(
+                if (biometricAvailable) {
+                  R.drawable.pg_icon_fingerprint
+                } else {
+                  R.drawable.pg_icon_lock
+                },
+              ),
             contentDescription = null,
             tint =
               if (biometricAvailable) {
@@ -317,14 +318,8 @@ private fun ParentPinUnlockScreen(
             color = ParentAccentColor,
           ),
       ) {
-        Icon(
-          imageVector = Icons.Rounded.Fingerprint,
-          contentDescription = null,
-          tint = ParentAccentColor,
-          modifier = Modifier.size(20.dp),
-        )
         Text(
-          text = "  UNLOCK WITH BIOMETRICS",
+          text = "UNLOCK WITH BIOMETRICS",
           color = ParentAccentColor,
         )
       }
