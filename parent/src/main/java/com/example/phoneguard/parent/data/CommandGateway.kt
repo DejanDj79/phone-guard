@@ -108,6 +108,8 @@ class HttpCommandGateway : CommandGateway {
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
               batteryLevelPercent = deviceJson.nullableInt("batteryLevelPercent"),
+              temporaryAccessGrantedMinutes =
+                deviceJson.nullableInt("temporaryAccessGrantedMinutes"),
               protectionStatus = deviceJson.protectionStatus(),
             ),
           commandId = json.getString("commandId"),
@@ -201,6 +203,8 @@ class HttpCommandGateway : CommandGateway {
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
               batteryLevelPercent = deviceJson.nullableInt("batteryLevelPercent"),
+              temporaryAccessGrantedMinutes =
+                deviceJson.nullableInt("temporaryAccessGrantedMinutes"),
               protectionStatus = deviceJson.protectionStatus(),
             ),
         )
