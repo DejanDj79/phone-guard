@@ -16,8 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.AllowedAppsSnapshot
+import com.example.phoneguard.parent.R
 
 @Composable
 fun AllowedAppsEditorScreen(
@@ -202,7 +202,7 @@ fun AllowedAppsEditorScreen(
             )
           } else {
             Icon(
-              imageVector = Icons.Default.Check,
+              painter = painterResource(R.drawable.pg_icon_check),
               contentDescription = "Save allowed apps",
               tint = MaterialTheme.colorScheme.onSurface,
               modifier = Modifier.size(24.dp),
