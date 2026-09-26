@@ -370,3 +370,7 @@ Before publication we still need to decide:
 - Action buttons now use a 12dp corner radius, retain the 52dp minimum height, and standalone actions are visually centered in their card/screen while staying content-width. Intentional paired controls keep their shared-row layout. Usage overview segments use the same compact radius. Awaiting physical review.
 
 - Startup biometric unlock now has a dedicated Warm Modern screen: the shared Parent gradient remains visible, a centered bordered card presents a fingerprint/lock visual, Michroma headings and compact 12dp-radius actions. Biometric unlock is now explicitly triggered from the custom screen instead of auto-opening the native Android prompt immediately; PIN remains the secondary fallback. The native BiometricPrompt text was simplified to match. Awaiting physical review.
+
+- Custom Parent outline icon set imported from user-supplied SVGs and converted to Android VectorDrawable resources. Header, bottom navigation, account menu, connection test states, biometric screen, protection status, Settings icons, Back controls, app fallback icon and icon-only save now use the custom set. Text action buttons were simplified to text-only. Three temporary Material icons remain until matching SVGs are supplied: Protection history, Edit schedule/calendar and Notifications/bell. Awaiting physical review.
+
+- Before publication, record the source/license metadata for the externally supplied icon set (including any required Flaticon attribution) in the project documentation/app credits as applicable.
