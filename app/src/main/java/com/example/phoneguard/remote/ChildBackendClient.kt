@@ -763,6 +763,7 @@ class ChildBackendClient {
     deviceSecret: String,
     accessState: String,
     temporaryAllowUntilMillis: Long?,
+    temporaryAccessGrantedMinutes: Int? = null,
     accessibilityEnabled: Boolean,
     preciseTimingEnabled: Boolean,
     batteryUnrestricted: Boolean,
@@ -816,6 +817,9 @@ class ChildBackendClient {
           .also { json ->
             batteryLevelPercent?.let {
               json.put("batteryLevelPercent", it)
+            }
+            temporaryAccessGrantedMinutes?.let {
+              json.put("temporaryAccessGrantedMinutes", it)
             }
             if (!protectionEvent.isNullOrBlank()) {
               json.put("protectionEvent", protectionEvent)
