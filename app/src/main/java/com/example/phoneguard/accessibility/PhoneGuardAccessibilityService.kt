@@ -716,7 +716,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun showOverlay() {
     if (overlayView != null) return
 
-    val accent = Color.rgb(242, 138, 46)
+    val accent = Color.rgb(243, 87, 2)
     val graphite = Color.rgb(48, 49, 50)
     val secondaryText = Color.rgb(127, 128, 130)
     val surface = Color.rgb(246, 246, 243)
@@ -1228,7 +1228,6 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
 
     content.addView(lockIcon)
     content.addView(title)
-    content.addView(allowedAppsScroller)
     content.addView(utilityControls)
     content.addView(systemMessage)
     content.addView(requestMoreTimeButton)
@@ -1237,6 +1236,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     content.addView(pinInput)
     content.addView(error)
     content.addView(unlockButton)
+    content.addView(allowedAppsScroller)
 
     val params =
       WindowManager.LayoutParams(
