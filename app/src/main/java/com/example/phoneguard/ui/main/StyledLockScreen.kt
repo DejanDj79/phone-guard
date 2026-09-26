@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +41,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -63,13 +67,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import com.example.phoneguard.R
 import com.example.phoneguard.remote.ChildTimeRequestResult
 import kotlinx.coroutines.launch
 
-private val LockAccent = Color(0xFFE83E1D)
+private val LockAccent = Color(0xFFF28A2E)
 private val LockGradientEdge = Color(0xFFDEDEDA)
 private val LockGradientCenter = Color(0xFFF3F3F0)
 private val LockActionShape = RoundedCornerShape(12.dp)
+private val LockHeadlineFamily = FontFamily(Font(R.font.michroma, FontWeight.Normal))
+private val LockBodyFamily = FontFamily(Font(R.font.manrope, FontWeight.Normal))
 
 private data class AllowedLockApp(
   val label: String,
@@ -150,9 +157,10 @@ internal fun StyledLockScreen(
       Spacer(Modifier.height(18.dp))
       Text(
         text = "LOCKED",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 1.5.sp,
+        fontFamily = LockHeadlineFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 38.sp,
+        letterSpacing = 1.1.sp,
         color = Color(0xFF303132),
       )
 
@@ -232,14 +240,23 @@ internal fun StyledLockScreen(
       }
 
       Spacer(Modifier.height(30.dp))
-      Button(
+      OutlinedButton(
         onClick = { showTimeRequest = true; timeRequestMessage = null },
         enabled = !timeRequestInProgress,
-        modifier = Modifier.fillMaxWidth().height(54.dp),
+        modifier = Modifier.fillMaxWidth().height(64.dp),
         shape = LockActionShape,
-        colors = ButtonDefaults.buttonColors(containerColor = LockAccent, contentColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFD3D3CE)),
+        colors =
+          ButtonDefaults.outlinedButtonColors(
+            contentColor = Color(0xFF303132),
+            disabledContentColor = Color(0xFF7F8082),
+          ),
       ) {
-        Text(if (timeRequestInProgress) "SENDING REQUEST…" else "REQUEST MORE TIME", style = MaterialTheme.typography.labelLarge)
+        Text(
+          if (timeRequestInProgress) "SENDING REQUEST…" else "REQUEST MORE TIME",
+          fontFamily = LockHeadlineFamily,
+          fontSize = 11.sp,
+        )
       }
 
       timeRequestMessage?.let {
@@ -255,12 +272,21 @@ internal fun StyledLockScreen(
       OutlinedTextField(
         value = pin,
         onValueChange = { pin = it.filter(Char::isDigit).take(6); errorMessage = null },
-        label = { Text("Parent PIN") },
+        label = { Text("Parent PIN", fontFamily = LockBodyFamily) },
         singleLine = true,
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        modifier = Modifier.fillMaxWidth(),
+        textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = LockBodyFamily),
+        modifier = Modifier.fillMaxWidth().height(64.dp),
         shape = LockActionShape,
+        colors =
+          OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = LockAccent,
+            unfocusedBorderColor = Color(0xFFD3D3CE),
+            cursorColor = LockAccent,
+            focusedLabelColor = LockAccent,
+            unfocusedLabelColor = Color(0xFF7F8082),
+          ),
       )
 
       errorMessage?.let {
@@ -271,7 +297,9 @@ internal fun StyledLockScreen(
       Spacer(Modifier.height(12.dp))
       OutlinedButton(
         onClick = {
-          if (onUnlock(pin)) {
+          if (pin.length !in 4..6) {
+            errorMessage = "Enter Parent PIN."
+          } else if (onUnlock(pin)) {
             pin = ""
             errorMessage = null
           } else {
@@ -279,11 +307,12 @@ internal fun StyledLockScreen(
             errorMessage = "Incorrect PIN."
           }
         },
-        enabled = pin.length in 4..6,
-        modifier = Modifier.fillMaxWidth().height(54.dp),
+        modifier = Modifier.fillMaxWidth().height(64.dp),
         shape = LockActionShape,
+        border = BorderStroke(2.dp, LockAccent),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = LockAccent),
       ) {
-        Text("UNLOCK", style = MaterialTheme.typography.labelLarge)
+        Text("UNLOCK", fontFamily = LockHeadlineFamily, fontSize = 11.sp)
       }
       Spacer(Modifier.height(20.dp))
     }
@@ -325,8 +354,8 @@ private fun LockRoundAction(
     enabled = enabled,
     modifier = Modifier.size(56.dp),
     colors = IconButtonDefaults.iconButtonColors(
-      containerColor = if (selected) LockAccent else Color(0xFFF6F6F3),
-      contentColor = if (selected) Color.White else Color(0xFF3C3C3A),
+      containerColor = if (selected) LockAccent.copy(alpha = 0.14f) else Color(0xFFF6F6F3),
+      contentColor = LockAccent,
       disabledContainerColor = Color(0xFFE9E9E5),
       disabledContentColor = Color(0xFFAAAAA6),
     ),
