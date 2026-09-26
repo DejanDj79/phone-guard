@@ -78,7 +78,7 @@ import com.example.phoneguard.theme.ChildTextSecondary
 import kotlinx.coroutines.launch
 
 private val LockAccent = ChildAccent
-private val LockGradientEdge = ChildSurfaceMuted
+private val LockGradientEdge = Color(0xFFDCDCDC)
 private val LockGradientCenter = ChildLight
 private val LockActionShape = RoundedCornerShape(12.dp)
 private val LockHeadlineFamily = FontFamily(Font(R.font.michroma, FontWeight.Normal))
@@ -141,9 +141,9 @@ internal fun StyledLockScreen(
       Brush.horizontalGradient(
         colorStops = arrayOf(
           0f to LockGradientEdge,
-          0.18f to Color(0xFFEFEFEF),
+          0.22f to Color(0xFFE8E8E8),
           0.5f to LockGradientCenter,
-          0.82f to Color(0xFFEFEFEF),
+          0.78f to Color(0xFFE8E8E8),
           1f to LockGradientEdge,
         ),
       ),
@@ -299,7 +299,7 @@ internal fun StyledLockScreen(
       Spacer(Modifier.height(20.dp))
 
       if (allowedApps.isNotEmpty()) {
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(36.dp))
         Row(
           modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
           horizontalArrangement = Arrangement.Center,
@@ -315,7 +315,7 @@ internal fun StyledLockScreen(
               Image(
                 bitmap = app.icon.toBitmap(96, 96).asImageBitmap(),
                 contentDescription = app.label,
-                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(13.dp)),
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(15.dp)),
               )
             }
           }
