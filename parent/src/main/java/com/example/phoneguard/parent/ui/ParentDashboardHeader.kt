@@ -210,6 +210,30 @@ internal fun ParentDashboardShell(
               color = MaterialTheme.colorScheme.onSurface,
             )
 
+            if (sectionIndex in parentBottomSections.indices) {
+              Row(
+                modifier =
+                  Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 50.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                parentBottomSections.indices.forEach { index ->
+                  Surface(
+                    modifier = Modifier.size(6.dp),
+                    shape = CircleShape,
+                    color =
+                      if (index == sectionIndex) {
+                        ParentAccentColor
+                      } else {
+                        ParentGradientEdge
+                      },
+                  ) {}
+                }
+              }
+            }
+
             if (isHome) {
               ParentConnectionTestAction(
                 inProgress = connectionTestInProgress,
