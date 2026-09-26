@@ -82,6 +82,12 @@ class HttpPairingGateway(
                 } else {
                   deviceJson.getInt("batteryLevelPercent")
                 },
+              temporaryAccessGrantedMinutes =
+                if (deviceJson.isNull("temporaryAccessGrantedMinutes")) {
+                  null
+                } else {
+                  deviceJson.getInt("temporaryAccessGrantedMinutes")
+                },
             ),
           controlToken = json.getString("controlToken"),
         )
