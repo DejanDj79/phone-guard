@@ -215,7 +215,7 @@ fun ParentDashboardScreen(
           },
         )
       },
-      onPair = ::pairChild,
+      onPair = { code -> pairChild(code) },
       onCancel = null,
     )
     return
@@ -309,7 +309,7 @@ fun ParentDashboardScreen(
             },
           )
         },
-        onPair = ::pairChild,
+        onPair = { code -> pairChild(code) },
         onCancel = {
           uiState.showPairDevice = false
         },
