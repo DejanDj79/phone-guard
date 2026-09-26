@@ -89,6 +89,8 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
                   .takeIf { it.isNotBlank() && it != "null" },
               batteryLevelPercent =
                 deviceJson.nullableInt("batteryLevelPercent"),
+              temporaryAccessGrantedMinutes =
+                deviceJson.nullableInt("temporaryAccessGrantedMinutes"),
               protectionStatus =
                 DeviceProtectionStatus(
                   accessibilityEnabled =
