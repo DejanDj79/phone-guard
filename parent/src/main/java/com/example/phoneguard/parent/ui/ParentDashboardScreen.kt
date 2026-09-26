@@ -1,6 +1,7 @@
 package com.example.phoneguard.parent.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -1238,6 +1240,29 @@ fun ParentDashboardScreen(
       modifier =
         Modifier
           .fillMaxSize()
+          .pointerInput(uiState.selectedTab) {
+            var horizontalDrag = 0f
+            val swipeThreshold = 80.dp.toPx()
+
+            detectHorizontalDragGestures(
+              onDragStart = { horizontalDrag = 0f },
+              onHorizontalDrag = { _, dragAmount ->
+                horizontalDrag += dragAmount
+              },
+              onDragEnd = {
+                if (uiState.selectedTab in 0..3) {
+                  when {
+                    horizontalDrag <= -swipeThreshold && uiState.selectedTab < 3 ->
+                      uiState.selectedTab += 1
+                    horizontalDrag >= swipeThreshold && uiState.selectedTab > 0 ->
+                      uiState.selectedTab -= 1
+                  }
+                }
+                horizontalDrag = 0f
+              },
+              onDragCancel = { horizontalDrag = 0f },
+            )
+          }
           .verticalScroll(rememberScrollState())
           .padding(
             start = 20.dp,
