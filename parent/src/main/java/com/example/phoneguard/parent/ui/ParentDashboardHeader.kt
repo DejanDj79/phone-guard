@@ -420,7 +420,7 @@ private fun ParentConnectionTestAction(
           Icon(
             painter = painterResource(R.drawable.pg_icon_check),
             contentDescription = "Connection OK",
-            tint = Color(0xFF3E7C4E),
+            tint = ParentHeaderIconColor,
             modifier = Modifier.size(21.dp),
           )
         }
@@ -429,7 +429,7 @@ private fun ParentConnectionTestAction(
           Icon(
             painter = painterResource(R.drawable.pg_icon_close),
             contentDescription = "Connection failed",
-            tint = MaterialTheme.colorScheme.error,
+            tint = ParentHeaderIconColor,
             modifier = Modifier.size(21.dp),
           )
         }
