@@ -29,18 +29,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,7 +70,38 @@ internal data class ParentDashboardSection(
   @DrawableRes val iconRes: Int,
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val ParentDashboardHeaderShape =
+  GenericShape { size, _ ->
+    val width = size.width
+    val height = size.height
+    val shoulderY = height * 0.70f
+    val leftShoulder = width * 0.33f
+    val rightShoulder = width * 0.67f
+
+    moveTo(0f, 0f)
+    lineTo(width, 0f)
+    lineTo(width, shoulderY)
+    lineTo(rightShoulder, shoulderY)
+    cubicTo(
+      width * 0.61f,
+      shoulderY,
+      width * 0.60f,
+      height,
+      width * 0.50f,
+      height,
+    )
+    cubicTo(
+      width * 0.40f,
+      height,
+      width * 0.39f,
+      shoulderY,
+      leftShoulder,
+      shoulderY,
+    )
+    lineTo(0f, shoulderY)
+    close()
+  }
+
 @Composable
 internal fun ParentDashboardShell(
   device: ChildDevice,
@@ -90,12 +119,6 @@ internal fun ParentDashboardShell(
 ) {
   var accountMenuExpanded by remember { mutableStateOf(false) }
   val showBottomNavigation = selectedSection in parentBottomSections.indices
-  val headerShape =
-    RoundedCornerShape(
-      bottomStart = 28.dp,
-      bottomEnd = 28.dp,
-    )
-
   Box(
     modifier = modifier.fillMaxSize(),
   ) {
@@ -131,84 +154,73 @@ internal fun ParentDashboardShell(
           val isHome = sectionIndex == 0
           val headerContentColor = MaterialTheme.colorScheme.onSurface
 
+          val currentSection =
+            parentDashboardSections.getOrNull(sectionIndex)
+              ?: parentDashboardSections.first()
+
           Surface(
             color = Color.Transparent,
-            shape = headerShape,
-            border =
-              BorderStroke(
-                width = 1.dp,
-                color = ParentBorderColor,
-              ),
+            shape = ParentDashboardHeaderShape,
+            border = BorderStroke(1.dp, ParentBorderColor),
           ) {
-            CenterAlignedTopAppBar(
+            Box(
               modifier =
-                if (isHome) {
-                  Modifier
-                } else {
-                  Modifier.padding(bottom = 8.dp)
-                },
-              navigationIcon = {
-                if (isHome) {
-                  ParentAccountMenuButton(
-                    expanded = accountMenuExpanded,
-                    onExpandedChange = { accountMenuExpanded = it },
-                    parentEmail = parentEmail,
-                    childName = device.displayName,
-                    actionsBusy = actionsBusy,
-                    coloredHeader = false,
-                    onChangeDevice = onChangeDevice,
-                    onOpenSettings = { onSectionSelected(4) },
-                    onSignOut = onSignOut,
-                  )
-                } else {
-                  Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
-                    modifier =
-                      Modifier
-                        .padding(start = 10.dp)
-                        .size(38.dp),
+                Modifier
+                  .fillMaxWidth()
+                  .statusBarsPadding()
+                  .height(76.dp),
+            ) {
+              if (isHome) {
+                ParentAccountMenuButton(
+                  expanded = accountMenuExpanded,
+                  onExpandedChange = { accountMenuExpanded = it },
+                  parentEmail = parentEmail,
+                  childName = device.displayName,
+                  actionsBusy = actionsBusy,
+                  coloredHeader = false,
+                  onChangeDevice = onChangeDevice,
+                  onOpenSettings = { onSectionSelected(4) },
+                  onSignOut = onSignOut,
+                )
+              } else {
+                Surface(
+                  shape = CircleShape,
+                  color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                  modifier =
+                    Modifier
+                      .align(Alignment.TopStart)
+                      .padding(start = 10.dp, top = 8.dp)
+                      .size(38.dp),
+                ) {
+                  IconButton(
+                    onClick = { onSectionSelected(0) },
+                    modifier = Modifier.size(38.dp),
                   ) {
-                    IconButton(
-                      onClick = { onSectionSelected(0) },
-                      modifier = Modifier.size(38.dp),
-                    ) {
-                      Icon(
-                        painter = painterResource(R.drawable.pg_icon_back),
-                        contentDescription = "Back to Home",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp),
-                      )
-                    }
+                    Icon(
+                      painter = painterResource(R.drawable.pg_icon_back),
+                      contentDescription = "Back to Home",
+                      tint = headerContentColor,
+                      modifier = Modifier.size(20.dp),
+                    )
                   }
                 }
-              },
-              title = {
-                Text(
-                  text =
-                    (
-                      parentDashboardSections
-                        .getOrNull(sectionIndex)
-                        ?.label
-                        ?: "PhoneGuard"
-                    ).uppercase(),
-                  style = MaterialTheme.typography.titleMedium,
-                  fontWeight = FontWeight.Bold,
-                  color = headerContentColor,
+              }
+
+              if (isHome) {
+                ParentConnectionTestAction(
+                  inProgress = connectionTestInProgress,
+                  succeeded = connectionTestSucceeded,
+                  enabled =
+                    !actionsBusy &&
+                      !connectionTestInProgress &&
+                      connectionTestSucceeded == null,
+                  onClick = onTestConnection,
+                  modifier = Modifier.align(Alignment.TopEnd),
                 )
-              },
-              actions = {
-                if (isHome) {
-                  ParentConnectionTestAction(
-                    inProgress = connectionTestInProgress,
-                    succeeded = connectionTestSucceeded,
-                    enabled =
-                      !actionsBusy &&
-                        !connectionTestInProgress &&
-                        connectionTestSucceeded == null,
-                    onClick = onTestConnection,
-                  )
-                } else {
+              } else {
+                Box(
+                  modifier = Modifier.align(Alignment.TopEnd),
+                ) {
                   ParentAccountMenuButton(
                     expanded = accountMenuExpanded,
                     onExpandedChange = { accountMenuExpanded = it },
@@ -221,15 +233,19 @@ internal fun ParentDashboardShell(
                     onSignOut = onSignOut,
                   )
                 }
-              },
-              colors =
-                TopAppBarDefaults.centerAlignedTopAppBarColors(
-                  containerColor = Color.Transparent,
-                  navigationIconContentColor = headerContentColor,
-                  titleContentColor = headerContentColor,
-                  actionIconContentColor = headerContentColor,
-                ),
-            )
+              }
+
+              Icon(
+                painter = painterResource(currentSection.iconRes),
+                contentDescription = currentSection.label,
+                tint = headerContentColor,
+                modifier =
+                  Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 9.dp)
+                    .size(24.dp),
+              )
+            }
           }
         }
       },
@@ -378,13 +394,14 @@ private fun ParentConnectionTestAction(
   succeeded: Boolean?,
   enabled: Boolean,
   onClick: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   Surface(
     shape = CircleShape,
     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
     modifier =
-      Modifier
-        .padding(end = 10.dp)
+      modifier
+        .padding(end = 10.dp, top = 8.dp)
         .size(38.dp),
   ) {
     IconButton(
