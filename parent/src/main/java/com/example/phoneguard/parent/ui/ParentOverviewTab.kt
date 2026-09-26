@@ -469,6 +469,7 @@ internal fun ParentOverviewTab(
             day = todayUsage,
             emptyMessage = "No app usage has been recorded today.",
             inventory = appInventorySnapshot,
+            showAppChart = true,
           )
         }
 
