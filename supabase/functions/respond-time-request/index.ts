@@ -173,6 +173,17 @@ export default {
       return json({ error: "command_status_update_failed" }, 500);
     }
 
+    const { error: grantedMinutesError } = await ctx.supabaseAdmin
+      .from("child_devices")
+      .update({
+        temporary_allow_granted_minutes: requestRow.requested_minutes,
+      })
+      .eq("device_id", deviceId);
+
+    if (grantedMinutesError) {
+      return json({ error: "temporary_grant_update_failed" }, 500);
+    }
+
     const { error: resolveError } = await ctx.supabaseAdmin
       .from("time_requests")
       .update({
