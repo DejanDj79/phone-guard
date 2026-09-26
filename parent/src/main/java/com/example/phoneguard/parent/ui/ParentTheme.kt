@@ -31,6 +31,7 @@ private val MichromaFamily =
   )
 
 internal val ParentAccentColor = Color(0xFF69DEFF)
+internal val ParentBorderColor = Color(0xFF7382A3)
 internal val ParentActionShape = RoundedCornerShape(12.dp)
 internal val ParentGradientEdge = Color(0xFF3E4759)
 internal val ParentGradientCenter = Color(0xFF5C6B8A)
@@ -55,8 +56,8 @@ private val ParentColors =
     onSurface = Color(0xFFEFF6FF),
     surfaceVariant = Color(0xFF7183A3),
     onSurfaceVariant = Color(0xFFEFF6FF),
-    outline = Color(0xFFA9BCD9),
-    outlineVariant = Color(0xFF7183A3),
+    outline = ParentBorderColor,
+    outlineVariant = ParentBorderColor,
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005),
     errorContainer = Color(0xFF8C4A52),
