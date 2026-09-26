@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -46,7 +45,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,38 +71,6 @@ internal data class ParentDashboardSection(
   val label: String,
   @DrawableRes val iconRes: Int,
 )
-
-private val ParentDashboardHeaderShape =
-  GenericShape { size, _ ->
-    val width = size.width
-    val height = size.height
-    val shoulderY = height * 0.70f
-    val leftShoulder = width * 0.33f
-    val rightShoulder = width * 0.67f
-
-    moveTo(0f, 0f)
-    lineTo(width, 0f)
-    lineTo(width, shoulderY)
-    lineTo(rightShoulder, shoulderY)
-    cubicTo(
-      width * 0.61f,
-      shoulderY,
-      width * 0.60f,
-      height,
-      width * 0.50f,
-      height,
-    )
-    cubicTo(
-      width * 0.40f,
-      height,
-      width * 0.39f,
-      shoulderY,
-      leftShoulder,
-      shoulderY,
-    )
-    lineTo(0f, shoulderY)
-    close()
-  }
 
 @Composable
 internal fun ParentDashboardShell(
@@ -158,94 +128,127 @@ internal fun ParentDashboardShell(
             parentDashboardSections.getOrNull(sectionIndex)
               ?: parentDashboardSections.first()
 
-          Surface(
-            color = Color.Transparent,
-            shape = ParentDashboardHeaderShape,
-            border = BorderStroke(1.dp, ParentBorderColor),
+          Box(
+            modifier =
+              Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .height(104.dp)
+                .drawBehind {
+                  val shoulderY = size.height * 0.72f
+                  val leftShoulder = size.width * 0.34f
+                  val rightShoulder = size.width * 0.66f
+
+                  val path =
+                    Path().apply {
+                      moveTo(0f, shoulderY)
+                      lineTo(leftShoulder, shoulderY)
+                      cubicTo(
+                        size.width * 0.40f,
+                        shoulderY,
+                        size.width * 0.41f,
+                        size.height,
+                        size.width * 0.50f,
+                        size.height,
+                      )
+                      cubicTo(
+                        size.width * 0.59f,
+                        size.height,
+                        size.width * 0.60f,
+                        shoulderY,
+                        rightShoulder,
+                        shoulderY,
+                      )
+                      lineTo(size.width, shoulderY)
+                    }
+
+                  drawPath(
+                    path = path,
+                    color = ParentBorderColor,
+                    style = Stroke(width = 1.dp.toPx()),
+                  )
+                },
           ) {
-            Box(
+            if (isHome) {
+              ParentAccountMenuButton(
+                expanded = accountMenuExpanded,
+                onExpandedChange = { accountMenuExpanded = it },
+                parentEmail = parentEmail,
+                childName = device.displayName,
+                actionsBusy = actionsBusy,
+                coloredHeader = false,
+                onChangeDevice = onChangeDevice,
+                onOpenSettings = { onSectionSelected(4) },
+                onSignOut = onSignOut,
+              )
+            } else {
+              IconButton(
+                onClick = { onSectionSelected(0) },
+                modifier =
+                  Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 10.dp, top = 10.dp)
+                    .size(38.dp),
+              ) {
+                Icon(
+                  painter = painterResource(R.drawable.pg_icon_back),
+                  contentDescription = "Back to Home",
+                  tint = ParentHeaderIconColor,
+                  modifier = Modifier.size(20.dp),
+                )
+              }
+            }
+
+            Text(
+              text = currentSection.label.uppercase(),
               modifier =
                 Modifier
-                  .fillMaxWidth()
-                  .statusBarsPadding()
-                  .height(76.dp),
-            ) {
-              if (isHome) {
+                  .align(Alignment.TopCenter)
+                  .padding(top = 18.dp),
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.Bold,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            if (isHome) {
+              ParentConnectionTestAction(
+                inProgress = connectionTestInProgress,
+                succeeded = connectionTestSucceeded,
+                enabled =
+                  !actionsBusy &&
+                    !connectionTestInProgress &&
+                    connectionTestSucceeded == null,
+                onClick = onTestConnection,
+                modifier = Modifier.align(Alignment.TopEnd),
+              )
+            } else {
+              Box(
+                modifier = Modifier.align(Alignment.TopEnd),
+              ) {
                 ParentAccountMenuButton(
                   expanded = accountMenuExpanded,
                   onExpandedChange = { accountMenuExpanded = it },
                   parentEmail = parentEmail,
                   childName = device.displayName,
                   actionsBusy = actionsBusy,
-                  coloredHeader = false,
+                  coloredHeader = true,
                   onChangeDevice = onChangeDevice,
                   onOpenSettings = { onSectionSelected(4) },
                   onSignOut = onSignOut,
                 )
-              } else {
-                Surface(
-                  shape = CircleShape,
-                  color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
-                  modifier =
-                    Modifier
-                      .align(Alignment.TopStart)
-                      .padding(start = 10.dp, top = 8.dp)
-                      .size(38.dp),
-                ) {
-                  IconButton(
-                    onClick = { onSectionSelected(0) },
-                    modifier = Modifier.size(38.dp),
-                  ) {
-                    Icon(
-                      painter = painterResource(R.drawable.pg_icon_back),
-                      contentDescription = "Back to Home",
-                      tint = headerContentColor,
-                      modifier = Modifier.size(20.dp),
-                    )
-                  }
-                }
               }
-
-              if (isHome) {
-                ParentConnectionTestAction(
-                  inProgress = connectionTestInProgress,
-                  succeeded = connectionTestSucceeded,
-                  enabled =
-                    !actionsBusy &&
-                      !connectionTestInProgress &&
-                      connectionTestSucceeded == null,
-                  onClick = onTestConnection,
-                  modifier = Modifier.align(Alignment.TopEnd),
-                )
-              } else {
-                Box(
-                  modifier = Modifier.align(Alignment.TopEnd),
-                ) {
-                  ParentAccountMenuButton(
-                    expanded = accountMenuExpanded,
-                    onExpandedChange = { accountMenuExpanded = it },
-                    parentEmail = parentEmail,
-                    childName = device.displayName,
-                    actionsBusy = actionsBusy,
-                    coloredHeader = true,
-                    onChangeDevice = onChangeDevice,
-                    onOpenSettings = { onSectionSelected(4) },
-                    onSignOut = onSignOut,
-                  )
-                }
-              }
-
-              Icon(
-                painter = painterResource(currentSection.iconRes),
-                contentDescription = currentSection.label,
-                tint = headerContentColor,
-                modifier =
-                  Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 9.dp)
-                    .size(24.dp),
-              )
             }
+
+            Icon(
+              painter = painterResource(currentSection.iconRes),
+              contentDescription = currentSection.label,
+              tint = ParentHeaderIconColor,
+              modifier =
+                Modifier
+                  .align(Alignment.BottomCenter)
+                  .padding(bottom = 8.dp)
+                  .size(24.dp),
+            )
           }
         }
       },
@@ -351,7 +354,7 @@ private fun ParentFloatingBottomNavigation(
             .size(44.dp),
         shape = CircleShape,
         color = Color.Transparent,
-        border = BorderStroke(1.dp, ParentBorderColor),
+        border = BorderStroke(1.dp, ParentAccentColor),
         shadowElevation = 0.dp,
       ) {}
 
@@ -375,7 +378,7 @@ private fun ParentFloatingBottomNavigation(
               contentDescription = section.label,
               tint =
                 if (selected) {
-                  MaterialTheme.colorScheme.onPrimary
+                  MaterialTheme.colorScheme.onSurface
                 } else {
                   MaterialTheme.colorScheme.onSurfaceVariant
                 },
@@ -396,25 +399,20 @@ private fun ParentConnectionTestAction(
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Surface(
-    shape = CircleShape,
-    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+  IconButton(
+    onClick = onClick,
+    enabled = enabled,
     modifier =
       modifier
-        .padding(end = 10.dp, top = 8.dp)
+        .padding(end = 10.dp, top = 10.dp)
         .size(38.dp),
   ) {
-    IconButton(
-      onClick = onClick,
-      enabled = enabled,
-      modifier = Modifier.size(38.dp),
-    ) {
       when {
         inProgress -> {
           CircularProgressIndicator(
             modifier = Modifier.size(18.dp),
             strokeWidth = 2.dp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = ParentHeaderIconColor,
           )
         }
 
@@ -440,12 +438,11 @@ private fun ParentConnectionTestAction(
           Icon(
             painter = painterResource(R.drawable.pg_icon_test),
             contentDescription = "Test connection",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = ParentHeaderIconColor,
             modifier = Modifier.size(20.dp),
           )
         }
       }
-    }
   }
 }
 
@@ -578,37 +575,24 @@ private fun ParentAccountMenuButton(
   onOpenSettings: () -> Unit,
   onSignOut: () -> Unit,
 ) {
-  Box {
-    Surface(
-      shape = CircleShape,
-      color =
-        if (coloredHeader) {
-          MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
-        } else {
-          MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
-        },
-      modifier =
-        if (coloredHeader) {
-          Modifier
-            .padding(end = 10.dp)
-            .size(38.dp)
-        } else {
-          Modifier
-            .padding(start = 10.dp)
-            .size(38.dp)
-        },
-    ) {
-      IconButton(
-        onClick = { onExpandedChange(!expanded) },
-        modifier = Modifier.size(38.dp),
-      ) {
-        Icon(
-          painter = painterResource(R.drawable.pg_icon_user),
-          contentDescription = "Parent menu",
-          tint = MaterialTheme.colorScheme.onSurface,
-          modifier = Modifier.size(20.dp),
-        )
-      }
-    }
+  IconButton(
+    onClick = { onExpandedChange(!expanded) },
+    modifier =
+      if (coloredHeader) {
+        Modifier
+          .padding(end = 10.dp, top = 10.dp)
+          .size(38.dp)
+      } else {
+        Modifier
+          .padding(start = 10.dp, top = 10.dp)
+          .size(38.dp)
+      },
+  ) {
+    Icon(
+      painter = painterResource(R.drawable.pg_icon_user),
+      contentDescription = "Parent menu",
+      tint = ParentHeaderIconColor,
+      modifier = Modifier.size(20.dp),
+    )
   }
 }
