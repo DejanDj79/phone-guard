@@ -179,7 +179,19 @@ internal fun ParentOverviewTab(
         Column(
           horizontalAlignment = Alignment.End,
           modifier = Modifier.weight(1f),
+          verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
+          Text(
+            text =
+              "BATTERY  " +
+                (
+                  device.batteryLevelPercent
+                    ?.let { it.toString() + "%" }
+                    ?: "—"
+                ),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
           Text(
             text = "LAST SEEN",
             style = MaterialTheme.typography.labelSmall,
