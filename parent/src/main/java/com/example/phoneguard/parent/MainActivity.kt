@@ -48,9 +48,7 @@ class MainActivity : FragmentActivity() {
                   colorStops =
                     arrayOf(
                       0.0f to ParentGradientEdge,
-                      0.18f to Color(0xFFE7E7E3),
                       0.50f to ParentGradientCenter,
-                      0.82f to Color(0xFFE7E7E3),
                       1.0f to ParentGradientEdge,
                     ),
                 ),
