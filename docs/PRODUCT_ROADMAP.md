@@ -1,6 +1,6 @@
 # PhoneGuard Product Roadmap
 
-_Last updated: 2026-09-26 — Warm Modern Parent UI in final polish phase_
+_Last updated: 2026-09-26 — Free v1 product/UI scope complete; release hardening remains_
 
 This document tracks product decisions for the future Play Store release, especially which features should remain available in the free version and which features are candidates for a paid/premium version.
 
@@ -68,6 +68,11 @@ The current implementation already includes the main foundation that should rema
 - Protection history
 - Clear protection history
 - Device presence / last seen / possible shutdown state
+- Child battery level in Parent
+- Persistent temporary-access status
+  - originally approved minutes
+  - remaining minutes
+  - survives Parent app restart
 - App usage dashboard
   - Today
   - Yesterday
@@ -85,8 +90,12 @@ The current implementation already includes the main foundation that should rema
   - Time requests
   - Protection alerts
 - Reboot recovery / background protection handling
+- Parent pairing as an in-context bottom sheet
+- Redesigned Parent and Child visual systems
+- Redesigned Child lock screen / enforced accessibility overlay
+- Parent header content scrolling around the custom notch border
 
-The visual design and final UX are still to be redesigned before release.
+**Free v1 feature scope is now considered complete.** The remaining work before publication is release hardening, regression testing, accessibility/small-screen validation and Play Store preparation rather than adding more Free features.
 
 ## Reliability / protection validation
 
@@ -132,51 +141,55 @@ During ADB diagnostics, package and UID AppOps could show different values, and 
 
 ## UI / UX direction and implementation status
 
-**Design direction approved:** modern, minimalist Android UI rather than the current prototype/admin-panel appearance.
+**Design direction approved and implemented:** MetroPulse-inspired, modern minimalist Android UI with a cool blue-gray visual system shared across Parent and Child.
 
 ### Global Parent app shell
 
 The current approved Parent shell uses:
 
-- A transparent rounded top header that lets the center-lit horizontal root gradient continue behind it.
-- A thin darker header outline; no separate filled header panel.
-- Home: Parent/account control on the left and connection-test status action on the right.
-- Schedule / Apps / Device: Back control on the left and Parent/account control on the right.
-- Parent account menu is an in-window overlay rather than a Material popup. It contains:
-  - Parent identity
-  - currently managed Child
-  - Manage children
-  - Settings
-  - Sign out
-- Primary navigation is a floating, icon-only bottom bar with:
-  - Home
-  - Schedule
-  - Apps
-  - Device
-- The selected bottom destination uses one orange circular indicator that slides with a spring/bounce animation.
-- Settings is intentionally secondary and is opened from the Parent account menu.
-- Android native navigation controls remain hidden during normal use; the floating Parent navigation is fixed and no longer follows navigation-bar inset changes.
-- Current top and bottom navigation structure has been physically reviewed and accepted.
+- Root horizontal gradient: `#3E4759 → #5C6B8A → #3E4759`.
+- Primary accent: `#69DEFF`.
+- Main text: `#EFF6FF`.
+- Regular cards: `#8194B5`.
+- Standard borders: `#7382A3`.
+- Header icon color: `#95A4C5`.
+- A 104dp transparent top header with a custom-drawn lower border and broad central downward notch.
+- The current page title centered near the top of the header.
+- The current page icon centered inside the notch.
+- Home: Parent/account action on the left and connection-test action on the right.
+- Schedule / Apps / Device: Back action on the left and Parent/account action on the right.
+- Home / Schedule / Apps / Device show four compact page-position dots beneath the title.
+- Settings remains secondary and is opened from the Parent account menu.
+- Main content scrolls underneath the header and is masked by the exact same Bézier path as the notch, so cards/text visually pass around the lower header border instead of being cut by a rectangular top-bar boundary.
+- Primary navigation remains a floating, icon-only bottom bar for Home, Schedule, Apps and Device.
+- The selected bottom destination uses a transparent circular indicator with a 1dp `#69DEFF` border.
+- Android native navigation controls remain hidden during normal use.
+- Parent account menu is an in-window overlay rather than a Material popup.
 
 ### Parent Home
 
-Home is the main command center and should prioritize only information that matters now:
+Home is the main command center and currently includes:
 
-1. Child status hero area
+1. Child status card
    - Child name
-   - Online / last seen
-   - Available / locked / bonus-time state
-2. Primary controls
-   - Lock now or Unlock, depending on current state
-   - Add bonus time
-3. Compact daily summary
-   - Screen time today
-   - Daily limit / remaining time
-4. Contextual attention card
-   - Only shown when the Child is offline for a meaningful period or a protection capability needs attention
-5. Recent / relevant activity
-   - Time requests, recent control feedback and important protection events
-6. Detailed usage remains available without overwhelming the first viewport.
+   - battery icon + percentage beside the Child name
+   - online / last seen
+   - lock / unlock state
+   - Lock / Unlock and Bonus controls
+   - persistent temporary-access status such as `Approved 5 minutes · Left 3 minutes`
+2. Daily summary
+   - screen time today
+   - daily limit / remaining time
+3. Contextual protection attention
+   - shown only when relevant
+4. Recent activity
+   - unlocked-phone app-session timeline
+   - real app icons, start time and duration
+5. Usage overview
+   - Today / Yesterday / 7 days
+   - transparent filters with cyan border on the active filter
+   - top-five app cards
+   - real weekly usage chart
 
 ### Visual rules
 
@@ -196,13 +209,17 @@ Home is the main command center and should prioritize only information that matt
 - [x] Parent pairing foundation
 - [x] Child five-step setup / protection wizard
 - [x] Clarified Child Change Parent flow
-- [x] Warm Modern Parent design system
-  - center-lit horizontal gradient
-  - warm near-white surfaces
-  - graphite text
-  - orange active-state accent
+- [x] Final cool blue-gray Parent design system
+  - horizontal `#3E4759 → #5C6B8A → #3E4759` gradient
+  - `#8194B5` card surfaces
+  - `#EFF6FF` primary text
+  - `#69DEFF` active-state accent
+  - `#7382A3` standard borders
   - Michroma display/labels + Manrope body
 - [x] Parent top header and floating bottom navigation
+  - 104dp custom notch header
+  - page-position dots
+  - content scrolls around the exact notch border path
 - [x] Account menu converted to an in-window overlay; repeated account-icon tap closes it correctly
 - [x] Bottom-navigation jump caused by Android navigation-bar insets fixed
 - [x] Parent action-button system
@@ -211,25 +228,31 @@ Home is the main command center and should prioritize only information that matt
   - centered standalone actions
   - 12dp corner radius
   - paired/segmented controls keep shared-row width
-- [x] Startup Parent security / biometric screen redesigned in the Warm Modern style
+- [x] Startup Parent security / biometric screen redesigned in the final Parent style
   - custom fingerprint/lock screen first
   - native Android BiometricPrompt opens only after explicit biometric action
   - PIN remains fallback
 - [x] Parent connection-test action moved to Home header with idle/loading/success/failure visual states
 - [x] Device Protection history preview limited to five events, with dedicated full History screen
 
-#### Implemented — keep under physical review while polishing
+#### Free v1 UI implementation — complete
 
-- [ ] Parent Home final visual pass
+- [x] Parent Home final visual pass
+  - battery beside Child name
+  - persistent Approved / Left bonus-time status
   - Recent unlocked activity timeline
   - Usage overview Today / Yesterday / 7 days
   - top-five real app cards
   - real weekly bar chart
-- [ ] Schedule overview/editor final visual review
-- [ ] Apps overview / Allowed Apps editor final visual review
-- [ ] Device / protection page final visual review
-- [ ] Settings page final visual review
-- [ ] Devices / Device management secondary-screen visual review
+- [x] Schedule overview/editor visual pass
+  - custom-colored Material3 time picker
+- [x] Apps overview / Allowed Apps editor visual pass
+- [x] Device / protection page visual pass
+- [x] Settings page visual pass
+- [x] Devices / Device management secondary-screen visual pass
+- [x] Pair Child flow converted from full screen to styled bottom sheet
+- [x] Child app visual system aligned with Parent
+- [x] Child lock screen and enforced accessibility overlay aligned with Parent
 
 #### Icon system
 
@@ -243,27 +266,37 @@ Home is the main command center and should prioritize only information that matt
 
 #### Still to do before release
 
-- [ ] Pairing / authentication / setup visual polish pass using the finalized Warm Modern system
-- [ ] Small-screen layout pass
+These are release-hardening tasks, not unfinished Free feature work:
+
+- [ ] Small-screen layout regression pass
 - [ ] Accessibility pass
   - touch targets
   - TalkBack/content descriptions
   - contrast
   - text scaling
-- [ ] Decide whether a dark theme is required for v1; if yes, implement and physically review it
-- [ ] Full Parent + Child regression test after the UI/icon pass
-- [ ] Final Free vs Premium feature gating implementation
-  - Per-app daily limits remain Premium candidate
-  - New-app-installed alerts remain Premium candidate
+- [ ] Full Parent + Child regression test
+  - pairing / re-pairing
+  - reboot recovery
+  - offline command recovery
+  - lock / unlock / bonus time
+  - Request More Time
+  - schedule
+  - daily limit
+  - allowed apps
+  - protection alerts/history
+  - battery/status refresh
+  - Parent restart while temporary access is active
 - [ ] Release preparation
   - icon/font/license credits
   - versioning/signing verification
   - Play Store assets/listing/privacy requirements
+  - Data Safety / permissions / child-safety policy review
   - release build smoke test
+- [ ] Premium implementation only when Premium development starts
+  - Per-app daily limits remain reserved for Premium
+  - New-app-installed alerts remain reserved for Premium
 
-The tracker above is the current source of truth. Older entries in the Decision log are retained as history and may describe directions that were later superseded.
-
-
+The Free version should not gain additional scope unless a regression, safety issue or release requirement makes it necessary.
 
 ## Paid / Premium candidates
 
@@ -341,9 +374,23 @@ Before publication we still need to decide:
 - Permissions justification
 - Child-safety / parental-control Play Store policy compliance
 - Store listing, screenshots and onboarding
-- Final UI/UX redesign
 
 ## Decision log
+
+### 2026-09-26 — Free v1 scope closed
+
+- Free v1 feature scope and primary UI/UX implementation are considered complete.
+- Final Parent palette is cool blue-gray: `#69DEFF` accent, `#EFF6FF` text, `#8194B5` cards, `#7382A3` borders and `#3E4759 → #5C6B8A → #3E4759` root gradient.
+- The earlier Warm Modern / orange / light-surface experiments are historical and superseded.
+- Parent top header is 104dp with a custom central notch. Main scroll content can pass under the header and is masked by the exact notch Bézier path so content follows the visible border.
+- Parent Home shows Child battery percentage beside the device name.
+- Temporary access now persists both originally approved minutes and remaining minutes, so `Approved X minutes · Left Y minutes` survives Parent app restart.
+- Parent pairing is presented as a styled bottom sheet over the Devices screen when adding another Child.
+- Child setup/dashboard and both lock-screen implementations now use the same cool blue-gray visual language as Parent.
+- Recent Activity spacing and Usage Overview filter styling received their final Home pass.
+- Parent startup PIN/biometric screen now uses equal-width controls with centered PIN entry.
+- Schedule time picker received the custom Parent visual treatment.
+- From this point, remaining Free work is release hardening/regression/accessibility/small-screen verification, not additional product scope.
 
 ### 2026-09-25
 
