@@ -530,16 +530,16 @@ private fun UsageViewSegment(
         .height(40.dp)
         .clickable(onClick = onClick),
     shape = ParentActionShape,
-    color =
-      if (selected) {
-        ParentAccentColor
-      } else {
-        Color.Transparent
-      },
+    color = Color.Transparent,
     border =
       BorderStroke(
         width = 1.dp,
-        color = ParentBorderColor,
+        color =
+          if (selected) {
+            ParentAccentColor
+          } else {
+            ParentBorderColor
+          },
       ),
   ) {
     Box(
@@ -549,12 +549,7 @@ private fun UsageViewSegment(
       Text(
         text = text,
         style = MaterialTheme.typography.labelSmall,
-        color =
-          if (selected) {
-            Color.White
-          } else {
-            MaterialTheme.colorScheme.onSurface
-          },
+        color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center,
         maxLines = 1,
       )
@@ -635,7 +630,7 @@ private fun RecentUnlockedActivityTimeline(
   ) {
     Column(
       modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       Text(
         text = "Recent activity",
@@ -653,7 +648,7 @@ private fun RecentUnlockedActivityTimeline(
           style = MaterialTheme.typography.labelSmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           fontWeight = FontWeight.Bold,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         )
 
         Text(
@@ -662,8 +657,6 @@ private fun RecentUnlockedActivityTimeline(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
-
-      androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(14.dp))
 
       when {
         loading && recentItems.isEmpty() -> {
