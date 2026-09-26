@@ -137,7 +137,7 @@ internal fun ParentDashboardShell(
             border =
               BorderStroke(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.58f),
+                color = ParentBorderColor,
               ),
           ) {
             CenterAlignedTopAppBar(
@@ -334,8 +334,9 @@ private fun ParentFloatingBottomNavigation(
             .offset(x = indicatorOffset)
             .size(44.dp),
         shape = CircleShape,
-        color = ParentAccentColor,
-        shadowElevation = 2.dp,
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, ParentBorderColor),
+        shadowElevation = 0.dp,
       ) {}
 
       Row(
@@ -450,7 +451,7 @@ private fun ParentAccountMenuOverlay(
     border =
       BorderStroke(
         width = 1.dp,
-        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+        color = ParentBorderColor,
       ),
   ) {
     Column(
