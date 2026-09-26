@@ -523,12 +523,7 @@ private fun UsageViewSegment(
     border =
       BorderStroke(
         width = 1.dp,
-        color =
-          if (selected) {
-            ParentAccentColor
-          } else {
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.70f)
-          },
+        color = ParentBorderColor,
       ),
   ) {
     Box(
