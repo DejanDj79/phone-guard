@@ -1,12 +1,14 @@
 package com.example.phoneguard.parent.ui
 
 import android.widget.NumberPicker
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -503,6 +506,7 @@ internal fun AppUsageDayContent(
   day: AppUsageDay?,
   emptyMessage: String,
   inventory: AllowedAppsSnapshot?,
+  showAppChart: Boolean = false,
 ) {
   if (day == null) {
     Text(
@@ -549,6 +553,11 @@ internal fun AppUsageDayContent(
       style = MaterialTheme.typography.bodyMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+  } else if (showAppChart) {
+    AppUsageTodayBarChart(
+      apps = topApps,
+      inventory = inventory,
+    )
   } else {
     topApps.forEach { app ->
       UsageAppCard(
@@ -558,6 +567,162 @@ internal fun AppUsageDayContent(
     }
   }
 }
+
+@Composable
+private fun AppUsageTodayBarChart(
+  apps: List<AppUsageEntry>,
+  inventory: AllowedAppsSnapshot?,
+) {
+  val installedByPackage =
+    inventory
+      ?.installedApps
+      ?.associateBy { it.packageName }
+      .orEmpty()
+
+  val maxMinutes =
+    apps
+      .maxOfOrNull { app -> (app.seconds + 59) / 60 }
+      ?.coerceAtLeast(1)
+      ?: 1
+  val axisMaxMinutes =
+    (((maxMinutes + 29) / 30) * 30)
+      .coerceAtLeast(30)
+  val tickCount = axisMaxMinutes / 30
+  val chartHeight =
+    (tickCount * 30)
+      .coerceIn(180, 330)
+      .dp
+  val ticks =
+    (0..tickCount)
+      .map { index -> index * 30 }
+      .reversed()
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(20.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+  ) {
+    Column(
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Column(
+          modifier = Modifier.width(42.dp).height(chartHeight),
+          verticalArrangement = Arrangement.SpaceBetween,
+          horizontalAlignment = Alignment.End,
+        ) {
+          ticks.forEach { minutes ->
+            Text(
+              text = usageAxisMinutesLabel(minutes),
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              textAlign = TextAlign.End,
+            )
+          }
+        }
+
+        Box(
+          modifier =
+            Modifier
+              .weight(1f)
+              .height(chartHeight)
+              .padding(start = 8.dp),
+        ) {
+          Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween,
+          ) {
+            repeat(ticks.size) {
+              Box(
+                modifier =
+                  Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                      MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+                    ),
+              )
+            }
+          }
+
+          Row(
+            modifier =
+              Modifier
+                .fillMaxSize()
+                .padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Bottom,
+          ) {
+            apps.forEach { app ->
+              val fraction =
+                (app.seconds.toFloat() / (axisMaxMinutes * 60f))
+                  .coerceIn(0f, 1f)
+
+              Box(
+                modifier =
+                  Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.BottomCenter,
+              ) {
+                Surface(
+                  modifier =
+                    Modifier
+                      .width(22.dp)
+                      .fillMaxHeight(fraction.coerceAtLeast(0.025f)),
+                  shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+                  color = ParentAccentColor,
+                ) {}
+              }
+            }
+          }
+        }
+      }
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Spacer(modifier = Modifier.width(50.dp))
+
+        Row(
+          modifier = Modifier.weight(1f),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          apps.forEach { app ->
+            val installedApp =
+              installedByPackage[app.packageName]
+                ?: InstalledAppInfo(
+                  packageName = app.packageName,
+                  label = app.label,
+                )
+
+            Box(
+              modifier = Modifier.weight(1f),
+              contentAlignment = Alignment.Center,
+            ) {
+              ParentAppIcon(
+                app = installedApp,
+                modifier = Modifier.size(36.dp),
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+private fun usageAxisMinutesLabel(minutes: Int): String =
+  when {
+    minutes == 0 -> "0"
+    minutes < 60 -> minutes.toString() + "m"
+    minutes % 60 == 0 -> (minutes / 60).toString() + "h"
+    else -> (minutes / 60).toString() + "h " + (minutes % 60) + "m"
+  }
 
 @Composable
 internal fun AppUsageWeekContent(
