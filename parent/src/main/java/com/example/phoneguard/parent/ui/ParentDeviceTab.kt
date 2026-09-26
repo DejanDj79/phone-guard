@@ -12,13 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -29,10 +23,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
 
 private const val DEVICE_HISTORY_PREVIEW_COUNT = 5
@@ -92,7 +88,7 @@ internal fun ParentDeviceTab(
           color = ParentSectionHeaderColor,
         ) {
           Icon(
-            imageVector = Icons.Default.PhoneAndroid,
+            painter = painterResource(R.drawable.pg_icon_device),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.padding(14.dp),
@@ -126,7 +122,6 @@ internal fun ParentDeviceTab(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         DeviceActionTile(
-          icon = Icons.Default.Devices,
           label = "DEVICES",
           detail = pairedDeviceCount.toString(),
           enabled = !actionsBusy,
@@ -135,7 +130,6 @@ internal fun ParentDeviceTab(
         )
 
         DeviceActionTile(
-          icon = Icons.Default.Refresh,
           label = "REFRESH",
           detail = if (refreshInProgress) "…" else "STATUS",
           enabled = !refreshInProgress,
@@ -144,7 +138,6 @@ internal fun ParentDeviceTab(
         )
 
         DeviceActionTile(
-          icon = Icons.Default.Settings,
           label = "MANAGE",
           detail = "DEVICE",
           enabled = !actionsBusy,
@@ -379,7 +372,6 @@ internal fun ParentDeviceTab(
 
 @Composable
 private fun DeviceActionTile(
-  icon: androidx.compose.ui.graphics.vector.ImageVector,
   label: String,
   detail: String,
   enabled: Boolean,
@@ -398,18 +390,6 @@ private fun DeviceActionTile(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-      Icon(
-        imageVector = icon,
-        contentDescription = null,
-        tint =
-          if (enabled) {
-            ParentSectionHeaderColor
-          } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
-          },
-        modifier = Modifier.size(20.dp),
-      )
-
       Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
