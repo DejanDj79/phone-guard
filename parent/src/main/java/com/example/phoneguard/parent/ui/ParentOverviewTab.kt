@@ -640,7 +640,10 @@ private fun RecentUnlockedActivityTimeline(
       )
 
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .padding(bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Text(
