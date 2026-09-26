@@ -267,7 +267,25 @@ internal fun ParentOverviewTab(
         }
       }
 
-      timeRequestNotice?.let { message ->
+      val temporaryAccessStatus =
+        if (
+          device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
+          device.temporaryAccessGrantedMinutes != null &&
+          device.temporaryAccessMinutesRemaining != null
+        ) {
+          val granted = device.temporaryAccessGrantedMinutes
+          val left = device.temporaryAccessMinutesRemaining
+          "Approved " +
+            granted +
+            if (granted == 1) " minute" else " minutes" +
+              " · Left " +
+              left +
+              if (left == 1) " minute" else " minutes"
+        } else {
+          null
+        }
+
+      (temporaryAccessStatus ?: timeRequestNotice)?.let { message ->
         Surface(
           modifier = Modifier.fillMaxWidth(),
           shape = RoundedCornerShape(12.dp),
@@ -285,23 +303,7 @@ internal fun ParentOverviewTab(
               modifier = Modifier.size(16.dp),
             )
             Text(
-              text =
-                if (
-                  message.startsWith("Approved ", ignoreCase = true) &&
-                  device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
-                  device.temporaryAccessMinutesRemaining != null
-                ) {
-                  message.removeSuffix(".") +
-                    " · Left " +
-                    device.temporaryAccessMinutesRemaining +
-                    if (device.temporaryAccessMinutesRemaining == 1) {
-                      " minute"
-                    } else {
-                      " minutes"
-                    }
-                } else {
-                  message
-                },
+              text = message,
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
