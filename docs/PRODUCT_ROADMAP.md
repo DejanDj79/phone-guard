@@ -300,6 +300,8 @@ These are release-hardening tasks, not unfinished Free feature work:
 
 The Free version should not gain additional scope unless a regression, safety issue or release requirement makes it necessary.
 
+The working test plan for this phase is `docs/FREE_V1_RELEASE_CHECKLIST.md`.
+
 ## Paid / Premium candidates
 
 ### 1. Per-app daily limits
