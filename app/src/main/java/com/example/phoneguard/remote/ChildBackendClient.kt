@@ -766,6 +766,7 @@ class ChildBackendClient {
     accessibilityEnabled: Boolean,
     preciseTimingEnabled: Boolean,
     batteryUnrestricted: Boolean,
+    batteryLevelPercent: Int? = null,
     protectionEvent: String? = null,
     dailyUsageDate: String,
     dailyUsageSeconds: Int,
@@ -813,6 +814,9 @@ class ChildBackendClient {
           .put("preciseTimingEnabled", preciseTimingEnabled)
           .put("batteryUnrestricted", batteryUnrestricted)
           .also { json ->
+            batteryLevelPercent?.let {
+              json.put("batteryLevelPercent", it)
+            }
             if (!protectionEvent.isNullOrBlank()) {
               json.put("protectionEvent", protectionEvent)
             }
