@@ -175,7 +175,7 @@ internal fun StyledLockScreen(
       if (unlockTimeLabel != null) {
         Spacer(Modifier.height(10.dp))
         Text("AVAILABLE AGAIN AT", style = MaterialTheme.typography.labelMedium, color = ChildTextSecondary)
-        Text(unlockTimeLabel, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = ChildDark)
+        Text(unlockTimeLabel, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = ChildLight)
       } else if (dailyLimitReached) {
         Spacer(Modifier.height(10.dp))
         Text("DAILY LIMIT REACHED", style = MaterialTheme.typography.labelMedium, color = ChildTextSecondary)
