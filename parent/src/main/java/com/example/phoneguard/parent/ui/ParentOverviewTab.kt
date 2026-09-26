@@ -168,30 +168,44 @@ internal fun ParentOverviewTab(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top,
       ) {
-        Text(
-          text = device.displayName,
-          style = MaterialTheme.typography.headlineSmall,
-          fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSurface,
+        Row(
           modifier = Modifier.weight(1f),
-        )
+          horizontalArrangement = Arrangement.spacedBy(9.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Text(
+            text = device.displayName,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
+
+          Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Icon(
+              painter = painterResource(R.drawable.pg_icon_battery),
+              contentDescription = "Battery",
+              tint = ParentHeaderIconColor,
+              modifier = Modifier.size(18.dp),
+            )
+            Text(
+              text =
+                device.batteryLevelPercent
+                  ?.let { it.toString() + "%" }
+                  ?: "—",
+              style = MaterialTheme.typography.bodySmall,
+              fontWeight = FontWeight.SemiBold,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+          }
+        }
 
         Column(
           horizontalAlignment = Alignment.End,
-          modifier = Modifier.weight(1f),
           verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-          Text(
-            text =
-              "BATTERY  " +
-                (
-                  device.batteryLevelPercent
-                    ?.let { it.toString() + "%" }
-                    ?: "—"
-                ),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-          )
           Text(
             text = "LAST SEEN",
             style = MaterialTheme.typography.labelSmall,
@@ -204,26 +218,6 @@ internal fun ParentOverviewTab(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
-          )
-        }
-      }
-
-      if (
-        device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
-        device.temporaryAccessMinutesRemaining != null
-      ) {
-        Surface(
-          shape = RoundedCornerShape(50),
-          color = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f),
-        ) {
-          Text(
-            text =
-              "Bonus time · " +
-                device.temporaryAccessMinutesRemaining +
-                " min",
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
           )
         }
       }
@@ -291,7 +285,23 @@ internal fun ParentOverviewTab(
               modifier = Modifier.size(16.dp),
             )
             Text(
-              text = message,
+              text =
+                if (
+                  message.startsWith("Approved ", ignoreCase = true) &&
+                  device.state == DeviceAccessState.TEMPORARILY_ALLOWED &&
+                  device.temporaryAccessMinutesRemaining != null
+                ) {
+                  message.removeSuffix(".") +
+                    " · Left " +
+                    device.temporaryAccessMinutesRemaining +
+                    if (device.temporaryAccessMinutesRemaining == 1) {
+                      " minute"
+                    } else {
+                      " minutes"
+                    }
+                } else {
+                  message
+                },
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
