@@ -69,11 +69,17 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.example.phoneguard.R
 import com.example.phoneguard.remote.ChildTimeRequestResult
+import com.example.phoneguard.theme.ChildAccent
+import com.example.phoneguard.theme.ChildDark
+import com.example.phoneguard.theme.ChildLight
+import com.example.phoneguard.theme.ChildOutline
+import com.example.phoneguard.theme.ChildSurfaceMuted
+import com.example.phoneguard.theme.ChildTextSecondary
 import kotlinx.coroutines.launch
 
-private val LockAccent = Color(0xFFF35702)
-private val LockGradientEdge = Color(0xFFDEDEDA)
-private val LockGradientCenter = Color(0xFFF3F3F0)
+private val LockAccent = ChildAccent
+private val LockGradientEdge = ChildSurfaceMuted
+private val LockGradientCenter = ChildLight
 private val LockActionShape = RoundedCornerShape(12.dp)
 private val LockHeadlineFamily = FontFamily(Font(R.font.michroma, FontWeight.Normal))
 private val LockBodyFamily = FontFamily(Font(R.font.manrope, FontWeight.Normal))
@@ -135,9 +141,9 @@ internal fun StyledLockScreen(
       Brush.horizontalGradient(
         colorStops = arrayOf(
           0f to LockGradientEdge,
-          0.18f to Color(0xFFE7E7E3),
+          0.18f to Color(0xFFEFEFEF),
           0.5f to LockGradientCenter,
-          0.82f to Color(0xFFE7E7E3),
+          0.82f to Color(0xFFEFEFEF),
           1f to LockGradientEdge,
         ),
       ),
@@ -148,7 +154,7 @@ internal fun StyledLockScreen(
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
       Spacer(Modifier.height(18.dp))
-      Surface(shape = CircleShape, color = Color(0xFFF6F6F3), shadowElevation = 1.dp) {
+      Surface(shape = CircleShape, color = ChildSurfaceMuted, shadowElevation = 1.dp) {
         Box(Modifier.size(82.dp), contentAlignment = Alignment.Center) {
           Icon(Icons.Outlined.Lock, contentDescription = null, tint = LockAccent, modifier = Modifier.size(38.dp))
         }
@@ -161,16 +167,16 @@ internal fun StyledLockScreen(
         fontWeight = FontWeight.Normal,
         fontSize = 38.sp,
         letterSpacing = 1.1.sp,
-        color = Color(0xFF303132),
+        color = ChildDark,
       )
 
       if (unlockTimeLabel != null) {
         Spacer(Modifier.height(10.dp))
-        Text("AVAILABLE AGAIN AT", style = MaterialTheme.typography.labelMedium, color = Color(0xFF7F8082))
-        Text(unlockTimeLabel, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Color(0xFF303132))
+        Text("AVAILABLE AGAIN AT", style = MaterialTheme.typography.labelMedium, color = ChildTextSecondary)
+        Text(unlockTimeLabel, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = ChildDark)
       } else if (dailyLimitReached) {
         Spacer(Modifier.height(10.dp))
-        Text("DAILY LIMIT REACHED", style = MaterialTheme.typography.labelMedium, color = Color(0xFF7F8082))
+        Text("DAILY LIMIT REACHED", style = MaterialTheme.typography.labelMedium, color = ChildTextSecondary)
       }
 
       Spacer(Modifier.height(28.dp))
@@ -212,7 +218,7 @@ internal fun StyledLockScreen(
 
       systemMessage?.let {
         Spacer(Modifier.height(10.dp))
-        Text(it, style = MaterialTheme.typography.bodySmall, color = Color(0xFF7F8082), textAlign = TextAlign.Center)
+        Text(it, style = MaterialTheme.typography.bodySmall, color = ChildTextSecondary, textAlign = TextAlign.Center)
       }
 
       Spacer(Modifier.height(30.dp))
@@ -221,11 +227,11 @@ internal fun StyledLockScreen(
         enabled = !timeRequestInProgress,
         modifier = Modifier.fillMaxWidth().height(64.dp),
         shape = LockActionShape,
-        border = BorderStroke(1.dp, Color(0xFFD3D3CE)),
+        border = BorderStroke(1.dp, ChildOutline),
         colors =
           ButtonDefaults.outlinedButtonColors(
-            contentColor = Color(0xFF303132),
-            disabledContentColor = Color(0xFF7F8082),
+            contentColor = ChildDark,
+            disabledContentColor = ChildTextSecondary,
           ),
       ) {
         Text(
@@ -237,7 +243,7 @@ internal fun StyledLockScreen(
 
       timeRequestMessage?.let {
         Spacer(Modifier.height(8.dp))
-        Text(it, style = MaterialTheme.typography.bodySmall, color = Color(0xFF7F8082), textAlign = TextAlign.Center)
+        Text(it, style = MaterialTheme.typography.bodySmall, color = ChildTextSecondary, textAlign = TextAlign.Center)
       }
       timeRequestFeedback?.let {
         Spacer(Modifier.height(8.dp))
@@ -258,10 +264,10 @@ internal fun StyledLockScreen(
         colors =
           OutlinedTextFieldDefaults.colors(
             focusedBorderColor = LockAccent,
-            unfocusedBorderColor = Color(0xFFD3D3CE),
+            unfocusedBorderColor = ChildOutline,
             cursorColor = LockAccent,
             focusedLabelColor = LockAccent,
-            unfocusedLabelColor = Color(0xFF7F8082),
+            unfocusedLabelColor = ChildTextSecondary,
           ),
       )
 
@@ -355,10 +361,10 @@ private fun LockRoundAction(
     enabled = enabled,
     modifier = Modifier.size(56.dp),
     colors = IconButtonDefaults.iconButtonColors(
-      containerColor = if (selected) LockAccent.copy(alpha = 0.14f) else Color(0xFFF6F6F3),
-      contentColor = LockAccent,
-      disabledContainerColor = Color(0xFFE9E9E5),
-      disabledContentColor = Color(0xFFAAAAA6),
+      containerColor = if (selected) LockAccent else ChildSurfaceMuted,
+      contentColor = if (selected) ChildLight else LockAccent,
+      disabledContainerColor = ChildSurfaceMuted,
+      disabledContentColor = ChildTextSecondary,
     ),
   ) {
     Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(25.dp))
