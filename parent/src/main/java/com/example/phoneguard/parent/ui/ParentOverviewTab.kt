@@ -17,11 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,6 +38,7 @@ import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.core.InstalledAppInfo
 import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.RemoteCommandType
+import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.AppUsageDay
 import com.example.phoneguard.parent.data.PendingTimeRequest
 import java.text.SimpleDateFormat
@@ -251,20 +248,11 @@ internal fun ParentOverviewTab(
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           } else {
-            Icon(
-              imageVector =
-                if (isLocked) {
-                  Icons.Default.LockOpen
-                } else {
-                  Icons.Default.Lock
-                },
-              contentDescription = null,
-            )
             Text(
               if (isLocked) {
-                "  UNLOCK"
+                "UNLOCK"
               } else {
-                "  LOCK"
+                "LOCK"
               },
             )
           }
@@ -283,11 +271,7 @@ internal fun ParentOverviewTab(
               color = MaterialTheme.colorScheme.primary,
             )
           } else {
-            Icon(
-              imageVector = Icons.Default.AddCircle,
-              contentDescription = null,
-            )
-            Text("  BONUS")
+            Text("BONUS")
           }
         }
       }
@@ -342,7 +326,7 @@ internal fun ParentOverviewTab(
           verticalAlignment = Alignment.CenterVertically,
         ) {
           Icon(
-            imageVector = Icons.Default.Warning,
+            painter = painterResource(R.drawable.pg_icon_warning),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onErrorContainer,
           )
