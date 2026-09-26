@@ -30,7 +30,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,7 +63,6 @@ fun ParentSecurityGate(
   var hasPin by remember { mutableStateOf(securityStore.hasPin()) }
   var unlocked by remember { mutableStateOf(false) }
   var backgroundedAt by remember { mutableStateOf<Long?>(null) }
-  var biometricPromptAttempted by remember { mutableStateOf(false) }
   var biometricEnabled by remember {
     mutableStateOf(securityStore.biometricEnabled())
   }
@@ -106,8 +104,8 @@ fun ParentSecurityGate(
   val biometricPromptInfo =
     remember {
       BiometricPrompt.PromptInfo.Builder()
-        .setTitle("Unlock PhoneGuard Parent")
-        .setSubtitle("Use fingerprint or face authentication")
+        .setTitle("PhoneGuard Parent")
+        .setSubtitle("Confirm your identity to unlock")
         .setAllowedAuthenticators(biometricAuthenticators)
         .setNegativeButtonText("Use PIN")
         .build()
@@ -136,7 +134,6 @@ fun ParentSecurityGate(
               SystemClock.elapsedRealtime() - leftAt >= relockAfterBackgroundMs
             ) {
               unlocked = false
-              biometricPromptAttempted = false
             }
             backgroundedAt = null
           }
@@ -168,7 +165,6 @@ fun ParentSecurityGate(
         onUnlocked = { unlocked = true },
         biometricAvailable = biometricEnabled && biometricAvailable,
         onBiometricUnlock = {
-          biometricPromptAttempted = true
           showBiometricPrompt()
         },
       )
