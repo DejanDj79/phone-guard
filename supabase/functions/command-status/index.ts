@@ -50,7 +50,7 @@ export default {
 
     const { data: device, error: deviceError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_id, display_name, access_state, temporary_allow_until, accessibility_enabled, precise_timing_enabled, battery_unrestricted")
+      .select("device_id, display_name, access_state, temporary_allow_until, battery_level_percent, accessibility_enabled, precise_timing_enabled, battery_unrestricted")
       .eq("device_id", deviceId)
       .eq("parent_user_id", parentUserId)
       .eq("control_token_hash", controlTokenHash)
@@ -101,6 +101,10 @@ export default {
         displayName: device.display_name,
         state: device.access_state,
         temporaryAccessMinutesRemaining,
+        batteryLevelPercent:
+          typeof device.battery_level_percent === "number"
+            ? device.battery_level_percent
+            : null,
         protection: {
           accessibilityEnabled:
             typeof device.accessibility_enabled === "boolean"
