@@ -198,7 +198,7 @@ fun MainScreen(
         // Intentionally consume Back while the child device is locked.
       }
 
-      LockScreen(
+      StyledLockScreen(
         allowedPackages = allowedPackages,
         timeRequestFeedback = timeRequestFeedback,
         unlockTimeLabel =
