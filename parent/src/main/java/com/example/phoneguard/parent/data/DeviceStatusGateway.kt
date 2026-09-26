@@ -87,6 +87,8 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
               lastSeenAt =
                 deviceJson.optString("lastSeenAt")
                   .takeIf { it.isNotBlank() && it != "null" },
+              batteryLevelPercent =
+                deviceJson.nullableInt("batteryLevelPercent"),
               protectionStatus =
                 DeviceProtectionStatus(
                   accessibilityEnabled =
