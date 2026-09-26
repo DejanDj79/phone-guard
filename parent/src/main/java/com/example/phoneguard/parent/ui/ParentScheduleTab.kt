@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EditCalendar
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -23,9 +22,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.parent.R
 
 @Composable
 internal fun ParentScheduleTab(
@@ -140,7 +141,7 @@ internal fun ParentScheduleTab(
           color = MaterialTheme.colorScheme.primaryContainer,
         ) {
           Icon(
-            imageVector = Icons.Default.Timer,
+            painter = painterResource(R.drawable.pg_icon_timer),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(12.dp),
