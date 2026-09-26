@@ -371,14 +371,14 @@ fun ParentScheduleEditorScreen(
                     selectorColor = ParentAccentColor,
                     clockDialSelectedContentColor =
                       MaterialTheme.colorScheme.onPrimary,
-                    clockDialContentColor =
+                    clockDialUnselectedContentColor =
                       MaterialTheme.colorScheme.onSurface,
                     timeSelectorSelectedContainerColor =
                       ParentAccentColor,
-                    timeSelectorContainerColor = Color.Transparent,
+                    timeSelectorUnselectedContainerColor = Color.Transparent,
                     timeSelectorSelectedContentColor =
                       MaterialTheme.colorScheme.onPrimary,
-                    timeSelectorContentColor =
+                    timeSelectorUnselectedContentColor =
                       MaterialTheme.colorScheme.onSurface,
                   ),
               )
