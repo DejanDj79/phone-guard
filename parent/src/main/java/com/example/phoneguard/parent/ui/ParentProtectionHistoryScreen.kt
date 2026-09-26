@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import com.example.phoneguard.parent.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +50,7 @@ internal fun ParentProtectionHistoryScreen(
     ) {
       ParentDetailHeader(
         title = "Protection history",
+        iconRes = R.drawable.pg_icon_warning,
         onBack = onBack,
       )
 
