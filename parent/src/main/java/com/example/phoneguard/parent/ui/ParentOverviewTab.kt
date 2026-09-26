@@ -386,12 +386,6 @@ internal fun ParentOverviewTab(
     }
   }
 
-  Text(
-    text = "Recent activity",
-    style = MaterialTheme.typography.titleLarge,
-    fontWeight = FontWeight.SemiBold,
-  )
-
   RecentUnlockedActivityTimeline(
     day =
       device.dailyScreenTime.usageDate
@@ -401,12 +395,6 @@ internal fun ParentOverviewTab(
         ?: appUsageDays.firstOrNull(),
     inventory = appInventorySnapshot,
     loading = appUsageLoading,
-  )
-
-  Text(
-    text = "Usage overview",
-    style = MaterialTheme.typography.titleLarge,
-    fontWeight = FontWeight.SemiBold,
   )
 
   val referenceDate =
@@ -431,6 +419,13 @@ internal fun ParentOverviewTab(
       modifier = Modifier.padding(18.dp),
       verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+      Text(
+        text = "Usage overview",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface,
+      )
+
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -619,7 +614,15 @@ private fun RecentUnlockedActivityTimeline(
   ) {
     Column(
       modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+      Text(
+        text = "Recent activity",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface,
+      )
+
       Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
