@@ -40,6 +40,7 @@ internal fun ParentScheduleTab(
     text = "Automatic controls",
     style = MaterialTheme.typography.headlineSmall,
     fontWeight = FontWeight.Bold,
+    color = MaterialTheme.colorScheme.onSurface,
   )
 
   Text(
