@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -63,7 +64,12 @@ fun DevicesScreen(
       devices.forEach { device ->
         val selected = device.deviceId == selectedDeviceId
 
-        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+          modifier = Modifier.fillMaxWidth(),
+          colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+          ),
+        ) {
           Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
