@@ -56,7 +56,7 @@ internal fun ParentScheduleTab(
   Surface(
     modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(28.dp),
-    color = MaterialTheme.colorScheme.secondaryContainer,
+    color = MaterialTheme.colorScheme.surface,
   ) {
     Column(
       modifier = Modifier.padding(22.dp),
