@@ -26,9 +26,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.PairingRequest
 import com.example.phoneguard.core.PairingResult
 import com.example.phoneguard.core.RemoteCommand
+import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.parent.data.AllowedAppsFetchResult
 import com.example.phoneguard.parent.data.AllowedAppsSaveResult
 import com.example.phoneguard.parent.data.AppUsageResult
