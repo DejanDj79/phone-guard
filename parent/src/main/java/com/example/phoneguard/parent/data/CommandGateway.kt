@@ -59,6 +59,7 @@ class HttpCommandGateway : CommandGateway {
         readTimeout = 15_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -154,6 +155,7 @@ class HttpCommandGateway : CommandGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {

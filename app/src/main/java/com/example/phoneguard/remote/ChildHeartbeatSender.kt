@@ -26,13 +26,30 @@ class ChildHeartbeatSender(context: Context) {
       (appUsageMillis.values.sum() / 1000L)
         .coerceIn(0L, 172800L)
         .toInt()
-    val appUsageEntries =
+    val recentSessions =
+      settingsStore.recentAppSessionsForToday(now)
+    val recentSessionsByPackage =
+      recentSessions.groupBy { it.packageName }
+
+    val recentPackages =
+      recentSessions
+        .sortedByDescending { it.startedAtMillis }
+        .map { it.packageName }
+
+    val usagePackages =
       appUsageMillis.entries
         .asSequence()
         .filter { it.value >= 1000L }
         .sortedByDescending { it.value }
+        .map { it.key }
+        .toList()
+
+    val appUsageEntries =
+      (recentPackages + usagePackages)
+        .distinct()
         .take(MAX_APP_USAGE_ENTRIES)
-        .map { (packageName, millis) ->
+        .map { packageName ->
+          val millis = appUsageMillis[packageName] ?: 0L
           val label =
             runCatching {
               val appInfo =
@@ -45,6 +62,22 @@ class ChildHeartbeatSender(context: Context) {
               .getOrDefault("")
               .ifBlank { packageName.substringAfterLast('.') }
 
+          val sessions =
+            recentSessionsByPackage[packageName]
+              .orEmpty()
+              .sortedByDescending { it.startedAtMillis }
+              .take(MAX_RECENT_SESSIONS_PER_APP)
+              .map { session ->
+                ChildAppUsageSession(
+                  startedAtMillis = session.startedAtMillis,
+                  endedAtMillis = session.endedAtMillis,
+                  seconds =
+                    (session.durationMillis / 1000L)
+                      .coerceIn(0L, 86400L)
+                      .toInt(),
+                )
+              }
+
           ChildAppUsageEntry(
             packageName = packageName,
             label = label.take(MAX_APP_LABEL_LENGTH),
@@ -52,9 +85,9 @@ class ChildHeartbeatSender(context: Context) {
               (millis / 1000L)
                 .coerceIn(0L, 172800L)
                 .toInt(),
+            sessions = sessions,
           )
         }
-        .toList()
     val temporaryAllowanceActive = temporaryAllowanceUntil > now
     val accessState =
       when {
@@ -100,6 +133,7 @@ class ChildHeartbeatSender(context: Context) {
   private companion object {
     const val TAG = "PhoneGuardHeartbeat"
     const val MAX_APP_USAGE_ENTRIES = 30
+    const val MAX_RECENT_SESSIONS_PER_APP = 20
     const val MAX_APP_LABEL_LENGTH = 120
   }
 }

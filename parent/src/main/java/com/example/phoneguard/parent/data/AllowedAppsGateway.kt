@@ -53,6 +53,7 @@ class HttpAllowedAppsGateway : AllowedAppsGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -83,12 +84,17 @@ class HttpAllowedAppsGateway : AllowedAppsGateway {
                 val item = installedJson.optJSONObject(index) ?: continue
                 val packageName = item.optString("packageName").trim()
                 val label = item.optString("label").trim()
+                val iconBase64 =
+                  item.optString("iconBase64")
+                    .trim()
+                    .takeIf { it.isNotEmpty() && it != "null" }
 
                 if (packageName.isNotEmpty() && label.isNotEmpty()) {
                   add(
                     InstalledAppInfo(
                       packageName = packageName,
                       label = label,
+                      iconBase64 = iconBase64,
                     ),
                   )
                 }
@@ -142,6 +148,7 @@ class HttpAllowedAppsGateway : AllowedAppsGateway {
         readTimeout = 15_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {

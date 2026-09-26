@@ -15,7 +15,10 @@ data class PairedChildDevice(
 
 class ParentSettingsStore(context: Context) {
   private val preferences =
-    context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    context.getSharedPreferences(
+      ParentAccountScopeStore(context).settingsPreferencesName(),
+      Context.MODE_PRIVATE,
+    )
   private val tokenCipher = ParentTokenCipher()
 
   /**
@@ -87,12 +90,23 @@ class ParentSettingsStore(context: Context) {
       ?.controlToken
   }
 
+  fun backendOwnershipConfirmed(deviceId: String): Boolean =
+    preferences.getBoolean(backendOwnershipKey(deviceId), false)
+
+  fun markBackendOwnershipConfirmed(deviceId: String) {
+    preferences
+      .edit()
+      .putBoolean(backendOwnershipKey(deviceId), true)
+      .apply()
+  }
+
   fun removePairing(deviceId: String) {
     ensureMultiDeviceStorage()
     val remaining =
       loadPairingsInternal().filterNot { it.device.deviceId == deviceId }
 
     savePairingsInternal(remaining)
+    preferences.edit().remove(backendOwnershipKey(deviceId)).apply()
 
     val selectedId = preferences.getString(KEY_SELECTED_DEVICE_ID, null)
     if (selectedId == deviceId) {
@@ -106,18 +120,18 @@ class ParentSettingsStore(context: Context) {
       editor.apply()
     }
 
-    if (remaining.isEmpty()) {
-      runCatching { tokenCipher.deleteKey() }
-    }
   }
 
   /**
    * Legacy behavior used by the current single-device UI.
    * Once Device list UI is connected, unpair should call removePairing(deviceId).
+   *
+   * The Android Keystore key is intentionally retained. Pairings are now
+   * account-scoped, while the encryption key is app-scoped and can still be
+   * required by another Parent account on the same phone.
    */
   fun clearPairing() {
     preferences.edit().clear().apply()
-    runCatching { tokenCipher.deleteKey() }
   }
 
   private fun ensureMultiDeviceStorage() {
@@ -288,11 +302,13 @@ class ParentSettingsStore(context: Context) {
       ?.takeIf { it.isNotBlank() }
   }
 
-  private companion object {
-    const val PREFERENCES_NAME = "phone_guard_parent_settings"
+  private fun backendOwnershipKey(deviceId: String): String =
+    KEY_BACKEND_OWNERSHIP_PREFIX + deviceId
 
+  private companion object {
     const val KEY_PAIRED_DEVICES = "paired_devices_v2"
     const val KEY_SELECTED_DEVICE_ID = "selected_device_id"
+    const val KEY_BACKEND_OWNERSHIP_PREFIX = "backend_owner_confirmed_"
 
     const val KEY_DEVICE_ID = "device_id"
     const val KEY_DISPLAY_NAME = "display_name"

@@ -4,17 +4,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
@@ -30,22 +35,27 @@ fun DevicesScreen(
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Surface(modifier = modifier.fillMaxSize()) {
+  Surface(
+    modifier = modifier.fillMaxSize(),
+    color = Color.Transparent,
+  ) {
     Column(
-      modifier =
-        Modifier
-          .fillMaxSize()
-          .verticalScroll(rememberScrollState())
-          .padding(24.dp),
-      verticalArrangement = Arrangement.spacedBy(16.dp),
+      modifier = Modifier.fillMaxSize(),
     ) {
-      Text(
-        text = "Devices",
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
+      ParentDetailHeader(
+        title = "Devices",
+        onBack = onBack,
       )
 
-      Text(
+      Column(
+        modifier =
+          Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+      ) {
+        Text(
         text = "Choose which Child device you want to manage.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -54,7 +64,12 @@ fun DevicesScreen(
       devices.forEach { device ->
         val selected = device.deviceId == selectedDeviceId
 
-        ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        ElevatedCard(
+          modifier = Modifier.fillMaxWidth(),
+          colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+          ),
+        ) {
           Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -84,8 +99,9 @@ fun DevicesScreen(
               OutlinedButton(
                 onClick = { onSelectDevice(device) },
                 enabled = !busy,
-                modifier = Modifier.fillMaxWidth(),
-              ) {
+                modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
+      shape = ParentActionShape,
+    ) {
                 Text("SELECT DEVICE")
               }
             }
@@ -93,20 +109,15 @@ fun DevicesScreen(
         }
       }
 
-      Button(
+      OutlinedButton(
         onClick = onAddDevice,
         enabled = !busy,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
+        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
+      shape = ParentActionShape,
+    ) {
         Text("+ ADD DEVICE")
       }
 
-      OutlinedButton(
-        onClick = onBack,
-        enabled = !busy,
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text("BACK")
       }
     }
   }

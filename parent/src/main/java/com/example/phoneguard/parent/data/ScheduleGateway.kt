@@ -51,6 +51,7 @@ class HttpScheduleGateway : ScheduleGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -106,6 +107,7 @@ class HttpScheduleGateway : ScheduleGateway {
         readTimeout = 15_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {

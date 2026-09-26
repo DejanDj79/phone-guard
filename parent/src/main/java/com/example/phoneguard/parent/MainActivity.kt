@@ -1,34 +1,72 @@
 package com.example.phoneguard.parent
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
-import androidx.core.content.ContextCompat
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import com.example.phoneguard.parent.auth.ParentSupabase
 import com.example.phoneguard.parent.data.ParentSettingsStore
 import com.example.phoneguard.parent.push.ParentMessagingService
 import com.example.phoneguard.parent.push.ParentPushRegistrar
+import com.example.phoneguard.parent.ui.ParentAuthGate
 import com.example.phoneguard.parent.ui.ParentDashboardScreen
 import com.example.phoneguard.parent.ui.ParentSecurityGate
+import com.example.phoneguard.parent.ui.ParentPostAuthOnboardingGate
+import com.example.phoneguard.parent.ui.ParentGradientCenter
+import com.example.phoneguard.parent.ui.ParentGradientEdge
+import com.example.phoneguard.parent.ui.PhoneGuardParentTheme
 import com.google.firebase.FirebaseApp
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : FragmentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    ParentSupabase.client.handleDeeplinks(intent)
     selectRequestedDevice(intent)
     enableEdgeToEdge()
+    hideSystemNavigation()
     setContent {
-      MaterialTheme {
-        Surface {
-          ParentSecurityGate {
-            ParentDashboardScreen()
+      PhoneGuardParentTheme {
+        Box(
+          modifier =
+            Modifier
+              .fillMaxSize()
+              .background(
+                Brush.horizontalGradient(
+                  colorStops =
+                    arrayOf(
+                      0.0f to ParentGradientEdge,
+                      0.18f to Color(0xFFE7E7E3),
+                      0.50f to ParentGradientCenter,
+                      0.82f to Color(0xFFE7E7E3),
+                      1.0f to ParentGradientEdge,
+                    ),
+                ),
+              ),
+        ) {
+          Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Transparent,
+          ) {
+            ParentAuthGate {
+              ParentSecurityGate {
+                ParentPostAuthOnboardingGate {
+                  ParentDashboardScreen()
+                }
+              }
+            }
           }
         }
       }
@@ -38,37 +76,37 @@ class MainActivity : FragmentActivity() {
   override fun onStart() {
     super.onStart()
 
-    requestNotificationPermissionIfNeeded()
-
-    if (FirebaseApp.getApps(this).isNotEmpty()) {
+    if (
+      FirebaseApp.getApps(this).isNotEmpty() &&
+      ParentSupabase.client.auth.currentSessionOrNull() != null
+    ) {
       ParentPushRegistrar(applicationContext).registerCurrentToken()
     }
   }
 
-  private fun requestNotificationPermissionIfNeeded() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+  override fun onWindowFocusChanged(hasFocus: Boolean) {
+    super.onWindowFocusChanged(hasFocus)
 
-    if (
-      ContextCompat.checkSelfPermission(
-        this,
-        Manifest.permission.POST_NOTIFICATIONS,
-      ) == PackageManager.PERMISSION_GRANTED
-    ) {
-      return
+    if (hasFocus) {
+      hideSystemNavigation()
     }
-
-    requestPermissions(
-      arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-      NOTIFICATION_PERMISSION_REQUEST_CODE,
-    )
   }
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     setIntent(intent)
+    ParentSupabase.client.handleDeeplinks(intent)
 
     if (selectRequestedDevice(intent)) {
       recreate()
+    }
+  }
+
+  private fun hideSystemNavigation() {
+    WindowInsetsControllerCompat(window, window.decorView).apply {
+      hide(WindowInsetsCompat.Type.navigationBars())
+      systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
   }
 
@@ -82,7 +120,4 @@ class MainActivity : FragmentActivity() {
     return ParentSettingsStore(applicationContext).selectDevice(deviceId)
   }
 
-  private companion object {
-    const val NOTIFICATION_PERMISSION_REQUEST_CODE = 4101
-  }
 }

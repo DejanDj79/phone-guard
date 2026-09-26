@@ -60,6 +60,8 @@ dependencies {
   implementation(project(":core"))
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.messaging)
+  implementation(libs.supabase.auth)
+  implementation(libs.ktor.client.android)
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
 
@@ -71,6 +73,7 @@ dependencies {
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
+  implementation("androidx.compose.material:material-icons-extended")
 
   debugImplementation(libs.androidx.compose.ui.tooling)
 }

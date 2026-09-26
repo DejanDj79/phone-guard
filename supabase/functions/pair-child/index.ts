@@ -1,4 +1,5 @@
 import { withSupabase } from "npm:@supabase/server@1.7.1";
+import { requireParentUserId } from "../_shared/parent-auth.ts";
 
 const PAIRING_CODE = /^[A-Z0-9]{6}$/;
 const MAX_ATTEMPTS = 20;
@@ -43,6 +44,11 @@ export default {
       return json({ error: "method_not_allowed" }, 405);
     }
 
+    const parentUserId = await requireParentUserId(req, ctx);
+    if (!parentUserId) {
+      return json({ error: "parent_auth_required" }, 401);
+    }
+
     const ipAddress = clientIp(req);
     const windowStart = new Date(Date.now() - ATTEMPT_WINDOW_MS).toISOString();
 
@@ -81,22 +87,63 @@ export default {
     }
 
     const pairingCodeHash = await sha256Hex(pairingCode);
-    const controlToken = randomToken();
-    const controlTokenHash = await sha256Hex(controlToken);
     const now = new Date().toISOString();
 
-    const { data: pairedDevice, error: pairError } = await ctx.supabaseAdmin
+    const { data: candidate, error: lookupError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .update({
-        control_token_hash: controlTokenHash,
-        parent_fcm_token: null,
-        pairing_expires_at: now,
-        updated_at: now,
-      })
+      .select(
+        "device_id, display_name, access_state, temporary_allow_until, parent_user_id",
+      )
       .eq("pairing_code_hash", pairingCodeHash)
       .gt("pairing_expires_at", now)
+      .maybeSingle();
+
+    if (lookupError) {
+      return json({ error: "database_error" }, 500);
+    }
+
+    if (!candidate) {
+      return json({ error: "invalid_or_expired_code" }, 404);
+    }
+
+    if (
+      candidate.parent_user_id &&
+      candidate.parent_user_id !== parentUserId
+    ) {
+      return json({ error: "device_owned_by_another_parent" }, 409);
+    }
+
+    const controlToken = randomToken();
+    const controlTokenHash = await sha256Hex(controlToken);
+
+    const updateValues: Record<string, unknown> = {
+      control_token_hash: controlTokenHash,
+      parent_fcm_token: null,
+      pairing_expires_at: now,
+      updated_at: now,
+    };
+
+    updateValues.parent_user_id = parentUserId;
+
+    let updateQuery = ctx.supabaseAdmin
+      .from("child_devices")
+      .update(updateValues)
+      .eq("device_id", candidate.device_id)
+      .eq("pairing_code_hash", pairingCodeHash)
+      .gt("pairing_expires_at", now);
+
+    if (candidate.parent_user_id) {
+      updateQuery = updateQuery.eq(
+        "parent_user_id",
+        candidate.parent_user_id,
+      );
+    } else {
+      updateQuery = updateQuery.is("parent_user_id", null);
+    }
+
+    const { data: pairedDevice, error: pairError } = await updateQuery
       .select(
-        "device_id, display_name, access_state, temporary_allow_until"
+        "device_id, display_name, access_state, temporary_allow_until, parent_user_id",
       )
       .maybeSingle();
 
@@ -105,7 +152,7 @@ export default {
     }
 
     if (!pairedDevice) {
-      return json({ error: "invalid_or_expired_code" }, 404);
+      return json({ error: "pairing_state_changed" }, 409);
     }
 
     await ctx.supabaseAdmin
