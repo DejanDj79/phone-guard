@@ -85,7 +85,8 @@ internal fun ParentOverviewTab(
     Surface(
       modifier = Modifier.fillMaxWidth(),
       shape = RoundedCornerShape(24.dp),
-      color = MaterialTheme.colorScheme.primaryContainer,
+      color = MaterialTheme.colorScheme.surface,
+      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
       Column(
         modifier = Modifier.padding(20.dp),
@@ -94,7 +95,7 @@ internal fun ParentOverviewTab(
         Text(
           text = "Time request",
           style = MaterialTheme.typography.labelLarge,
-          color = MaterialTheme.colorScheme.onPrimaryContainer,
+          color = MaterialTheme.colorScheme.onSurface,
         )
 
         Text(
@@ -105,7 +106,7 @@ internal fun ParentOverviewTab(
               " more minutes.",
           style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.SemiBold,
-          color = MaterialTheme.colorScheme.onPrimaryContainer,
+          color = MaterialTheme.colorScheme.onSurface,
         )
 
         Row(
@@ -142,22 +143,6 @@ internal fun ParentOverviewTab(
     }
   }
 
-  timeRequestNotice?.let { message ->
-    Text(
-      text = message,
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-  }
-
-  timeRequestError?.let { message ->
-    Text(
-      text = message,
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.error,
-    )
-  }
-
   val isLocked = device.state == DeviceAccessState.LOCKED
   val mainCommandLoading =
     commandInProgress &&
@@ -172,11 +157,11 @@ internal fun ParentOverviewTab(
   Surface(
     modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(30.dp),
-    color = MaterialTheme.colorScheme.secondaryContainer,
+    color = MaterialTheme.colorScheme.surface,
   ) {
     Column(
       modifier = Modifier.padding(22.dp),
-      verticalArrangement = Arrangement.spacedBy(20.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -187,25 +172,25 @@ internal fun ParentOverviewTab(
           text = device.displayName,
           style = MaterialTheme.typography.headlineSmall,
           fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSecondaryContainer,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          color = MaterialTheme.colorScheme.onSurface,
+          modifier = Modifier.weight(1f),
         )
 
         Column(
           horizontalAlignment = Alignment.End,
-          modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+          modifier = Modifier.weight(1f),
         ) {
           Text(
             text = "LAST SEEN",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.68f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f),
           )
           Text(
             text =
               formatLastSeen(device.lastSeenAt)
                 .removePrefix("Last seen: "),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
           )
         }
@@ -226,7 +211,7 @@ internal fun ParentOverviewTab(
                 " min",
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            color = MaterialTheme.colorScheme.onSurface,
           )
         }
       }
@@ -274,6 +259,40 @@ internal fun ParentOverviewTab(
             Text("BONUS")
           }
         }
+      }
+
+      timeRequestNotice?.let { message ->
+        Surface(
+          modifier = Modifier.fillMaxWidth(),
+          shape = RoundedCornerShape(12.dp),
+          color = MaterialTheme.colorScheme.surfaceVariant,
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Icon(
+              painter = painterResource(R.drawable.pg_icon_check),
+              contentDescription = null,
+              tint = ParentAccentColor,
+              modifier = Modifier.size(16.dp),
+            )
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
+      }
+
+      timeRequestError?.let { message ->
+        Text(
+          text = message,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.error,
+        )
       }
     }
   }
