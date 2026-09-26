@@ -9,14 +9,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -82,18 +80,12 @@ internal fun ParentDeviceTab(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
       ) {
-        Surface(
-          modifier = Modifier.size(54.dp),
-          shape = CircleShape,
-          color = ParentSectionHeaderColor,
-        ) {
-          Icon(
-            painter = painterResource(R.drawable.pg_icon_device),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.padding(14.dp),
-          )
-        }
+        Icon(
+          painter = painterResource(R.drawable.pg_icon_device),
+          contentDescription = null,
+          tint = ParentSectionHeaderColor,
+          modifier = Modifier.size(24.dp),
+        )
 
         Column(modifier = Modifier.weight(1f)) {
           Text(
@@ -261,18 +253,12 @@ internal fun ParentDeviceTab(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        Surface(
-          modifier = Modifier.size(36.dp),
-          shape = CircleShape,
-          color = ParentSectionHeaderColor.copy(alpha = 0.12f),
-        ) {
-          Icon(
-            imageVector = Icons.Default.History,
-            contentDescription = null,
-            tint = ParentSectionHeaderColor,
-            modifier = Modifier.padding(8.dp),
-          )
-        }
+        Icon(
+          painter = painterResource(R.drawable.pg_icon_warning),
+          contentDescription = null,
+          tint = ParentSectionHeaderColor,
+          modifier = Modifier.size(24.dp),
+        )
 
         Text(
           text = "Protection history",
@@ -331,32 +317,36 @@ internal fun ParentDeviceTab(
             ProtectionHistoryRow(event)
           }
 
-          if (protectionHistory.size > DEVICE_HISTORY_PREVIEW_COUNT) {
-            TextButton(
-              onClick = onOpenProtectionHistory,
-              modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
-      shape = ParentActionShape,
-    ) {
-              Text("VIEW FULL HISTORY (" + protectionHistory.size + ")")
-            }
-          }
         }
       }
 
       if (protectionHistory.isNotEmpty()) {
-        TextButton(
-          onClick = onRequestClearProtectionHistory,
-          enabled = !protectionHistoryClearing,
-          modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally).heightIn(min = 52.dp),
-      shape = ParentActionShape,
-    ) {
-          if (protectionHistoryClearing) {
-            CircularProgressIndicator(
-              modifier = Modifier.size(16.dp),
-              strokeWidth = 2.dp,
-            )
-          } else {
-            Text("CLEAR HISTORY")
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+          OutlinedButton(
+            onClick = onOpenProtectionHistory,
+            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+            shape = ParentActionShape,
+          ) {
+            Text("VIEW FULL")
+          }
+
+          OutlinedButton(
+            onClick = onRequestClearProtectionHistory,
+            enabled = !protectionHistoryClearing,
+            modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+            shape = ParentActionShape,
+          ) {
+            if (protectionHistoryClearing) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+              )
+            } else {
+              Text("CLEAR")
+            }
           }
         }
       }
