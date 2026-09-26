@@ -716,7 +716,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun showOverlay() {
     if (overlayView != null) return
 
-    val accent = Color.rgb(232, 62, 29)
+    val accent = Color.rgb(242, 138, 46)
     val graphite = Color.rgb(48, 49, 50)
     val secondaryText = Color.rgb(127, 128, 130)
     val surface = Color.rgb(246, 246, 243)
