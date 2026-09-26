@@ -9,11 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -22,11 +19,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
-import com.example.phoneguard.parent.R
 
 @Composable
 internal fun ParentScheduleTab(
@@ -62,34 +57,19 @@ internal fun ParentScheduleTab(
       modifier = Modifier.padding(22.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+      Column(
+        verticalArrangement = Arrangement.spacedBy(5.dp),
       ) {
-        Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
-        ) {
-          Icon(
-            imageVector = Icons.Default.EditCalendar,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(12.dp),
-          )
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = "Lock schedule",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-          )
-          Text(
-            text = "Automatically lock the Child phone during selected hours.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
+        Text(
+          text = "Lock schedule",
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+        )
+        Text(
+          text = "Automatically lock the Child phone during selected hours.",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
       }
 
       OutlinedButton(
@@ -132,37 +112,22 @@ internal fun ParentScheduleTab(
       modifier = Modifier.padding(22.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+      Column(
+        verticalArrangement = Arrangement.spacedBy(5.dp),
       ) {
-        Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = MaterialTheme.colorScheme.primaryContainer,
-        ) {
-          Icon(
-            painter = painterResource(R.drawable.pg_icon_timer),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(12.dp),
-          )
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = "Daily screen time",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-          )
-          Text(
-            text =
-              dailyLimitMinutes
-                ?.let { formatDurationMinutes(it) + " daily limit" }
-                ?: "No daily limit",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
+        Text(
+          text = "Daily screen time",
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+        )
+        Text(
+          text =
+            dailyLimitMinutes
+              ?.let { formatDurationMinutes(it) + " daily limit" }
+              ?: "No daily limit",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
       }
 
       Row(
