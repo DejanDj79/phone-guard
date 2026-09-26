@@ -1,5 +1,6 @@
 package com.example.phoneguard.parent.ui
 
+import com.example.phoneguard.parent.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -100,6 +101,7 @@ fun ParentScheduleEditorScreen(
     ) {
       ParentDetailHeader(
         title = "Lock schedule",
+        iconRes = R.drawable.pg_icon_timer,
         onBack = onCancel,
       )
 
