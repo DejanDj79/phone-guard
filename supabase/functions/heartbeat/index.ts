@@ -53,6 +53,10 @@ export default {
       typeof payload.batteryUnrestricted === "boolean"
         ? payload.batteryUnrestricted
         : null;
+    const batteryLevelPercent =
+      typeof payload.batteryLevelPercent === "number"
+        ? Math.trunc(payload.batteryLevelPercent)
+        : null;
     const protectionEvent =
       typeof payload.protectionEvent === "string"
         ? payload.protectionEvent.trim()
@@ -94,6 +98,16 @@ export default {
       )
     ) {
       return json({ error: "temporary_allow_until_invalid" }, 400);
+    }
+    if (
+      batteryLevelPercent !== null &&
+      (
+        !Number.isFinite(batteryLevelPercent) ||
+        batteryLevelPercent < 0 ||
+        batteryLevelPercent > 100
+      )
+    ) {
+      return json({ error: "battery_level_invalid" }, 400);
     }
     if (
       protectionEvent &&
@@ -295,6 +309,9 @@ export default {
         accessibility_enabled: accessibilityEnabled,
         precise_timing_enabled: preciseTimingEnabled,
         battery_unrestricted: batteryUnrestricted,
+        ...(batteryLevelPercent !== null
+          ? { battery_level_percent: batteryLevelPercent }
+          : {}),
         protection_updated_at: now,
         last_seen_at: now,
         updated_at: now,
