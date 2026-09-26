@@ -16,6 +16,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -183,7 +185,7 @@ fun AllowedAppsEditorScreen(
           Spacer(modifier = Modifier.height(8.dp))
         }
 
-        OutlinedButton(
+        Button(
           onClick = { onSave(selectedPackages) },
           enabled = !saving && snapshot.installedApps.isNotEmpty(),
           modifier =
@@ -193,6 +195,13 @@ fun AllowedAppsEditorScreen(
               .size(56.dp),
           shape = CircleShape,
           contentPadding = PaddingValues(0.dp),
+          colors =
+            ButtonDefaults.buttonColors(
+              containerColor = ParentAccentColor,
+              contentColor = Color.White,
+              disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+              disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
         ) {
           if (saving) {
             CircularProgressIndicator(
@@ -204,7 +213,7 @@ fun AllowedAppsEditorScreen(
             Icon(
               painter = painterResource(R.drawable.pg_icon_check),
               contentDescription = "Save allowed apps",
-              tint = MaterialTheme.colorScheme.onSurface,
+              tint = Color.White,
               modifier = Modifier.size(24.dp),
             )
           }
