@@ -155,12 +155,51 @@ fun ParentDashboardScreen(
     }
   }
 
-  if (uiState.showPairDevice || uiState.pairedDevice == null) {
-    BackHandler(enabled = uiState.pairedDevices.isNotEmpty()) {
-      uiState.showPairDevice = false
-      uiState.showDevices = true
+  suspend fun pairChild(rawCode: String): PairingResult {
+    val requestResult =
+      runCatching { PairingRequest.fromUserInput(rawCode) }
+
+    if (requestResult.isFailure) {
+      return PairingResult.InvalidCode(
+        "Code must contain exactly 6 letters or digits.",
+      )
     }
 
+    val result =
+      withContext(Dispatchers.IO) {
+        gateway.pair(requestResult.getOrThrow())
+      }
+
+    if (result !is PairingResult.Success) {
+      return result
+    }
+
+    val token = result.controlToken
+    if (token.isNullOrBlank()) {
+      return PairingResult.Error(
+        "Backend did not return a control token.",
+      )
+    }
+
+    settingsStore.savePairing(
+      device = result.device,
+      controlToken = token,
+    )
+    settingsStore.markBackendOwnershipConfirmed(
+      result.device.deviceId,
+    )
+    settingsStore.selectDevice(result.device.deviceId)
+    uiState.pairedDevices = settingsStore.loadPairedDevices()
+    uiState.pairedDevice = result.device
+    ParentPushRegistrar(context.applicationContext)
+      .registerCurrentToken()
+    uiState.showPairDevice = false
+    uiState.showDevices = false
+    uiState.selectedTab = 0
+    return result
+  }
+
+  if (uiState.pairedDevice == null) {
     PairDeviceScreen(
       parentEmail =
         ParentSupabase.client.auth.currentUserOrNull()?.email,
@@ -176,57 +215,8 @@ fun ParentDashboardScreen(
           },
         )
       },
-      onPair = { rawCode ->
-        val requestResult =
-          runCatching { PairingRequest.fromUserInput(rawCode) }
-
-        if (requestResult.isFailure) {
-          PairingResult.InvalidCode(
-            "Code must contain exactly 6 letters or digits.",
-          )
-        } else {
-          val result =
-            withContext(Dispatchers.IO) {
-              gateway.pair(requestResult.getOrThrow())
-            }
-
-          if (result is PairingResult.Success) {
-            val token = result.controlToken
-
-            if (token.isNullOrBlank()) {
-              PairingResult.Error(
-                "Backend did not return a control token.",
-              )
-            } else {
-              settingsStore.savePairing(
-                device = result.device,
-                controlToken = token,
-              )
-              settingsStore.markBackendOwnershipConfirmed(
-                result.device.deviceId,
-              )
-              settingsStore.selectDevice(result.device.deviceId)
-              uiState.pairedDevices = settingsStore.loadPairedDevices()
-              uiState.pairedDevice = result.device
-              ParentPushRegistrar(context.applicationContext)
-                .registerCurrentToken()
-              uiState.showPairDevice = false
-              result
-            }
-          } else {
-            result
-          }
-        }
-      },
-      onCancel =
-        if (uiState.pairedDevices.isNotEmpty()) {
-          {
-            uiState.showPairDevice = false
-            uiState.showDevices = true
-          }
-        } else {
-          null
-        },
+      onPair = ::pairChild,
+      onCancel = null,
     )
     return
   }
@@ -297,12 +287,34 @@ fun ParentDashboardScreen(
         }
       },
       onAddDevice = {
-        uiState.showDevices = false
         uiState.showPairDevice = true
       },
       onBack = { uiState.showDevices = false },
       modifier = modifier,
     )
+
+    if (uiState.showPairDevice) {
+      PairDeviceScreen(
+        parentEmail =
+          ParentSupabase.client.auth.currentUserOrNull()?.email,
+        modifier = modifier,
+        onSwitchAccount = {
+          runCatching {
+            ParentSupabase.client.auth.signOut()
+            accountScopeStore.clearActiveAccount()
+          }.fold(
+            onSuccess = { null },
+            onFailure = { error ->
+              error.message ?: "Could not switch Parent account. Please try again."
+            },
+          )
+        },
+        onPair = ::pairChild,
+        onCancel = {
+          uiState.showPairDevice = false
+        },
+      )
+    }
     return
   }
 
