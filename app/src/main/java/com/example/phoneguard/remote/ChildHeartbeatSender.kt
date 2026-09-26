@@ -1,6 +1,7 @@
 package com.example.phoneguard.remote
 
 import android.content.Context
+import android.os.BatteryManager
 import android.util.Log
 import com.example.phoneguard.accessibility.PhoneGuardAccessibilityStatus
 import com.example.phoneguard.data.ChildSettingsStore
@@ -102,6 +103,11 @@ class ChildHeartbeatSender(context: Context) {
     val preciseTimingEnabled = alarmScheduler.hasPreciseTimingPermission()
     val batteryUnrestricted =
       BackgroundProtectionStatus.isBatteryOptimizationIgnored(appContext)
+    val batteryLevelPercent =
+      appContext
+        .getSystemService(BatteryManager::class.java)
+        ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        ?.takeIf { it in 0..100 }
 
     when (
       val result =
@@ -114,6 +120,7 @@ class ChildHeartbeatSender(context: Context) {
           accessibilityEnabled = accessibilityEnabled,
           preciseTimingEnabled = preciseTimingEnabled,
           batteryUnrestricted = batteryUnrestricted,
+          batteryLevelPercent = batteryLevelPercent,
           protectionEvent = protectionEvent,
           dailyUsageDate = dailyUsageDate,
           dailyUsageSeconds = dailyUsageSeconds,
