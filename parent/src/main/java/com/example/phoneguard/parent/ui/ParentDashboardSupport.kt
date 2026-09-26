@@ -418,8 +418,9 @@ private fun PairingStep(
   ) {
     Text(
       text = "Step " + number + " · " + title,
-      style = MaterialTheme.typography.titleSmall,
+      style = MaterialTheme.typography.labelLarge,
       fontWeight = FontWeight.SemiBold,
+      color = MaterialTheme.colorScheme.onSurface,
     )
     Text(
       text = description,
