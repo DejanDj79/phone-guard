@@ -716,13 +716,14 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
   private fun showOverlay() {
     if (overlayView != null) return
 
-    val accent = Color.rgb(254, 93, 13)
-    val graphite = Color.rgb(71, 71, 71)
-    val secondaryText = Color.rgb(106, 106, 106)
-    val surface = Color.rgb(244, 244, 244)
-    val surfaceVariant = Color.rgb(233, 233, 233)
-    val outline = Color.rgb(207, 207, 207)
-    val errorColor = Color.rgb(200, 72, 8)
+    val accent = Color.rgb(105, 222, 255)
+    val graphite = Color.rgb(239, 246, 255)
+    val accentOnColor = Color.rgb(62, 71, 89)
+    val secondaryText = Color.rgb(216, 227, 243)
+    val surface = Color.rgb(129, 148, 181)
+    val surfaceVariant = Color.rgb(113, 131, 163)
+    val outline = Color.rgb(115, 130, 163)
+    val errorColor = Color.rgb(255, 180, 171)
     val michroma = ResourcesCompat.getFont(this, R.font.michroma) ?: Typeface.DEFAULT
     val manrope = ResourcesCompat.getFont(this, R.font.manrope) ?: Typeface.DEFAULT
 
@@ -761,11 +762,11 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
           GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
             intArrayOf(
-              Color.rgb(210, 210, 210),
-              Color.rgb(227, 227, 227),
-              Color.rgb(244, 244, 244),
-              Color.rgb(227, 227, 227),
-              Color.rgb(210, 210, 210),
+              Color.rgb(62, 71, 89),
+              Color.rgb(77, 89, 112),
+              Color.rgb(92, 107, 138),
+              Color.rgb(77, 89, 112),
+              Color.rgb(62, 71, 89),
             ),
           )
         addView(
@@ -942,7 +943,7 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
         ColorStateList.valueOf(
           when {
             !enabled -> secondaryText
-            selected -> surface
+            selected -> accentOnColor
             else -> accent
           },
         )
@@ -1271,15 +1272,15 @@ class PhoneGuardAccessibilityService : AccessibilityService() {
     }.onSuccess {
       if (audioManager.ringerMode == mode) {
         statusView.text = ringerModeLabel(mode)
-        statusView.setTextColor(Color.LTGRAY)
+        statusView.setTextColor(Color.rgb(216, 227, 243))
       } else {
         statusView.text = "Android did not allow this sound change."
-        statusView.setTextColor(Color.rgb(255, 170, 100))
+        statusView.setTextColor(Color.rgb(255, 180, 171))
       }
     }.onFailure { error ->
       Log.w(TAG, "Ringer mode change blocked", error)
       statusView.text = "Android did not allow this sound change."
-      statusView.setTextColor(Color.rgb(255, 170, 100))
+      statusView.setTextColor(Color.rgb(255, 180, 171))
     }
   }
 
