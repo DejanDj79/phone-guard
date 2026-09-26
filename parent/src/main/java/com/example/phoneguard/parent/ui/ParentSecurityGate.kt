@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -309,7 +310,6 @@ private fun ParentPinUnlockScreen(
         modifier =
           Modifier
             .fillMaxWidth()
-            .wrapContentWidth(Alignment.CenterHorizontally)
             .heightIn(min = 52.dp),
         shape = ParentActionShape,
         border =
@@ -374,7 +374,6 @@ private fun ParentPinUnlockScreen(
       modifier =
         Modifier
           .fillMaxWidth()
-          .wrapContentWidth(Alignment.CenterHorizontally)
           .heightIn(min = 52.dp),
       shape = ParentActionShape,
     ) {
@@ -484,7 +483,12 @@ private fun ParentPinField(
       KeyboardOptions(
         keyboardType = KeyboardType.NumberPassword,
       ),
+    textStyle =
+      MaterialTheme.typography.bodyLarge.copy(
+        textAlign = TextAlign.Center,
+      ),
     modifier = Modifier.fillMaxWidth(),
+    shape = ParentActionShape,
   )
 }
 
