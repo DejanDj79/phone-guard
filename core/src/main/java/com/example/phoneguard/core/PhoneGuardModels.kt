@@ -103,12 +103,16 @@ data class ChildDevice(
   val temporaryAccessMinutesRemaining: Int? = null,
   val isOnline: Boolean = true,
   val lastSeenAt: String? = null,
+  val batteryLevelPercent: Int? = null,
   val protectionStatus: DeviceProtectionStatus = DeviceProtectionStatus(),
   val dailyScreenTime: DailyScreenTimeStatus = DailyScreenTimeStatus(),
 ) {
   init {
     require(deviceId.isNotBlank()) { "deviceId must not be blank." }
     require(displayName.isNotBlank()) { "displayName must not be blank." }
+    require(batteryLevelPercent == null || batteryLevelPercent in 0..100) {
+      "batteryLevelPercent must be between 0 and 100 when available."
+    }
 
     if (state == DeviceAccessState.TEMPORARILY_ALLOWED) {
       require(
