@@ -30,37 +30,37 @@ private val MichromaFamily =
     Font(R.font.michroma, FontWeight.Bold),
   )
 
-internal val ParentAccentColor = Color(0xFFE83E1D)
+internal val ParentAccentColor = Color(0xFF69DEFF)
 internal val ParentActionShape = RoundedCornerShape(12.dp)
 internal val ParentGradientEdge = Color(0xFF3E4759)
 internal val ParentGradientCenter = Color(0xFF5C6B8A)
 
 private val ParentColors =
   lightColorScheme(
-    primary = Color(0xFF3C3C3A),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFE8E8E4),
-    onPrimaryContainer = Color(0xFF31312F),
-    secondary = Color(0xFF55575A),
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFF0F0ED),
-    onSecondaryContainer = Color(0xFF333537),
-    tertiary = Color(0xFFE68E6C),
-    onTertiary = Color(0xFFFFFFFF),
-    tertiaryContainer = Color(0xFFF8E4DB),
-    onTertiaryContainer = Color(0xFF5B2B1A),
-    background = Color(0xFFECECE8),
-    onBackground = Color(0xFF2F3031),
-    surface = Color(0xFFF6F6F3),
-    onSurface = Color(0xFF303132),
-    surfaceVariant = Color(0xFFE9E9E5),
-    onSurfaceVariant = Color(0xFF7F8082),
-    outline = Color(0xFF8D8D89),
-    outlineVariant = Color(0xFFD3D3CE),
-    error = Color(0xFFA43D3D),
-    onError = Color(0xFFFFFFFF),
-    errorContainer = Color(0xFFF8DEDE),
-    onErrorContainer = Color(0xFF4E1717),
+    primary = Color(0xFF69DEFF),
+    onPrimary = Color(0xFF3E4759),
+    primaryContainer = Color(0xFF8194B5),
+    onPrimaryContainer = Color(0xFFEFF6FF),
+    secondary = Color(0xFF69DEFF),
+    onSecondary = Color(0xFF3E4759),
+    secondaryContainer = Color(0xFF8194B5),
+    onSecondaryContainer = Color(0xFFEFF6FF),
+    tertiary = Color(0xFF69DEFF),
+    onTertiary = Color(0xFF3E4759),
+    tertiaryContainer = Color(0xFF8194B5),
+    onTertiaryContainer = Color(0xFFEFF6FF),
+    background = Color(0xFF5C6B8A),
+    onBackground = Color(0xFFEFF6FF),
+    surface = Color(0xFF8194B5),
+    onSurface = Color(0xFFEFF6FF),
+    surfaceVariant = Color(0xFF7183A3),
+    onSurfaceVariant = Color(0xFFEFF6FF),
+    outline = Color(0xFFA9BCD9),
+    outlineVariant = Color(0xFF7183A3),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF8C4A52),
+    onErrorContainer = Color(0xFFFFDAD6),
   )
 
 private val ParentTypography =
