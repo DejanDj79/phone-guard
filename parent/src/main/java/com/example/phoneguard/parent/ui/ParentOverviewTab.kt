@@ -275,18 +275,9 @@ internal fun ParentOverviewTab(
         ) {
           val granted = device.temporaryAccessGrantedMinutes
           val left = device.temporaryAccessMinutesRemaining
-          "Approved $granted " +
-            if (granted == 1) {
-              "minute"
-            } else {
-              "minutes"
-            } +
-            " · Left $left " +
-            if (left == 1) {
-              "minute"
-            } else {
-              "minutes"
-            }
+          val grantedUnit = if (granted == 1) "minute" else "minutes"
+          val leftUnit = if (left == 1) "minute" else "minutes"
+          "Approved $granted $grantedUnit · Left $left $leftUnit"
         } else {
           null
         }
