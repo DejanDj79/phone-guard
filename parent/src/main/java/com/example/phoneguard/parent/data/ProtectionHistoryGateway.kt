@@ -53,6 +53,7 @@ class HttpProtectionHistoryGateway : ProtectionHistoryGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -132,6 +133,7 @@ class HttpProtectionHistoryGateway : ProtectionHistoryGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {

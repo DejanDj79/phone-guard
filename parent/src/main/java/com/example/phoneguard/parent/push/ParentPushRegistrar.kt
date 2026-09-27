@@ -3,6 +3,7 @@ package com.example.phoneguard.parent.push
 import android.content.Context
 import android.util.Log
 import com.example.phoneguard.parent.data.ParentSettingsStore
+import com.example.phoneguard.parent.data.applyParentAuthHeaders
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import org.json.JSONObject
@@ -68,6 +69,7 @@ class ParentPushRegistrar(context: Context) {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {

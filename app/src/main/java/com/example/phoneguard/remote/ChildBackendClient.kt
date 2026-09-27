@@ -85,10 +85,17 @@ sealed interface ChildDailyLimitResult {
   ) : ChildDailyLimitResult
 }
 
+data class ChildAppUsageSession(
+  val startedAtMillis: Long,
+  val endedAtMillis: Long,
+  val seconds: Int,
+)
+
 data class ChildAppUsageEntry(
   val packageName: String,
   val label: String,
   val seconds: Int,
+  val sessions: List<ChildAppUsageSession> = emptyList(),
 )
 
 sealed interface ChildHeartbeatResult {
@@ -514,7 +521,12 @@ class ChildBackendClient {
         appsJson.put(
           JSONObject()
             .put("packageName", app.packageName)
-            .put("label", app.label),
+            .put("label", app.label)
+            .also { json ->
+              if (!app.iconBase64.isNullOrBlank()) {
+                json.put("iconBase64", app.iconBase64)
+              }
+            },
         )
       }
 
@@ -751,9 +763,11 @@ class ChildBackendClient {
     deviceSecret: String,
     accessState: String,
     temporaryAllowUntilMillis: Long?,
+    temporaryAccessGrantedMinutes: Int? = null,
     accessibilityEnabled: Boolean,
     preciseTimingEnabled: Boolean,
     batteryUnrestricted: Boolean,
+    batteryLevelPercent: Int? = null,
     protectionEvent: String? = null,
     dailyUsageDate: String,
     dailyUsageSeconds: Int,
@@ -773,11 +787,22 @@ class ChildBackendClient {
     return try {
       val appUsageJson = JSONArray()
       appUsageEntries.forEach { entry ->
+        val sessionsJson = JSONArray()
+        entry.sessions.forEach { session ->
+          sessionsJson.put(
+            JSONObject()
+              .put("startedAtMillis", session.startedAtMillis)
+              .put("endedAtMillis", session.endedAtMillis)
+              .put("seconds", session.seconds),
+          )
+        }
+
         appUsageJson.put(
           JSONObject()
             .put("packageName", entry.packageName)
             .put("label", entry.label)
-            .put("seconds", entry.seconds),
+            .put("seconds", entry.seconds)
+            .put("sessions", sessionsJson),
         )
       }
 
@@ -790,6 +815,12 @@ class ChildBackendClient {
           .put("preciseTimingEnabled", preciseTimingEnabled)
           .put("batteryUnrestricted", batteryUnrestricted)
           .also { json ->
+            batteryLevelPercent?.let {
+              json.put("batteryLevelPercent", it)
+            }
+            temporaryAccessGrantedMinutes?.let {
+              json.put("temporaryAccessGrantedMinutes", it)
+            }
             if (!protectionEvent.isNullOrBlank()) {
               json.put("protectionEvent", protectionEvent)
             }

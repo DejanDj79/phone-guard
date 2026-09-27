@@ -59,6 +59,7 @@ class HttpCommandGateway : CommandGateway {
         readTimeout = 15_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -106,6 +107,9 @@ class HttpCommandGateway : CommandGateway {
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              batteryLevelPercent = deviceJson.nullableInt("batteryLevelPercent"),
+              temporaryAccessGrantedMinutes =
+                deviceJson.nullableInt("temporaryAccessGrantedMinutes"),
               protectionStatus = deviceJson.protectionStatus(),
             ),
           commandId = json.getString("commandId"),
@@ -154,6 +158,7 @@ class HttpCommandGateway : CommandGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -197,6 +202,9 @@ class HttpCommandGateway : CommandGateway {
               displayName = deviceJson.getString("displayName"),
               state = state,
               temporaryAccessMinutesRemaining = temporaryMinutes,
+              batteryLevelPercent = deviceJson.nullableInt("batteryLevelPercent"),
+              temporaryAccessGrantedMinutes =
+                deviceJson.nullableInt("temporaryAccessGrantedMinutes"),
               protectionStatus = deviceJson.protectionStatus(),
             ),
         )
@@ -250,3 +258,7 @@ private fun JSONObject.protectionStatus(): DeviceProtectionStatus {
 
 private fun JSONObject.nullableBoolean(name: String): Boolean? =
   if (isNull(name)) null else getBoolean(name)
+
+
+private fun JSONObject.nullableInt(name: String): Int? =
+  if (isNull(name)) null else getInt(name)

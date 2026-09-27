@@ -35,6 +35,9 @@ class AppUsageTracker(context: Context) {
   private var lastPersistElapsed = 0L
   private var wasCountable = false
 
+  private var recentSessionPackage: String? = null
+  private var recentSessionStartedAtMillis = 0L
+
   private val tickRunnable =
     object : Runnable {
       override fun run() {
@@ -57,6 +60,7 @@ class AppUsageTracker(context: Context) {
     lastTickElapsed = nowElapsed
     lastPersistElapsed = nowElapsed
     wasCountable = shouldCount(nowMillis)
+    syncRecentUnlockedSession(nowMillis)
 
     if (usageMillis.isEmpty()) {
       settingsStore.saveAppUsage(usageDate, emptyMap())
@@ -76,7 +80,10 @@ class AppUsageTracker(context: Context) {
 
     update(forcePersist = false)
     foregroundPackage = normalized
-    wasCountable = shouldCount(System.currentTimeMillis())
+
+    val nowMillis = System.currentTimeMillis()
+    syncRecentUnlockedSession(nowMillis)
+    wasCountable = shouldCount(nowMillis)
   }
 
   fun flush() {
@@ -87,6 +94,7 @@ class AppUsageTracker(context: Context) {
   fun stop() {
     if (!running) return
     update(forcePersist = true)
+    finishRecentUnlockedSession(System.currentTimeMillis())
     running = false
     handler.removeCallbacks(tickRunnable)
   }
@@ -98,6 +106,7 @@ class AppUsageTracker(context: Context) {
 
     var dateChanged = false
     if (currentDate != usageDate) {
+      finishRecentUnlockedSession(nowMillis)
       usageDate = currentDate
       usageMillis.clear()
       dateChanged = true
@@ -112,17 +121,56 @@ class AppUsageTracker(context: Context) {
       }
     }
 
+    syncRecentUnlockedSession(nowMillis)
+
     if (
       forcePersist ||
       dateChanged ||
       nowElapsed - lastPersistElapsed >= PERSIST_INTERVAL_MS
     ) {
       settingsStore.saveAppUsage(usageDate, usageMillis)
+      persistActiveRecentSession(nowMillis)
       lastPersistElapsed = nowElapsed
     }
 
     lastTickElapsed = nowElapsed
     wasCountable = shouldCount(nowMillis)
+  }
+
+  private fun syncRecentUnlockedSession(nowMillis: Long) {
+    val desiredPackage =
+      foregroundPackage
+        ?.takeIf {
+          powerManager.isInteractive &&
+            !settingsStore.isEffectivelyLocked(nowMillis)
+        }
+
+    if (desiredPackage == recentSessionPackage) return
+
+    finishRecentUnlockedSession(nowMillis)
+
+    if (desiredPackage != null) {
+      recentSessionPackage = desiredPackage
+      recentSessionStartedAtMillis = nowMillis
+    }
+  }
+
+  private fun persistActiveRecentSession(nowMillis: Long) {
+    val packageName = recentSessionPackage ?: return
+    val startedAtMillis = recentSessionStartedAtMillis
+    if (startedAtMillis <= 0L || nowMillis <= startedAtMillis) return
+
+    settingsStore.upsertRecentAppSession(
+      packageName = packageName,
+      startedAtMillis = startedAtMillis,
+      endedAtMillis = nowMillis,
+    )
+  }
+
+  private fun finishRecentUnlockedSession(nowMillis: Long) {
+    persistActiveRecentSession(nowMillis)
+    recentSessionPackage = null
+    recentSessionStartedAtMillis = 0L
   }
 
   private fun shouldCount(nowMillis: Long): Boolean {

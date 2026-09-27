@@ -1,4 +1,5 @@
 import { withSupabase } from "npm:@supabase/server@1.7.1";
+import { requireParentUserId } from "../_shared/parent-auth.ts";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -20,6 +21,9 @@ export default {
     if (req.method !== "POST") {
       return json({ error: "method_not_allowed" }, 405);
     }
+
+    const parentUserId = await requireParentUserId(req, ctx);
+    if (!parentUserId) return json({ error: "parent_auth_required" }, 401);
 
     let payload: Record<string, unknown>;
     try {
@@ -46,8 +50,9 @@ export default {
 
     const { data: device, error: deviceError } = await ctx.supabaseAdmin
       .from("child_devices")
-      .select("device_id, display_name, access_state, temporary_allow_until, accessibility_enabled, precise_timing_enabled, battery_unrestricted")
+      .select("device_id, display_name, access_state, temporary_allow_until, temporary_allow_granted_minutes, battery_level_percent, accessibility_enabled, precise_timing_enabled, battery_unrestricted")
       .eq("device_id", deviceId)
+      .eq("parent_user_id", parentUserId)
       .eq("control_token_hash", controlTokenHash)
       .maybeSingle();
 
@@ -96,6 +101,15 @@ export default {
         displayName: device.display_name,
         state: device.access_state,
         temporaryAccessMinutesRemaining,
+        temporaryAccessGrantedMinutes:
+          device.access_state === "TEMPORARILY_ALLOWED" &&
+            typeof device.temporary_allow_granted_minutes === "number"
+            ? device.temporary_allow_granted_minutes
+            : null,
+        batteryLevelPercent:
+          typeof device.battery_level_percent === "number"
+            ? device.battery_level_percent
+            : null,
         protection: {
           accessibilityEnabled:
             typeof device.accessibility_enabled === "boolean"

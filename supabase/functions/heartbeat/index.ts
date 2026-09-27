@@ -41,6 +41,15 @@ export default {
       typeof payload.temporaryAllowUntilMillis === "number"
         ? payload.temporaryAllowUntilMillis
         : null;
+    const hasTemporaryAccessGrantedMinutes =
+      Object.prototype.hasOwnProperty.call(
+        payload,
+        "temporaryAccessGrantedMinutes",
+      );
+    const temporaryAccessGrantedMinutes =
+      typeof payload.temporaryAccessGrantedMinutes === "number"
+        ? Math.trunc(payload.temporaryAccessGrantedMinutes)
+        : null;
     const accessibilityEnabled =
       typeof payload.accessibilityEnabled === "boolean"
         ? payload.accessibilityEnabled
@@ -52,6 +61,10 @@ export default {
     const batteryUnrestricted =
       typeof payload.batteryUnrestricted === "boolean"
         ? payload.batteryUnrestricted
+        : null;
+    const batteryLevelPercent =
+      typeof payload.batteryLevelPercent === "number"
+        ? Math.trunc(payload.batteryLevelPercent)
         : null;
     const protectionEvent =
       typeof payload.protectionEvent === "string"
@@ -96,6 +109,27 @@ export default {
       return json({ error: "temporary_allow_until_invalid" }, 400);
     }
     if (
+      hasTemporaryAccessGrantedMinutes &&
+      (
+        temporaryAccessGrantedMinutes === null ||
+        !Number.isFinite(temporaryAccessGrantedMinutes) ||
+        temporaryAccessGrantedMinutes < 1 ||
+        temporaryAccessGrantedMinutes > 1440
+      )
+    ) {
+      return json({ error: "temporary_granted_minutes_invalid" }, 400);
+    }
+    if (
+      batteryLevelPercent !== null &&
+      (
+        !Number.isFinite(batteryLevelPercent) ||
+        batteryLevelPercent < 0 ||
+        batteryLevelPercent > 100
+      )
+    ) {
+      return json({ error: "battery_level_invalid" }, 400);
+    }
+    if (
       protectionEvent &&
       ![
         "APP_INFO_OPENED",
@@ -130,7 +164,13 @@ export default {
       packageName: string;
       label: string;
       seconds: number;
+      sessions: Array<{
+        startedAtMillis: number;
+        endedAtMillis: number;
+        seconds: number;
+      }>;
     }> = [];
+    let normalizedSessionCount = 0;
 
     if (hasAppUsagePayload) {
       if (
@@ -177,10 +217,64 @@ export default {
           return json({ error: "app_usage_invalid" }, 400);
         }
 
+        const rawSessions =
+          Array.isArray(entry.sessions) ? entry.sessions : [];
+        if (rawSessions.length > 20) {
+          return json({ error: "app_usage_invalid" }, 400);
+        }
+
+        const sessions: Array<{
+          startedAtMillis: number;
+          endedAtMillis: number;
+          seconds: number;
+        }> = [];
+
+        for (const rawSession of rawSessions) {
+          if (
+            typeof rawSession !== "object" ||
+            rawSession === null ||
+            Array.isArray(rawSession)
+          ) {
+            return json({ error: "app_usage_invalid" }, 400);
+          }
+
+          const session = rawSession as Record<string, unknown>;
+          const startedAtMillis =
+            typeof session.startedAtMillis === "number"
+              ? Math.trunc(session.startedAtMillis)
+              : 0;
+          const endedAtMillis =
+            typeof session.endedAtMillis === "number"
+              ? Math.trunc(session.endedAtMillis)
+              : 0;
+          const durationMillis = endedAtMillis - startedAtMillis;
+
+          if (
+            startedAtMillis <= 0 ||
+            endedAtMillis <= startedAtMillis ||
+            durationMillis < 1000 ||
+            durationMillis > 86400000
+          ) {
+            return json({ error: "app_usage_invalid" }, 400);
+          }
+
+          normalizedSessionCount += 1;
+          if (normalizedSessionCount > 30) {
+            return json({ error: "app_usage_invalid" }, 400);
+          }
+
+          sessions.push({
+            startedAtMillis,
+            endedAtMillis,
+            seconds: Math.max(1, Math.floor(durationMillis / 1000)),
+          });
+        }
+
         normalizedAppUsage.push({
           packageName,
           label,
           seconds,
+          sessions,
         });
       }
     }
@@ -232,9 +326,20 @@ export default {
           accessState === "TEMPORARILY_ALLOWED"
             ? new Date(temporaryAllowUntilMillis!).toISOString()
             : null,
+        ...(accessState !== "TEMPORARILY_ALLOWED"
+          ? { temporary_allow_granted_minutes: null }
+          : hasTemporaryAccessGrantedMinutes
+            ? {
+                temporary_allow_granted_minutes:
+                  temporaryAccessGrantedMinutes,
+              }
+            : {}),
         accessibility_enabled: accessibilityEnabled,
         precise_timing_enabled: preciseTimingEnabled,
         battery_unrestricted: batteryUnrestricted,
+        ...(batteryLevelPercent !== null
+          ? { battery_level_percent: batteryLevelPercent }
+          : {}),
         protection_updated_at: now,
         last_seen_at: now,
         updated_at: now,

@@ -20,6 +20,7 @@ function json(body: unknown, status = 200): Response {
 type InstalledApp = {
   packageName: string;
   label: string;
+  iconBase64?: string;
 };
 
 function normalizeApps(value: unknown): InstalledApp[] | null {
@@ -35,9 +36,24 @@ function normalizeApps(value: unknown): InstalledApp[] | null {
       typeof item.packageName === "string" ? item.packageName.trim() : "";
     const label =
       typeof item.label === "string" ? item.label.trim().slice(0, 120) : "";
+    const rawIcon =
+      typeof item.iconBase64 === "string" ? item.iconBase64.trim() : "";
+    const iconBase64 =
+      rawIcon &&
+      rawIcon.length <= 16_384 &&
+      /^[A-Za-z0-9+/]+={0,2}$/.test(rawIcon)
+        ? rawIcon
+        : undefined;
 
     if (!PACKAGE_PATTERN.test(packageName) || !label) return null;
-    unique.set(packageName, { packageName, label });
+    if (rawIcon && !iconBase64) return null;
+
+    unique.set(
+      packageName,
+      iconBase64
+        ? { packageName, label, iconBase64 }
+        : { packageName, label },
+    );
   }
 
   return Array.from(unique.values()).sort((a, b) =>

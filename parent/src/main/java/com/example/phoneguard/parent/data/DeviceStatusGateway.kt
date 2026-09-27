@@ -38,6 +38,7 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
         readTimeout = 10_000
         doOutput = true
         setRequestProperty("Content-Type", "application/json")
+        applyParentAuthHeaders()
       }
 
     return try {
@@ -86,6 +87,10 @@ class HttpDeviceStatusGateway : DeviceStatusGateway {
               lastSeenAt =
                 deviceJson.optString("lastSeenAt")
                   .takeIf { it.isNotBlank() && it != "null" },
+              batteryLevelPercent =
+                deviceJson.nullableInt("batteryLevelPercent"),
+              temporaryAccessGrantedMinutes =
+                deviceJson.nullableInt("temporaryAccessGrantedMinutes"),
               protectionStatus =
                 DeviceProtectionStatus(
                   accessibilityEnabled =

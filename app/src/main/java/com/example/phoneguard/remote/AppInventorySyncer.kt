@@ -3,10 +3,14 @@ package com.example.phoneguard.remote
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.util.Base64
 import android.util.Log
 import com.example.phoneguard.core.InstalledAppInfo
 import com.example.phoneguard.data.AllowedAppsPolicy
 import com.example.phoneguard.data.ChildSettingsStore
+import java.io.ByteArrayOutputStream
 
 class AppInventorySyncer(context: Context) {
   private val appContext = context.applicationContext
@@ -17,7 +21,13 @@ class AppInventorySyncer(context: Context) {
   fun sync(): Boolean {
     val apps = discoverLauncherApps()
     val signature =
-      apps.joinToString("\n") { it.packageName + "\t" + it.label }
+      apps.joinToString("\n") {
+        it.packageName +
+          "\t" +
+          it.label +
+          "\t" +
+          (it.iconBase64?.hashCode() ?: 0)
+      }
 
     if (signature == settingsStore.appInventorySignature()) {
       return true
@@ -72,7 +82,32 @@ class AppInventorySyncer(context: Context) {
         if (label.isBlank()) {
           null
         } else {
-          InstalledAppInfo(packageName = packageName, label = label)
+          InstalledAppInfo(
+            packageName = packageName,
+            label = label,
+            iconBase64 =
+              runCatching {
+                val drawable = resolveInfo.loadIcon(packageManager)
+                val bitmap =
+                  Bitmap.createBitmap(
+                    ICON_SIZE_PX,
+                    ICON_SIZE_PX,
+                    Bitmap.Config.ARGB_8888,
+                  )
+                val canvas = Canvas(bitmap)
+                drawable.setBounds(0, 0, ICON_SIZE_PX, ICON_SIZE_PX)
+                drawable.draw(canvas)
+
+                val output = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+                bitmap.recycle()
+
+                Base64.encodeToString(
+                  output.toByteArray(),
+                  Base64.NO_WRAP,
+                ).takeIf { it.length <= MAX_ICON_BASE64_LENGTH }
+              }.getOrNull(),
+          )
         }
       }
       .distinctBy { it.packageName }
@@ -84,5 +119,7 @@ class AppInventorySyncer(context: Context) {
 
   private companion object {
     const val TAG = "PhoneGuardAppInventory"
+    const val ICON_SIZE_PX = 48
+    const val MAX_ICON_BASE64_LENGTH = 16_384
   }
 }
