@@ -86,6 +86,11 @@ export default {
       return json({ error: "database_error" }, 500);
     }
 
+    await ctx.supabaseAdmin
+      .from("child_locations")
+      .delete()
+      .eq("device_id", deviceId);
+
     return json({
       ok: true,
       deviceId,
