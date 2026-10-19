@@ -234,6 +234,7 @@ fun ParentDashboardScreen(
       uiState.commandInProgress ||
         uiState.connectionTestInProgress ||
         uiState.refreshInProgress ||
+        uiState.locationLoading ||
         uiState.scheduleLoading ||
         uiState.scheduleSaving ||
         uiState.allowedAppsLoading ||
@@ -1421,7 +1422,8 @@ fun ParentDashboardScreen(
     actionsBusy =
       uiState.commandInProgress ||
         uiState.connectionTestInProgress ||
-        uiState.refreshInProgress,
+        uiState.refreshInProgress ||
+        uiState.locationLoading,
     parentEmail = ParentSupabase.client.auth.currentUserOrNull()?.email,
     connectionTestInProgress = uiState.connectionTestInProgress,
     connectionTestSucceeded = uiState.connectionTestSucceeded,
