@@ -720,31 +720,35 @@ fun ParentDashboardScreen(
       return@LaunchedEffect
     }
 
-    when (
-      val result =
-        withContext(Dispatchers.IO) {
-          locationGateway.fetch(
-            deviceId = device.deviceId,
-            controlToken = controlToken,
-          )
+    while (true) {
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            locationGateway.fetch(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+            )
+          }
+      ) {
+        is LocationStatusResult.Success -> {
+          uiState.currentLocation = result.location
+          uiState.locationError = null
         }
-    ) {
-      is LocationStatusResult.Success -> {
-        uiState.currentLocation = result.location
-        uiState.locationError = null
+
+        is LocationStatusResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+            return@LaunchedEffect
+          } else {
+            uiState.locationError = result.message
+          }
+        }
       }
 
-      is LocationStatusResult.Error -> {
-        if (result.pairingInvalid) {
-          removeInvalidPairing(
-            deviceId = device.deviceId,
-            displayName = device.displayName,
-          )
-          return@LaunchedEffect
-        } else {
-          uiState.locationError = result.message
-        }
-      }
+      delay(5_000)
     }
   }
 
