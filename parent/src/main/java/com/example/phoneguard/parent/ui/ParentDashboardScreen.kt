@@ -711,7 +711,7 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "location-status") {
-    if (uiState.selectedTab != 3) return@LaunchedEffect
+    if (uiState.selectedTab != 0) return@LaunchedEffect
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
@@ -1523,11 +1523,6 @@ fun ParentDashboardScreen(
         protectionHistoryLoading = uiState.protectionHistoryLoading,
         protectionHistoryError = uiState.protectionHistoryError,
         protectionHistoryClearing = uiState.protectionHistoryClearing,
-        currentLocation = uiState.currentLocation,
-        locationLoading = uiState.locationLoading,
-        locationError = uiState.locationError,
-        locationNotice = uiState.locationNotice,
-        onRefreshLocation = { requestCurrentLocation() },
         onShowDevices = { uiState.showDevices = true },
         onRefreshStatus = {
           if (!uiState.refreshInProgress) {
@@ -1611,6 +1606,11 @@ fun ParentDashboardScreen(
         commandInProgress = uiState.commandInProgress,
         activeCommandType = uiState.activeCommandType,
         connectionTestInProgress = uiState.connectionTestInProgress,
+        currentLocation = uiState.currentLocation,
+        locationLoading = uiState.locationLoading,
+        locationError = uiState.locationError,
+        locationNotice = uiState.locationNotice,
+        onRefreshLocation = { requestCurrentLocation() },
         appUsageDays = uiState.appUsageDays,
         appInventorySnapshot = uiState.allowedAppsSnapshot,
         appUsageLoading = uiState.appUsageLoading,
