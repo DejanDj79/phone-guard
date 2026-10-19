@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,11 +35,12 @@ import com.example.phoneguard.parent.data.ChildLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
+import org.maplibre.android.MapLibre
+import org.maplibre.android.annotations.MarkerOptions
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.Style
 
 @Composable
 internal fun ParentLocationCard(
@@ -201,7 +203,75 @@ private fun ChildLocationMap(
   deviceName: String,
   location: ChildLocation,
 ) {
-  val point = GeoPoint(location.latitude, location.longitude)
+  val context = LocalContext.current
+  val point =
+    LatLng(
+      location.latitude,
+      location.longitude,
+    )
+
+  val mapView =
+    remember {
+      MapLibre.getInstance(context.applicationContext)
+
+      MapView(context).apply {
+        onCreate(null)
+      }
+    }
+
+  DisposableEffect(mapView) {
+    mapView.onStart()
+    mapView.onResume()
+
+    onDispose {
+      mapView.onPause()
+      mapView.onStop()
+      mapView.onDestroy()
+    }
+  }
+
+  LaunchedEffect(
+    mapView,
+    location.latitude,
+    location.longitude,
+    deviceName,
+  ) {
+    mapView.getMapAsync { map ->
+      val showLocation = {
+        map.clear()
+
+        map.addMarker(
+          MarkerOptions()
+            .position(point)
+            .title(deviceName)
+            .snippet("Current location"),
+        )
+
+        map.cameraPosition =
+          CameraPosition.Builder()
+            .target(point)
+            .zoom(16.5)
+            .build()
+
+        map.uiSettings.apply {
+          isCompassEnabled = false
+          isZoomControlsEnabled = false
+          isAttributionEnabled = true
+          isLogoEnabled = true
+        }
+      }
+
+      if (map.style?.uri == OPEN_FREE_MAP_STYLE) {
+        showLocation()
+      } else {
+        map.setStyle(
+          Style.Builder().fromUri(OPEN_FREE_MAP_STYLE),
+        ) {
+          showLocation()
+        }
+      }
+    }
+  }
 
   AndroidView(
     modifier =
@@ -209,32 +279,7 @@ private fun ChildLocationMap(
         .fillMaxWidth()
         .height(220.dp)
         .clip(RoundedCornerShape(18.dp)),
-    factory = { context ->
-      Configuration.getInstance().userAgentValue = context.packageName
-
-      MapView(context).apply {
-        setTileSource(TileSourceFactory.MAPNIK)
-        setMultiTouchControls(true)
-        controller.setZoom(17.0)
-        controller.setCenter(point)
-      }
-    },
-    update = { map ->
-      map.overlays.clear()
-
-      val marker =
-        Marker(map).apply {
-          position = point
-          title = deviceName
-          snippet = "Current location"
-          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        }
-
-      map.overlays.add(marker)
-      map.controller.setZoom(17.0)
-      map.controller.setCenter(point)
-      map.invalidate()
-    },
+    factory = { mapView },
   )
 }
 
