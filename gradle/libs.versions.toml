@@ -17,7 +17,7 @@ lifecycleViewmodelNav3 = "2.10.0"
 firebaseBom = "34.19.0"
 googleServices = "4.5.0"
 playServicesLocation = "21.4.0"
-mapsCompose = "8.2.2"
+osmdroid = "6.1.20"
 supabase = "3.5.0"
 ktor = "3.4.2"
 
@@ -47,7 +47,7 @@ androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecy
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
-maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
+osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "supabase" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 
