@@ -7,6 +7,7 @@ enum class RemoteCommandType {
   SYNC_SCHEDULE,
   SYNC_ALLOWED_APPS,
   SYNC_DAILY_LIMIT,
+  REQUEST_LOCATION,
 }
 
 data class RemoteCommand(
@@ -24,7 +25,8 @@ data class RemoteCommand(
       RemoteCommandType.UNLOCK,
       RemoteCommandType.SYNC_SCHEDULE,
       RemoteCommandType.SYNC_ALLOWED_APPS,
-      RemoteCommandType.SYNC_DAILY_LIMIT ->
+      RemoteCommandType.SYNC_DAILY_LIMIT,
+      RemoteCommandType.REQUEST_LOCATION ->
         require(bonusMinutes == null) {
           "$type must not include bonusMinutes."
         }
@@ -52,6 +54,9 @@ data class RemoteCommand(
 
     fun syncDailyLimit(): RemoteCommand =
       RemoteCommand(RemoteCommandType.SYNC_DAILY_LIMIT)
+
+    fun requestLocation(): RemoteCommand =
+      RemoteCommand(RemoteCommandType.REQUEST_LOCATION)
   }
 }
 
