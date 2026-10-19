@@ -38,10 +38,12 @@ import com.example.phoneguard.parent.data.AppUsageResult
 import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.DeviceStatusResult
+import com.example.phoneguard.parent.data.LocationStatusResult
 import com.example.phoneguard.parent.data.HttpAllowedAppsGateway
 import com.example.phoneguard.parent.data.HttpAppUsageGateway
 import com.example.phoneguard.parent.data.HttpDeviceManagementGateway
 import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
+import com.example.phoneguard.parent.data.HttpLocationGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.HttpProtectionHistoryGateway
@@ -87,6 +89,7 @@ fun ParentDashboardScreen(
   val gateway = pairingGateway ?: defaultGateway
   val commandGateway = remember { HttpCommandGateway() }
   val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
+  val locationGateway = remember { HttpLocationGateway() }
   val scheduleGateway = remember { HttpScheduleGateway() }
   val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
   val appUsageGateway = remember { HttpAppUsageGateway() }
@@ -265,6 +268,10 @@ fun ParentDashboardScreen(
           uiState.allowedAppsError = null
           uiState.allowedAppsNotice = null
           uiState.showBonusTimePicker = false
+          uiState.currentLocation = null
+          uiState.locationLoading = false
+          uiState.locationError = null
+          uiState.locationNotice = null
           uiState.showDeviceManagement = false
           uiState.deviceManagementError = null
           uiState.pendingTimeRequest = null
@@ -692,6 +699,44 @@ fun ParentDashboardScreen(
     }
 
     uiState.allowedAppsLoading = false
+  }
+
+  LaunchedEffect(device.deviceId, uiState.selectedTab, "location-status") {
+    if (uiState.selectedTab != 3) return@LaunchedEffect
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      uiState.locationError =
+        "Control token is missing. Re-pairing is required."
+      return@LaunchedEffect
+    }
+
+    when (
+      val result =
+        withContext(Dispatchers.IO) {
+          locationGateway.fetch(
+            deviceId = device.deviceId,
+            controlToken = controlToken,
+          )
+        }
+    ) {
+      is LocationStatusResult.Success -> {
+        uiState.currentLocation = result.location
+        uiState.locationError = null
+      }
+
+      is LocationStatusResult.Error -> {
+        if (result.pairingInvalid) {
+          removeInvalidPairing(
+            deviceId = device.deviceId,
+            displayName = device.displayName,
+          )
+          return@LaunchedEffect
+        } else {
+          uiState.locationError = result.message
+        }
+      }
+    }
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "protection-history-poll") {
@@ -1232,6 +1277,123 @@ fun ParentDashboardScreen(
     }
   }
 
+
+  fun requestCurrentLocation() {
+    if (uiState.locationLoading || uiState.commandInProgress) return
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      uiState.locationError =
+        "Control token is missing. Re-pairing is required."
+      return
+    }
+
+    scope.launch {
+      uiState.locationLoading = true
+      uiState.locationError = null
+      uiState.locationNotice = "Requesting current location…"
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            commandGateway.send(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+              command = RemoteCommand.requestLocation(),
+            )
+          }
+      ) {
+        is CommandResult.Success -> {
+          var deliveryStatus = result.deliveryStatus
+
+          for (attempt in 1..60) {
+            if (deliveryStatus == "APPLIED" || deliveryStatus == "FAILED") {
+              break
+            }
+
+            delay(500)
+
+            when (
+              val statusResult =
+                withContext(Dispatchers.IO) {
+                  commandGateway.status(
+                    deviceId = device.deviceId,
+                    controlToken = controlToken,
+                    commandId = result.commandId,
+                  )
+                }
+            ) {
+              is CommandDeliveryResult.Success -> {
+                deliveryStatus = statusResult.status
+              }
+
+              is CommandDeliveryResult.Error -> {
+                uiState.locationError = statusResult.message
+                break
+              }
+            }
+          }
+
+          if (uiState.locationError == null) {
+            when (deliveryStatus) {
+              "APPLIED" -> {
+                when (
+                  val locationResult =
+                    withContext(Dispatchers.IO) {
+                      locationGateway.fetch(
+                        deviceId = device.deviceId,
+                        controlToken = controlToken,
+                      )
+                    }
+                ) {
+                  is LocationStatusResult.Success -> {
+                    uiState.currentLocation = locationResult.location
+                    uiState.locationError =
+                      if (locationResult.location == null) {
+                        "Child confirmed the request, but no location was returned."
+                      } else {
+                        null
+                      }
+                    uiState.locationNotice =
+                      if (locationResult.location != null) {
+                        "Current location updated."
+                      } else {
+                        null
+                      }
+                  }
+
+                  is LocationStatusResult.Error -> {
+                    uiState.locationError = locationResult.message
+                    uiState.locationNotice = null
+                  }
+                }
+              }
+
+              "FAILED" -> {
+                uiState.locationError =
+                  "Child could not provide its current location. Check location permission and device location services."
+                uiState.locationNotice = null
+              }
+
+              else -> {
+                uiState.locationError =
+                  "Location request was sent, but the Child did not confirm it in time."
+                uiState.locationNotice = null
+              }
+            }
+          }
+        }
+
+        is CommandResult.Error -> {
+          uiState.locationError = result.message
+          uiState.locationNotice = null
+        }
+      }
+
+      uiState.locationLoading = false
+    }
+  }
+
   if (uiState.showAllProtectionHistory) {
     BackHandler(enabled = !uiState.protectionHistoryClearing) {
       uiState.showAllProtectionHistory = false
@@ -1335,6 +1497,11 @@ fun ParentDashboardScreen(
         protectionHistoryLoading = uiState.protectionHistoryLoading,
         protectionHistoryError = uiState.protectionHistoryError,
         protectionHistoryClearing = uiState.protectionHistoryClearing,
+        currentLocation = uiState.currentLocation,
+        locationLoading = uiState.locationLoading,
+        locationError = uiState.locationError,
+        locationNotice = uiState.locationNotice,
+        onRefreshLocation = { requestCurrentLocation() },
         onShowDevices = { uiState.showDevices = true },
         onRefreshStatus = {
           if (!uiState.refreshInProgress) {
