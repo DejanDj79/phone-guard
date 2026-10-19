@@ -47,6 +47,7 @@ class RemoteCommandSyncer(context: Context) {
               "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
               "SYNC_ALLOWED_APPS" -> RemoteCommand.syncAllowedApps()
               "SYNC_DAILY_LIMIT" -> RemoteCommand.syncDailyLimit()
+              "REQUEST_LOCATION" -> RemoteCommand.requestLocation()
 
               else -> {
                 Log.e(TAG, "Unknown remote command: " + pending.command)
