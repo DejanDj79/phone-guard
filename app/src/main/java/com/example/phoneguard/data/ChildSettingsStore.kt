@@ -41,6 +41,16 @@ class ChildSettingsStore(context: Context) {
       .apply()
   }
 
+  fun isLocationAccessRequestedByParent(): Boolean =
+    preferences.getBoolean(KEY_LOCATION_ACCESS_REQUESTED_BY_PARENT, false)
+
+  fun setLocationAccessRequestedByParent(requested: Boolean) {
+    preferences
+      .edit()
+      .putBoolean(KEY_LOCATION_ACCESS_REQUESTED_BY_PARENT, requested)
+      .apply()
+  }
+
   fun setParentPin(pin: String) {
     require(PIN_PATTERN.matches(pin)) { "PIN must contain 4 to 6 digits." }
 
@@ -613,6 +623,7 @@ class ChildSettingsStore(context: Context) {
     const val KEY_PIN_SALT = "parent_pin_salt"
     const val KEY_PIN_HASH = "parent_pin_hash"
     const val KEY_SETUP_WIZARD_COMPLETED = "setup_wizard_completed"
+    const val KEY_LOCATION_ACCESS_REQUESTED_BY_PARENT = "location_access_requested_by_parent"
     const val KEY_MANUAL_LOCKED = "manual_locked"
     const val KEY_SCHEDULE_LOCKED = "schedule_locked"
     const val KEY_WEEKLY_SCHEDULE = "weekly_schedule"
