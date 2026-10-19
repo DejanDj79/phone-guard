@@ -28,14 +28,16 @@ class ChildLocationReporter(context: Context) {
     val reported =
       when (
         backendClient.reportLocation(
-        deviceId = identity.deviceId,
-        deviceSecret = settingsStore.getOrCreateDeviceSecret(),
-        latitude = location.latitude,
-        longitude = location.longitude,
-        accuracyMeters = location.accuracy.toDouble(),
-        capturedAtMillis = location.time.takeIf { it > 0L } ?: System.currentTimeMillis(),
-      )
-    ) {
+          deviceId = identity.deviceId,
+          deviceSecret = settingsStore.getOrCreateDeviceSecret(),
+          latitude = location.latitude,
+          longitude = location.longitude,
+          accuracyMeters = location.accuracy.toDouble(),
+          capturedAtMillis =
+            location.time.takeIf { it > 0L }
+              ?: System.currentTimeMillis(),
+        )
+      ) {
         ChildLocationReportResult.Success -> true
         is ChildLocationReportResult.Failure -> false
       }
