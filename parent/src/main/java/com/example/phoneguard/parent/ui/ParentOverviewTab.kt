@@ -40,6 +40,7 @@ import com.example.phoneguard.core.DeviceAccessState
 import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.AppUsageDay
+import com.example.phoneguard.parent.data.ChildLocation
 import com.example.phoneguard.parent.data.PendingTimeRequest
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -55,6 +56,11 @@ internal fun ParentOverviewTab(
   commandInProgress: Boolean,
   activeCommandType: RemoteCommandType?,
   connectionTestInProgress: Boolean,
+  currentLocation: ChildLocation?,
+  locationLoading: Boolean,
+  locationError: String?,
+  locationNotice: String?,
+  onRefreshLocation: () -> Unit,
   appUsageDays: List<AppUsageDay>,
   appInventorySnapshot: AllowedAppsSnapshot?,
   appUsageLoading: Boolean,
@@ -317,6 +323,15 @@ internal fun ParentOverviewTab(
       }
     }
   }
+
+  ParentLocationCard(
+    deviceName = device.displayName,
+    location = currentLocation,
+    loading = locationLoading,
+    errorMessage = locationError,
+    notice = locationNotice,
+    onRefresh = onRefreshLocation,
+  )
 
   val remainingMinutes = device.dailyScreenTime.remainingMinutes
   val remainingLabel =
