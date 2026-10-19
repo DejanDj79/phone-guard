@@ -128,6 +128,10 @@ fun ParentDashboardScreen(
     uiState.allowedAppsError = null
     uiState.allowedAppsNotice = null
     uiState.showBonusTimePicker = false
+    uiState.currentLocation = null
+    uiState.locationLoading = false
+    uiState.locationError = null
+    uiState.locationNotice = null
     uiState.showDeviceManagement = false
     uiState.deviceManagementError = null
     uiState.pendingTimeRequest = null
@@ -197,6 +201,10 @@ fun ParentDashboardScreen(
     settingsStore.selectDevice(result.device.deviceId)
     uiState.pairedDevices = settingsStore.loadPairedDevices()
     uiState.pairedDevice = result.device
+    uiState.currentLocation = null
+    uiState.locationLoading = false
+    uiState.locationError = null
+    uiState.locationNotice = null
     ParentPushRegistrar(context.applicationContext)
       .registerCurrentToken()
     uiState.showPairDevice = false
