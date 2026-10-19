@@ -29,18 +29,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.example.phoneguard.parent.data.ChildLocation
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberUpdatedMarkerState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 @Composable
 internal fun ParentLocationCard(
@@ -203,40 +201,41 @@ private fun ChildLocationMap(
   deviceName: String,
   location: ChildLocation,
 ) {
-  val point = LatLng(location.latitude, location.longitude)
-  val cameraPositionState =
-    rememberCameraPositionState {
-      position = CameraPosition.fromLatLngZoom(point, 16f)
-    }
-  val markerState = rememberUpdatedMarkerState(position = point)
+  val point = GeoPoint(location.latitude, location.longitude)
 
-  LaunchedEffect(location.latitude, location.longitude) {
-    cameraPositionState.animate(
-      CameraUpdateFactory.newLatLngZoom(point, 16f),
-    )
-  }
-
-  GoogleMap(
+  AndroidView(
     modifier =
       Modifier
         .fillMaxWidth()
         .height(220.dp)
         .clip(RoundedCornerShape(18.dp)),
-    cameraPositionState = cameraPositionState,
-    uiSettings =
-      MapUiSettings(
-        compassEnabled = false,
-        mapToolbarEnabled = false,
-        myLocationButtonEnabled = false,
-        zoomControlsEnabled = false,
-      ),
-  ) {
-    Marker(
-      state = markerState,
-      title = deviceName,
-      snippet = "Current location",
-    )
-  }
+    factory = { context ->
+      Configuration.getInstance().userAgentValue = context.packageName
+
+      MapView(context).apply {
+        setTileSource(TileSourceFactory.MAPNIK)
+        setMultiTouchControls(true)
+        controller.setZoom(17.0)
+        controller.setCenter(point)
+      }
+    },
+    update = { map ->
+      map.overlays.clear()
+
+      val marker =
+        Marker(map).apply {
+          position = point
+          title = deviceName
+          snippet = "Current location"
+          setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        }
+
+      map.overlays.add(marker)
+      map.controller.setZoom(17.0)
+      map.controller.setCenter(point)
+      map.invalidate()
+    },
+  )
 }
 
 @Suppress("DEPRECATION")
