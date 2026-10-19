@@ -107,6 +107,11 @@ export default {
       .eq("device_id", deviceId)
       .eq("status", "PENDING");
 
+    await ctx.supabaseAdmin
+      .from("child_locations")
+      .delete()
+      .eq("device_id", deviceId);
+
     return json({
       ok: true,
       deviceId: updated.device_id,
