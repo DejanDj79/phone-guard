@@ -5,7 +5,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 private val ChildColorScheme =
@@ -28,12 +27,23 @@ private val ChildColorScheme =
     onSurface = ChildLight,
     surfaceVariant = ChildSurfaceMuted,
     onSurfaceVariant = ChildTextSecondary,
+    surfaceBright = ChildSurface,
+    surfaceDim = ChildBackground,
+    surfaceContainerLowest = ChildBackground,
+    surfaceContainerLow = ChildSurfaceMuted,
+    surfaceContainer = ChildSurfaceMuted,
+    surfaceContainerHigh = ChildSurface,
+    surfaceContainerHighest = ChildSurface,
+    inverseSurface = ChildDark,
+    inverseOnSurface = ChildLight,
+    inversePrimary = ChildAccent,
     outline = ChildOutline,
     outlineVariant = ChildOutlineSoft,
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
-    errorContainer = Color(0xFF8C4A52),
-    onErrorContainer = Color(0xFFFFDAD6),
+    error = ChildAccent,
+    onError = ChildDark,
+    errorContainer = ChildSurfaceMuted,
+    onErrorContainer = ChildLight,
+    scrim = ChildDark,
   )
 
 private val ChildShapes =
