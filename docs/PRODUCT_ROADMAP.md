@@ -344,11 +344,36 @@ Expected behavior:
 
 Existing app inventory synchronization should provide part of the technical foundation for this feature.
 
+### 3. Current Child location
+
+**Status:** Planned for Premium 1.0 and currently in implementation.
+
+Allow the Parent to request and view the Child phone's current location.
+
+Premium 1.0 scope:
+
+- On-demand current location
+- Parent-side map
+- Manual refresh
+- Last updated time
+- Location accuracy
+- Store only the latest location initially; no movement history in v1
+
+Implementation direction:
+
+- Parent sends a `REQUEST_LOCATION` command through the existing remote-command pipeline.
+- Child obtains a fresh location through Android location services when permission is available.
+- Child sends the coordinates to the backend.
+- Supabase stores only the latest location per Child device.
+- Parent reads the latest location and displays it on the Location screen/map.
+- Android location permission must remain explicit and transparent on the Child device.
+
+Geofencing and location history are separate follow-up Premium features.
+
 ## Future premium candidates — not decided
 
 These are ideas to evaluate later and are **not yet assigned to free or paid**:
 
-- Location tracking
 - Geofencing
 - Location history
 - More detailed usage analytics
@@ -362,6 +387,8 @@ These are ideas to evaluate later and are **not yet assigned to free or paid**:
 - Cloud backup / restore of Parent rules
 
 Do not implement or paywall these until we explicitly decide their product tier.
+
+Advanced reports are intentionally deferred from the first Premium release.
 
 ## Play Store / monetization tasks for later
 
