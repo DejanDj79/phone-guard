@@ -22,21 +22,6 @@ android {
     versionCode = 1
     versionName = "1.0"
 
-    val explicitMapsKey =
-      providers.gradleProperty("MAPS_API_KEY").orNull
-        ?: System.getenv("MAPS_API_KEY")
-    val firebaseMapsKey =
-      runCatching {
-        Regex("""["]current_key["]\s*:\s*["]([^"]+)["]""")
-          .find(file("google-services.json").readText())
-          ?.groupValues
-          ?.getOrNull(1)
-      }.getOrNull()
-
-    manifestPlaceholders["MAPS_API_KEY"] =
-      explicitMapsKey
-        ?: firebaseMapsKey
-        ?: ""
   }
 
   buildTypes {
@@ -78,7 +63,7 @@ dependencies {
   implementation(libs.firebase.messaging)
   implementation(libs.supabase.auth)
   implementation(libs.ktor.client.android)
-  implementation(libs.maps.compose)
+  implementation(libs.osmdroid.android)
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
 
