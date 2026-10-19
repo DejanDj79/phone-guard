@@ -48,6 +48,12 @@ class RemoteCommandProcessor(context: Context) {
           "Remote daily limit sync failed."
         }
       }
+
+      RemoteCommandType.REQUEST_LOCATION -> {
+        check(ChildLocationReporter(appContext).reportCurrentLocation()) {
+          "Current location report failed."
+        }
+      }
     }
   }
 }
