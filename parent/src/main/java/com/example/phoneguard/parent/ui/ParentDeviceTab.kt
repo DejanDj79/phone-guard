@@ -27,9 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.parent.R
-import com.example.phoneguard.parent.data.ChildLocation
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
-import java.util.Locale
 
 private const val DEVICE_HISTORY_PREVIEW_COUNT = 5
 
@@ -45,11 +43,6 @@ internal fun ParentDeviceTab(
   protectionHistoryLoading: Boolean,
   protectionHistoryError: String?,
   protectionHistoryClearing: Boolean,
-  currentLocation: ChildLocation?,
-  locationLoading: Boolean,
-  locationError: String?,
-  locationNotice: String?,
-  onRefreshLocation: () -> Unit,
   onShowDevices: () -> Unit,
   onRefreshStatus: () -> Unit,
   onManageDevice: () -> Unit,
@@ -59,7 +52,6 @@ internal fun ParentDeviceTab(
   val actionsBusy =
     refreshInProgress ||
       commandInProgress ||
-      locationLoading ||
       deviceRenaming ||
       deviceUnpairing
 
@@ -143,109 +135,6 @@ internal fun ParentDeviceTab(
           enabled = !actionsBusy,
           onClick = onManageDevice,
           modifier = Modifier.weight(1f),
-        )
-      }
-    }
-  }
-
-  Surface(
-    modifier = Modifier.fillMaxWidth(),
-    shape = RoundedCornerShape(28.dp),
-    color = MaterialTheme.colorScheme.surface,
-  ) {
-    Column(
-      modifier = Modifier.padding(20.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-            text = "Current location",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-          )
-          Text(
-            text =
-              currentLocation?.let {
-                "Updated " + formatProtectionEventTime(it.capturedAt)
-              } ?: "No location received yet.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
-
-        if (locationLoading) {
-          CircularProgressIndicator(
-            modifier = Modifier.size(18.dp),
-            strokeWidth = 2.dp,
-            color = ParentSectionHeaderColor,
-          )
-        }
-      }
-
-      currentLocation?.let { location ->
-        Surface(
-          modifier = Modifier.fillMaxWidth(),
-          shape = RoundedCornerShape(18.dp),
-          color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-        ) {
-          Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
-          ) {
-            Text(
-              text =
-                "Latitude  " +
-                  String.format(Locale.US, "%.5f", location.latitude),
-              style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-              text =
-                "Longitude  " +
-                  String.format(Locale.US, "%.5f", location.longitude),
-              style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-              text =
-                location.accuracyMeters?.let {
-                  "Accuracy  ±" + Math.round(it) + " m"
-                } ?: "Accuracy unavailable",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
-        }
-      }
-
-      OutlinedButton(
-        onClick = onRefreshLocation,
-        enabled = !locationLoading && !actionsBusy,
-        modifier =
-          Modifier
-            .fillMaxWidth()
-            .wrapContentWidth(Alignment.CenterHorizontally)
-            .heightIn(min = 52.dp),
-        shape = ParentActionShape,
-      ) {
-        Text(if (locationLoading) "LOCATING…" else "REFRESH LOCATION")
-      }
-
-      locationNotice?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-
-      locationError?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.error,
         )
       }
     }
