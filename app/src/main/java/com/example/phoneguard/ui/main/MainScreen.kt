@@ -61,10 +61,12 @@ import com.example.phoneguard.protection.BackgroundProtectionStatus
 import com.example.phoneguard.remote.ChildBackendClient
 import com.example.phoneguard.remote.AppInventorySyncer
 import com.example.phoneguard.remote.ChildHeartbeatSender
+import com.example.phoneguard.remote.ChildLocationAccess
 import com.example.phoneguard.remote.ChildPairingResetResult
 import com.example.phoneguard.remote.ChildRegistrationResult
 import com.example.phoneguard.remote.ChildTimeRequestResult
 import com.example.phoneguard.remote.FcmTokenProvider
+import com.example.phoneguard.remote.RemoteCommandSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
 import kotlinx.coroutines.Dispatchers
@@ -111,6 +113,9 @@ fun MainScreen(
   }
   var registrationInProgress by remember { mutableStateOf(false) }
   var registrationRetryKey by remember { mutableStateOf(0) }
+  var locationAccessRequestedByParent by remember {
+    mutableStateOf(settingsStore.isLocationAccessRequestedByParent())
+  }
 
   DisposableEffect(lifecycleOwner, context) {
     var firstResume = true
@@ -123,9 +128,22 @@ fun MainScreen(
         batteryOptimizationIgnored =
           BackgroundProtectionStatus.isBatteryOptimizationIgnored(context)
 
+        locationAccessRequestedByParent =
+          settingsStore.isLocationAccessRequestedByParent()
+
+        val locationAccessReady =
+          ChildLocationAccess.hasRequiredLocationAccess(context)
+        if (locationAccessRequestedByParent && locationAccessReady) {
+          settingsStore.setLocationAccessRequestedByParent(false)
+          locationAccessRequestedByParent = false
+        }
+
         Thread {
           AppInventorySyncer(context.applicationContext).sync()
           ChildHeartbeatSender(context.applicationContext).send()
+          if (locationAccessReady) {
+            RemoteCommandSyncer(context.applicationContext).sync()
+          }
         }.start()
       }
 
@@ -347,6 +365,54 @@ fun MainScreen(
         )
       }
     }
+  }
+
+  if (
+    locationAccessRequestedByParent &&
+    !ChildLocationAccess.hasRequiredLocationAccess(context)
+  ) {
+    AlertDialog(
+      onDismissRequest = {
+        locationAccessRequestedByParent = false
+      },
+      title = {
+        Text(
+          text = "Allow location sharing",
+          fontWeight = FontWeight.SemiBold,
+        )
+      },
+      text = {
+        Text(
+          text =
+            "Parent requested this phone's current location. Android requires PhoneGuard Location permission, including Allow all the time, so the request can work while the app is in the background.",
+          style = MaterialTheme.typography.bodyMedium,
+        )
+      },
+      confirmButton = {
+        OutlinedButton(
+          onClick = {
+            context.startActivity(
+              ChildLocationAccess.appSettingsIntent(context),
+            )
+          },
+          modifier = Modifier.heightIn(min = 52.dp),
+          shape = ChildActionShape,
+        ) {
+          Text("OPEN APP SETTINGS")
+        }
+      },
+      dismissButton = {
+        OutlinedButton(
+          onClick = {
+            locationAccessRequestedByParent = false
+          },
+          modifier = Modifier.heightIn(min = 52.dp),
+          shape = ChildActionShape,
+        ) {
+          Text("NOT NOW")
+        }
+      },
+    )
   }
 }
 
