@@ -106,6 +106,14 @@ sealed interface ChildHeartbeatResult {
   ) : ChildHeartbeatResult
 }
 
+sealed interface ChildLocationReportResult {
+  data object Success : ChildLocationReportResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildLocationReportResult
+}
+
 sealed interface ChildTimeRequestResult {
   data class Success(
     val requestId: String,
@@ -752,6 +760,64 @@ class ChildBackendClient {
     } catch (error: Exception) {
       ChildTimeRequestResult.Failure(
         error.message ?: "Network error.",
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
+  fun reportLocation(
+    deviceId: String,
+    deviceSecret: String,
+    latitude: Double,
+    longitude: Double,
+    accuracyMeters: Double,
+    capturedAtMillis: Long,
+  ): ChildLocationReportResult {
+    val connection =
+      (URL(REPORT_LOCATION_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .put("latitude", latitude)
+          .put("longitude", longitude)
+          .put("accuracyMeters", accuracyMeters)
+          .put("capturedAtMillis", capturedAtMillis)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        ChildLocationReportResult.Success
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildLocationReportResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildLocationReportResult.Failure(
+        error.message ?: error::class.java.simpleName,
       )
     } finally {
       connection.disconnect()
