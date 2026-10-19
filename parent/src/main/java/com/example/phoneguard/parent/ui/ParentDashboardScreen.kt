@@ -1302,6 +1302,8 @@ fun ParentDashboardScreen(
     }
 
     scope.launch {
+      val previousCapturedAt = uiState.currentLocation?.capturedAt
+
       uiState.locationLoading = true
       uiState.locationError = null
       uiState.locationNotice = "Requesting current location…"
@@ -1389,9 +1391,19 @@ fun ParentDashboardScreen(
               }
 
               else -> {
-                uiState.locationError =
-                  "Location request was sent, but the Child did not confirm it in time."
-                uiState.locationNotice = null
+                val freshLocationReceived =
+                  uiState.currentLocation?.capturedAt
+                    ?.let { it != previousCapturedAt }
+                    ?: false
+
+                if (freshLocationReceived) {
+                  uiState.locationError = null
+                  uiState.locationNotice = "Current location updated."
+                } else {
+                  uiState.locationError =
+                    "Location request was sent, but the Child did not confirm it in time."
+                  uiState.locationNotice = null
+                }
               }
             }
           }
