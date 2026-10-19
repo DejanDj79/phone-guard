@@ -3,6 +3,7 @@ package com.example.phoneguard.remote
 import android.os.Build
 import android.util.Log
 import com.example.phoneguard.core.RemoteCommand
+import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.data.ChildSettingsStore
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -72,12 +73,25 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
         "SYNC_ALLOWED_APPS" -> RemoteCommand.syncAllowedApps()
         "SYNC_DAILY_LIMIT" -> RemoteCommand.syncDailyLimit()
-              "REQUEST_LOCATION" -> RemoteCommand.requestLocation()
+        "REQUEST_LOCATION" -> RemoteCommand.requestLocation()
 
         else -> return
       }
 
-    RemoteCommandExecutor(applicationContext).applyAndAcknowledge(
+    val executor = RemoteCommandExecutor(applicationContext)
+
+    if (command.type == RemoteCommandType.REQUEST_LOCATION) {
+      Thread {
+        executor.applyAndAcknowledge(
+          commandId = commandId,
+          command = command,
+          logTag = TAG,
+        )
+      }.start()
+      return
+    }
+
+    executor.applyAndAcknowledge(
       commandId = commandId,
       command = command,
       logTag = TAG,
