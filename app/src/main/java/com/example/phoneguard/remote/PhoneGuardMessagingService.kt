@@ -72,6 +72,7 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
         "SYNC_ALLOWED_APPS" -> RemoteCommand.syncAllowedApps()
         "SYNC_DAILY_LIMIT" -> RemoteCommand.syncDailyLimit()
+              "REQUEST_LOCATION" -> RemoteCommand.requestLocation()
 
         else -> return
       }
