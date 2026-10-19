@@ -10,6 +10,7 @@ import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.core.RemoteWeeklySchedule
 import com.example.phoneguard.parent.data.AppUsageDay
+import com.example.phoneguard.parent.data.ChildLocation
 import com.example.phoneguard.parent.data.PendingTimeRequest
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
 
@@ -31,6 +32,11 @@ internal class ParentDashboardUiState(
   var pendingCommandFeedback by mutableStateOf<RemoteCommand?>(null)
   var commandError by mutableStateOf<String?>(null)
   var refreshInProgress by mutableStateOf(false)
+
+  var currentLocation by mutableStateOf<ChildLocation?>(null)
+  var locationLoading by mutableStateOf(false)
+  var locationError by mutableStateOf<String?>(null)
+  var locationNotice by mutableStateOf<String?>(null)
 
   var connectionTestInProgress by mutableStateOf(false)
   var connectionTestSucceeded by mutableStateOf<Boolean?>(null)
