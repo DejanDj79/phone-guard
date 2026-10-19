@@ -255,7 +255,6 @@ private fun ChildLocationMap(
 
         map.uiSettings.apply {
           isCompassEnabled = false
-          isZoomControlsEnabled = false
           isAttributionEnabled = true
           isLogoEnabled = true
         }
