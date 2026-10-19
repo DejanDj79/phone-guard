@@ -386,7 +386,7 @@ fun MainScreen(
       text = {
         Text(
           text =
-            "Parent requested this phone's current location. Android requires PhoneGuard Location permission, including Allow all the time, so the request can work while the app is in the background.",
+            "Parent requested this phone's current location. Enable Precise location and Allow all the time for PhoneGuard so the Parent app can show an accurate position while PhoneGuard is in the background.",
           style = MaterialTheme.typography.bodyMedium,
         )
       },
