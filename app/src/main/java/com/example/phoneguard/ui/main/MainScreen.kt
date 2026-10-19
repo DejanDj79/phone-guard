@@ -368,6 +368,8 @@ fun MainScreen(
   }
 
   if (
+    hasParentPin &&
+    !isLocked &&
     locationAccessRequestedByParent &&
     !ChildLocationAccess.hasRequiredLocationAccess(context)
   ) {
