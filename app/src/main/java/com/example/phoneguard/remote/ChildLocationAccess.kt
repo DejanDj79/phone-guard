@@ -10,20 +10,11 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 
 object ChildLocationAccess {
-  fun hasForegroundLocation(context: Context): Boolean {
-    val fineGranted =
-      ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-      ) == PackageManager.PERMISSION_GRANTED
-    val coarseGranted =
-      ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-      ) == PackageManager.PERMISSION_GRANTED
-
-    return fineGranted || coarseGranted
-  }
+  fun hasForegroundLocation(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(
+      context,
+      Manifest.permission.ACCESS_FINE_LOCATION,
+    ) == PackageManager.PERMISSION_GRANTED
 
   fun hasBackgroundLocation(context: Context): Boolean =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
