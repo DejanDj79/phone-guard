@@ -27,7 +27,7 @@ android {
         ?: System.getenv("MAPS_API_KEY")
     val firebaseMapsKey =
       runCatching {
-        Regex("\\"current_key\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
+        Regex("""["]current_key["]\\s*:\\s*["]([^"]+)["]""")
           .find(file("google-services.json").readText())
           ?.groupValues
           ?.getOrNull(1)
