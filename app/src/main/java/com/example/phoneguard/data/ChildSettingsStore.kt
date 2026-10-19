@@ -480,6 +480,7 @@ class ChildSettingsStore(context: Context) {
     preferences
       .edit()
       .putString(KEY_PAIRING_CODE, refreshed.pairingCode)
+      .putBoolean(KEY_LOCATION_ACCESS_REQUESTED_BY_PARENT, false)
       .apply()
 
     return refreshed
