@@ -59,6 +59,7 @@ internal fun ParentDeviceTab(
   val actionsBusy =
     refreshInProgress ||
       commandInProgress ||
+      locationLoading ||
       deviceRenaming ||
       deviceUnpairing
 
