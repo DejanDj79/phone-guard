@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.phoneguard.core.AllowedAppsSnapshot
 import com.example.phoneguard.core.ChildDevice
+import com.example.phoneguard.core.GeofenceZone
 import com.example.phoneguard.core.RemoteCommand
 import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.core.RemoteWeeklySchedule
@@ -38,6 +39,12 @@ internal class ParentDashboardUiState(
   var locationError by mutableStateOf<String?>(null)
   var locationNotice by mutableStateOf<String?>(null)
   var locationPanelVisible by mutableStateOf(true)
+
+  var geofenceZones by mutableStateOf<List<GeofenceZone>>(emptyList())
+  var geofenceLoading by mutableStateOf(false)
+  var geofenceSaving by mutableStateOf(false)
+  var geofenceError by mutableStateOf<String?>(null)
+  var geofenceNotice by mutableStateOf<String?>(null)
 
   var connectionTestInProgress by mutableStateOf(false)
   var connectionTestSucceeded by mutableStateOf<Boolean?>(null)
