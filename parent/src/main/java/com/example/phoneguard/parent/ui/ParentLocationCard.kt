@@ -88,7 +88,7 @@ internal fun ParentLocationScreen(
   geofenceSaving: Boolean,
   geofenceError: String?,
   geofenceNotice: String?,
-  onAddGeofence: (String, Int, Double, Double) -> Unit,
+  onSaveGeofence: (String?, String, Int, Double, Double) -> Unit,
   onDeleteGeofence: (String) -> Unit,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
@@ -107,7 +107,8 @@ internal fun ParentLocationScreen(
   var pickerRadiusMeters by remember { mutableStateOf(100) }
   var showGeofenceNameDialog by remember { mutableStateOf(false) }
   var pendingZoneName by remember { mutableStateOf("") }
-  var pickerSnapToChildRequest by remember { mutableStateOf(0) }
+  var editingZoneId by remember { mutableStateOf<String?>(null) }
+  var pickerRecenterRequest by remember { mutableStateOf(0) }
 
   LaunchedEffect(location?.capturedAt) {
     if (location == null) {
@@ -135,13 +136,18 @@ internal fun ParentLocationScreen(
       ChildLocationMap(
         deviceName = deviceName,
         location = location,
-        geofenceZones = geofenceZones,
+        geofenceZones =
+          if (geofencePickerActive && editingZoneId != null) {
+            geofenceZones.filterNot { it.zoneId == editingZoneId }
+          } else {
+            geofenceZones
+          },
         panelVisible = panelVisible && !geofencePickerActive,
         pickerActive = geofencePickerActive,
         pickerLatitude = pickerLatitude,
         pickerLongitude = pickerLongitude,
         pickerRadiusMeters = pickerRadiusMeters,
-        snapToChildRequest = pickerSnapToChildRequest,
+        recenterRequest = pickerRecenterRequest,
         onPickerCenterChange = { latitude, longitude ->
           pickerLatitude = latitude
           pickerLongitude = longitude
@@ -425,7 +431,12 @@ internal fun ParentLocationScreen(
           verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
           Text(
-            text = "Choose zone location",
+            text =
+              if (editingZoneId == null) {
+                "Choose zone location"
+              } else {
+                "Edit zone location"
+              },
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
           )
@@ -441,7 +452,7 @@ internal fun ParentLocationScreen(
               if (currentLocation != null) {
                 pickerLatitude = currentLocation.latitude
                 pickerLongitude = currentLocation.longitude
-                pickerSnapToChildRequest += 1
+                pickerRecenterRequest += 1
               }
             },
             enabled = !geofenceSaving && location != null,
@@ -468,6 +479,9 @@ internal fun ParentLocationScreen(
                 geofencePickerActive = false
                 pickerLatitude = null
                 pickerLongitude = null
+                editingZoneId = null
+                pendingZoneName = ""
+                showGeofenceManager = true
               },
               enabled = !geofenceSaving,
               modifier = Modifier.weight(1f).heightIn(min = 48.dp),
@@ -478,7 +492,9 @@ internal fun ParentLocationScreen(
 
             OutlinedButton(
               onClick = {
-                pendingZoneName = ""
+                if (editingZoneId == null) {
+                  pendingZoneName = ""
+                }
                 showGeofenceNameDialog = true
               },
               enabled =
@@ -508,12 +524,25 @@ internal fun ParentLocationScreen(
       onStartAdd = {
         val currentLocation = location
         if (currentLocation != null) {
+          editingZoneId = null
+          pendingZoneName = ""
           pickerLatitude = currentLocation.latitude
           pickerLongitude = currentLocation.longitude
           pickerRadiusMeters = 100
           showGeofenceManager = false
           geofencePickerActive = true
+          pickerRecenterRequest += 1
         }
+      },
+      onEdit = { zone ->
+        editingZoneId = zone.zoneId
+        pendingZoneName = zone.name
+        pickerLatitude = zone.latitude
+        pickerLongitude = zone.longitude
+        pickerRadiusMeters = zone.radiusMeters
+        showGeofenceManager = false
+        geofencePickerActive = true
+        pickerRecenterRequest += 1
       },
       onDelete = onDeleteGeofence,
       onDismiss = { showGeofenceManager = false },
@@ -529,7 +558,12 @@ internal fun ParentLocationScreen(
       },
       title = {
         Text(
-          text = "Name location zone",
+          text =
+            if (editingZoneId == null) {
+              "Name location zone"
+            } else {
+              "Edit location zone"
+            },
           fontWeight = FontWeight.Bold,
         )
       },
@@ -552,7 +586,8 @@ internal fun ParentLocationScreen(
             val longitude = pickerLongitude
 
             if (latitude != null && longitude != null) {
-              onAddGeofence(
+              onSaveGeofence(
+                editingZoneId,
                 pendingZoneName.trim(),
                 pickerRadiusMeters,
                 latitude,
@@ -563,6 +598,7 @@ internal fun ParentLocationScreen(
               pendingZoneName = ""
               pickerLatitude = null
               pickerLongitude = null
+              editingZoneId = null
             }
           },
           enabled =
@@ -601,6 +637,7 @@ private fun GeofenceManagerDialog(
   notice: String?,
   currentLocationAvailable: Boolean,
   onStartAdd: () -> Unit,
+  onEdit: (GeofenceZone) -> Unit,
   onDelete: (String) -> Unit,
   onDismiss: () -> Unit,
 ) {
@@ -642,17 +679,16 @@ private fun GeofenceManagerDialog(
               color = MaterialTheme.colorScheme.surfaceVariant,
               border = BorderStroke(1.dp, ParentBorderColor),
             ) {
-              Row(
+              Column(
                 modifier =
                   Modifier.padding(
                     horizontal = 14.dp,
                     vertical = 11.dp,
                   ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
               ) {
                 Column(
-                  modifier = Modifier.weight(1f),
+                  modifier = Modifier.fillMaxWidth(),
                   verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                   Text(
@@ -667,12 +703,27 @@ private fun GeofenceManagerDialog(
                   )
                 }
 
-                OutlinedButton(
-                  onClick = { onDelete(zone.zoneId) },
-                  enabled = !saving,
-                  shape = ParentActionShape,
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                  Text("DELETE")
+                  OutlinedButton(
+                    onClick = { onEdit(zone) },
+                    enabled = !saving,
+                    modifier = Modifier.weight(1f),
+                    shape = ParentActionShape,
+                  ) {
+                    Text("EDIT")
+                  }
+
+                  OutlinedButton(
+                    onClick = { onDelete(zone.zoneId) },
+                    enabled = !saving,
+                    modifier = Modifier.weight(1f),
+                    shape = ParentActionShape,
+                  ) {
+                    Text("DELETE")
+                  }
                 }
               }
             }
@@ -799,7 +850,7 @@ private fun ChildLocationMap(
   pickerLatitude: Double?,
   pickerLongitude: Double?,
   pickerRadiusMeters: Int,
-  snapToChildRequest: Int,
+  recenterRequest: Int,
   onPickerCenterChange: (Double, Double) -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -872,16 +923,20 @@ private fun ChildLocationMap(
   LaunchedEffect(
     mapView,
     pickerActive,
-    snapToChildRequest,
+    recenterRequest,
   ) {
-    if (!pickerActive || snapToChildRequest <= 0) {
+    if (!pickerActive || recenterRequest <= 0) {
       return@LaunchedEffect
     }
+
+    val latitude = pickerLatitude ?: point.latitude
+    val longitude = pickerLongitude ?: point.longitude
+    val target = LatLng(latitude, longitude)
 
     mapView.getMapAsync { map ->
       map.cameraPosition =
         CameraPosition.Builder(map.cameraPosition)
-          .target(point)
+          .target(target)
           .padding(
             0.0,
             0.0,
@@ -891,8 +946,8 @@ private fun ChildLocationMap(
           .build()
 
       onPickerCenterChange(
-        point.latitude,
-        point.longitude,
+        target.latitude,
+        target.longitude,
       )
     }
   }
