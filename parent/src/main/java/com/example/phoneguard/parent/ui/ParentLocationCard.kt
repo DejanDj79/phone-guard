@@ -4,6 +4,7 @@ import android.content.Context
 import android.location.Geocoder
 import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,6 +13,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -49,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.phoneguard.core.GeofenceZone
@@ -74,6 +78,8 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.FillLayer
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -136,9 +142,22 @@ internal fun ParentLocationScreen(
     addressLoading = false
   }
 
-  Box(
+  BoxWithConstraints(
     modifier = modifier.fillMaxSize(),
   ) {
+    val activityPanelVisible =
+      panelVisible && !geofencePickerActive
+    val locationBarBottomPadding by
+      animateDpAsState(
+        targetValue =
+          if (activityPanelVisible) {
+            maxHeight * LOCATION_ACTIVITY_PANEL_FRACTION + 10.dp
+          } else {
+            102.dp
+          },
+        animationSpec = tween(280),
+        label = "locationBarBottomPadding",
+      )
     if (location != null) {
       ChildLocationMap(
         deviceName = deviceName,
@@ -179,63 +198,160 @@ internal fun ParentLocationScreen(
       }
     }
 
-    Surface(
+    Row(
       modifier =
         Modifier
           .align(Alignment.TopStart)
+          .fillMaxWidth()
           .statusBarsPadding()
-          .padding(start = 14.dp, top = 12.dp, end = 76.dp),
-      shape = RoundedCornerShape(14.dp),
-      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-      border = BorderStroke(1.dp, ParentBorderColor),
-      shadowElevation = 6.dp,
-      tonalElevation = 0.dp,
-    ) {
-      Row(
-        modifier =
-          Modifier.padding(
-            horizontal = 11.dp,
-            vertical = 7.dp,
+          .padding(
+            start = 14.dp,
+            top = 12.dp,
+            end = 76.dp,
           ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalAlignment = Alignment.Top,
+    ) {
+      Surface(
+        modifier = Modifier.weight(1f),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        border = BorderStroke(1.dp, ParentBorderColor),
+        shadowElevation = 6.dp,
+        tonalElevation = 0.dp,
       ) {
-        Text(
-          text = deviceName,
-          style = MaterialTheme.typography.bodySmall,
-          fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSurface,
-        )
-
-        Surface(
+        Row(
           modifier =
-            Modifier
-              .height(18.dp)
-              .width(1.dp),
-          color = ParentBorderColor.copy(alpha = 0.65f),
-        ) {}
+            Modifier.padding(
+              horizontal = 11.dp,
+              vertical = 8.dp,
+            ),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            text = deviceName,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
 
-        Icon(
-          painter = painterResource(R.drawable.pg_icon_battery),
-          contentDescription = "Battery",
-          tint = MaterialTheme.colorScheme.onSurface,
-          modifier = Modifier.height(14.dp),
-        )
+          Surface(
+            modifier =
+              Modifier
+                .height(18.dp)
+                .width(1.dp),
+            color = ParentBorderColor.copy(alpha = 0.65f),
+          ) {}
 
-        Text(
-          text =
-            batteryLevelPercent
-              ?.let { it.toString() + "%" }
-              ?: "—",
-          style = MaterialTheme.typography.labelSmall,
-          fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSurface,
-        )
+          Icon(
+            painter = painterResource(R.drawable.pg_icon_battery),
+            contentDescription = "Battery",
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.height(14.dp),
+          )
+
+          Text(
+            text =
+              batteryLevelPercent
+                ?.let { it.toString() + "%" }
+                ?: "—",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
+        }
+      }
+
+      Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        border = BorderStroke(1.dp, ParentBorderColor),
+        shadowElevation = 6.dp,
+        tonalElevation = 0.dp,
+      ) {
+        Row(
+          modifier =
+            Modifier.padding(
+              start = 9.dp,
+              end = 5.dp,
+              top = 4.dp,
+              bottom = 4.dp,
+            ),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(1.dp),
+        ) {
+          Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+          ) {
+            Text(
+              text = "UPDATED",
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+              text =
+                location
+                  ?.capturedAt
+                  ?.let(::formatLocationRefreshTime)
+                  ?: "—",
+              style = MaterialTheme.typography.labelSmall,
+              fontWeight = FontWeight.Bold,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+          }
+
+          IconButton(
+            onClick = onRefresh,
+            enabled = !loading,
+            modifier = Modifier.size(38.dp),
+          ) {
+            if (loading) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(17.dp),
+                strokeWidth = 2.dp,
+                color = ParentAccentColor,
+              )
+            } else {
+              Icon(
+                painter = painterResource(R.drawable.pg_icon_refresh),
+                contentDescription = "Refresh location",
+                tint = ParentAccentColor,
+                modifier = Modifier.size(19.dp),
+              )
+            }
+          }
+
+          IconButton(
+            onClick = { showGeofenceManager = true },
+            enabled = !geofenceLoading,
+            modifier = Modifier.size(38.dp),
+          ) {
+            if (geofenceLoading) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(17.dp),
+                strokeWidth = 2.dp,
+                color = ParentAccentColor,
+              )
+            } else {
+              Icon(
+                painter = painterResource(R.drawable.pg_icon_location),
+                contentDescription = "Location zones",
+                tint = ParentAccentColor,
+                modifier = Modifier.size(19.dp),
+              )
+            }
+          }
+        }
       }
     }
 
     AnimatedVisibility(
-      visible = panelVisible && !geofencePickerActive,
+      visible = activityPanelVisible,
       modifier = Modifier.align(Alignment.BottomCenter),
       enter =
         slideInVertically(
@@ -252,7 +368,7 @@ internal fun ParentLocationScreen(
         modifier =
           Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.56f),
+            .fillMaxHeight(LOCATION_ACTIVITY_PANEL_FRACTION),
         shape =
           RoundedCornerShape(
             topStart = 32.dp,
@@ -275,137 +391,88 @@ internal fun ParentLocationScreen(
               .padding(
                 start = 22.dp,
                 end = 22.dp,
-                top = 12.dp,
+                top = 20.dp,
                 bottom = 102.dp,
               ),
-          verticalArrangement = Arrangement.spacedBy(12.dp),
+          verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-          Surface(
-            modifier =
-              Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(42.dp)
-                .height(4.dp),
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-          ) {}
+          Text(
+            text = "Recent zone activity",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
 
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-          ) {
-            Column(
-              modifier = Modifier.weight(1f),
-              verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-              Text(
-                text = "Current location",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-              )
-
-              Text(
-                text =
-                  when {
-                    location == null -> "No location received yet."
-                    addressLoading -> "Finding street address…"
-                    resolvedAddress != null -> resolvedAddress!!
-                    else -> "Street address unavailable."
-                  },
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-              )
-            }
-
-            if (loading || addressLoading) {
-              CircularProgressIndicator(
-                modifier = Modifier.padding(start = 12.dp),
-                strokeWidth = 2.dp,
-                color = ParentAccentColor,
-              )
-            }
-          }
-
-          if (location != null) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-              LocationInfoPill(
-                label = "UPDATED",
-                value = formatProtectionEventTime(location.capturedAt),
-                modifier = Modifier.weight(1f),
-              )
-              LocationInfoPill(
-                label = "ACCURACY",
-                value =
-                  location.accuracyMeters?.let {
-                    "±" + Math.round(it) + " m"
-                  } ?: "—",
-                modifier = Modifier.weight(1f),
-              )
-            }
-          }
-
-          OutlinedButton(
-            onClick = onRefresh,
-            enabled = !loading,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-            shape = ParentActionShape,
-          ) {
-            Text(if (loading) "LOCATING…" else "REFRESH LOCATION")
-          }
-
-          OutlinedButton(
-            onClick = { showGeofenceManager = true },
-            enabled = !geofenceLoading,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
-            shape = ParentActionShape,
-          ) {
-            Text(
-              if (geofenceLoading) {
-                "LOADING ZONES…"
-              } else {
-                "LOCATION ZONES (" + geofenceZones.size + ")"
-              },
-            )
-          }
-
-          GeofenceActivityPreview(
+          GeofenceActivityTimeline(
             events = geofenceEvents,
             loading = geofenceEventsLoading,
             errorMessage = geofenceEventsError,
           )
+        }
+      }
+    }
 
-
-          notice?.let { message ->
-            Text(
-              text = message,
-              style = MaterialTheme.typography.bodySmall,
-              color = ParentAccentColor,
-            )
-          }
-
-          errorMessage?.let { message ->
-            Text(
-              text = message,
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-
-          Spacer(modifier = Modifier.height(4.dp))
+    if (!geofencePickerActive) {
+      Surface(
+        modifier =
+          Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .padding(
+              start = 16.dp,
+              end = 16.dp,
+              bottom = locationBarBottomPadding,
+            ),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        border = BorderStroke(1.dp, ParentBorderColor),
+        shadowElevation = 8.dp,
+        tonalElevation = 0.dp,
+      ) {
+        Row(
+          modifier =
+            Modifier.padding(
+              horizontal = 14.dp,
+              vertical = 11.dp,
+            ),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+          Text(
+            text =
+              when {
+                location == null -> "Location unavailable"
+                addressLoading -> "Finding street address…"
+                resolvedAddress != null -> resolvedAddress!!
+                else -> "Street address unavailable"
+              },
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color =
+              if (errorMessage != null && location == null) {
+                MaterialTheme.colorScheme.error
+              } else {
+                MaterialTheme.colorScheme.onSurface
+              },
+          )
 
           Text(
-            text = "Map © OpenStreetMap contributors · OpenFreeMap",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            text =
+              location
+                ?.accuracyMeters
+                ?.let { "±" + Math.round(it) + " m" }
+                ?: "—",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
       }
     }
+
     if (geofencePickerActive) {
       Surface(
         modifier =
@@ -652,108 +719,112 @@ internal fun ParentLocationScreen(
 }
 
 @Composable
-private fun GeofenceActivityPreview(
+private fun GeofenceActivityTimeline(
   events: List<GeofenceEvent>,
   loading: Boolean,
   errorMessage: String?,
 ) {
-  Column(
-    modifier = Modifier.fillMaxWidth(),
-    verticalArrangement = Arrangement.spacedBy(8.dp),
-  ) {
-    Text(
-      text = "Recent zone activity",
-      style = MaterialTheme.typography.labelLarge,
-      fontWeight = FontWeight.Bold,
-      color = MaterialTheme.colorScheme.onSurface,
-    )
-
-    when {
-      loading && events.isEmpty() -> {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-          CircularProgressIndicator(
-            modifier = Modifier.size(18.dp),
-            strokeWidth = 2.dp,
-            color = ParentAccentColor,
-          )
-          Text(
-            text = "Loading zone activity…",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-        }
-      }
-
-      errorMessage != null && events.isEmpty() -> {
-        Text(
-          text = errorMessage,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.error,
+  when {
+    loading && events.isEmpty() -> {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        CircularProgressIndicator(
+          modifier = Modifier.size(18.dp),
+          strokeWidth = 2.dp,
+          color = ParentAccentColor,
         )
-      }
-
-      events.isEmpty() -> {
         Text(
-          text = "No zone activity yet.",
+          text = "Loading zone activity…",
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       }
+    }
 
-      else -> {
-        events.take(3).forEach { event ->
-          Surface(
+    errorMessage != null && events.isEmpty() -> {
+      Text(
+        text = errorMessage,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.error,
+      )
+    }
+
+    events.isEmpty() -> {
+      Text(
+        text = "No zone activity yet.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+
+    else -> {
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        events.forEachIndexed { index, event ->
+          Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
-            border = BorderStroke(1.dp, ParentBorderColor.copy(alpha = 0.75f)),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
           ) {
-            Row(
+            Box(
               modifier =
-                Modifier.padding(
-                  horizontal = 12.dp,
-                  vertical = 9.dp,
-                ),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(10.dp),
+                Modifier
+                  .width(18.dp)
+                  .height(62.dp),
+            ) {
+              if (index < events.lastIndex) {
+                Surface(
+                  modifier =
+                    Modifier
+                      .align(Alignment.TopCenter)
+                      .padding(top = 10.dp)
+                      .width(2.dp)
+                      .height(52.dp),
+                  color = ParentBorderColor.copy(alpha = 0.85f),
+                ) {}
+              }
+
+              Surface(
+                modifier =
+                  Modifier
+                    .align(Alignment.TopCenter)
+                    .size(10.dp),
+                shape = CircleShape,
+                color = ParentAccentColor,
+                border =
+                  BorderStroke(
+                    2.dp,
+                    MaterialTheme.colorScheme.surface,
+                  ),
+              ) {}
+            }
+
+            Column(
+              modifier =
+                Modifier
+                  .weight(1f)
+                  .padding(bottom = 14.dp),
+              verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
               Text(
                 text =
                   if (event.eventType == "ENTER") {
-                    "↳"
+                    "Arrived at " + event.zoneName
                   } else {
-                    "↰"
+                    "Left " + event.zoneName
                   },
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = ParentAccentColor,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
               )
-
-              Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-              ) {
-                Text(
-                  text =
-                    if (event.eventType == "ENTER") {
-                      "Arrived at " + event.zoneName
-                    } else {
-                      "Left " + event.zoneName
-                    },
-                  style = MaterialTheme.typography.bodyMedium,
-                  fontWeight = FontWeight.SemiBold,
-                  color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                  text = formatProtectionEventTime(event.occurredAt),
-                  style = MaterialTheme.typography.labelSmall,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-              }
+              Text(
+                text = formatProtectionEventTime(event.occurredAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
             }
           }
         }
@@ -979,37 +1050,6 @@ private fun RadiusChoiceRow(
 }
 
 @Composable
-private fun LocationInfoPill(
-  label: String,
-  value: String,
-  modifier: Modifier = Modifier,
-) {
-  Surface(
-    modifier = modifier,
-    shape = RoundedCornerShape(16.dp),
-    color = MaterialTheme.colorScheme.surfaceVariant,
-    border = BorderStroke(1.dp, ParentBorderColor),
-  ) {
-    Column(
-      modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-      verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-      Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-      Text(
-        text = value,
-        style = MaterialTheme.typography.bodyMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurface,
-      )
-    }
-  }
-}
-
-@Composable
 private fun ChildLocationMap(
   deviceName: String,
   location: ChildLocation,
@@ -1197,7 +1237,7 @@ private fun ChildLocationMap(
           } else {
             val bottomPadding =
               if (panelVisible) {
-                mapView.height * 0.56
+                mapView.height * LOCATION_MAP_BOTTOM_PADDING_FRACTION
               } else {
                 0.0
               }
@@ -1431,6 +1471,39 @@ private fun geofenceCircleFeature(
     )
 }
 
+private fun formatLocationRefreshTime(
+  rawTimestamp: String,
+): String {
+  val parsers =
+    listOf(
+      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+      "yyyy-MM-dd'T'HH:mm:ssXXX",
+      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+      "yyyy-MM-dd'T'HH:mm:ss'Z'",
+    )
+
+  val parsed =
+    parsers.firstNotNullOfOrNull { pattern ->
+      runCatching {
+        SimpleDateFormat(
+          pattern,
+          Locale.US,
+        ).apply {
+          isLenient = false
+        }.parse(rawTimestamp)
+      }.getOrNull()
+    }
+
+  return parsed
+    ?.let {
+      SimpleDateFormat(
+        "HH:mm",
+        Locale.getDefault(),
+      ).format(it)
+    }
+    ?: "—"
+}
+
 @Suppress("DEPRECATION")
 private fun resolveStreetAddress(
   context: Context,
@@ -1447,31 +1520,19 @@ private fun resolveStreetAddress(
     }.getOrNull()
       ?: return null
 
-  address.getAddressLine(0)
-    ?.trim()
-    ?.takeIf(String::isNotBlank)
-    ?.let { return it }
-
   val street =
-    listOfNotNull(
-      address.thoroughfare?.trim()?.takeIf(String::isNotBlank),
-      address.subThoroughfare?.trim()?.takeIf(String::isNotBlank),
-    )
-      .distinct()
-      .joinToString(" ")
+    address.thoroughfare
+      ?.trim()
+      ?.takeIf(String::isNotBlank)
 
-  val locality =
-    listOfNotNull(
-      address.postalCode?.trim()?.takeIf(String::isNotBlank),
-      address.locality?.trim()?.takeIf(String::isNotBlank),
-      address.adminArea?.trim()?.takeIf(String::isNotBlank),
-    )
-      .distinct()
-      .joinToString(", ")
+  val number =
+    address.subThoroughfare
+      ?.trim()
+      ?.takeIf(String::isNotBlank)
 
-  return listOf(street, locality)
-    .filter(String::isNotBlank)
-    .joinToString(", ")
+  return listOfNotNull(street, number)
+    .distinct()
+    .joinToString(" ")
     .takeIf(String::isNotBlank)
 }
 
