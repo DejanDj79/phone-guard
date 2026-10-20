@@ -30,7 +30,7 @@ class ScheduleRestoreReceiver : BroadcastReceiver() {
     val pendingResult = goAsync()
     Thread {
       try {
-        RemoteGeofenceSyncer(context.applicationContext).sync()
+        RemoteGeofenceSyncer(context.applicationContext).sync(force = true)
         ChildHeartbeatSender(context.applicationContext).send()
       } finally {
         pendingResult.finish()
