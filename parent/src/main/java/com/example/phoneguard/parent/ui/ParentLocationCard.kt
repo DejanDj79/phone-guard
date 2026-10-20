@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -60,7 +59,6 @@ internal fun ParentLocationScreen(
   errorMessage: String?,
   notice: String?,
   panelVisible: Boolean,
-  onPanelVisibleChange: (Boolean) -> Unit,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -154,7 +152,7 @@ internal fun ParentLocationScreen(
         Icon(
           painter = painterResource(R.drawable.pg_icon_battery),
           contentDescription = "Battery",
-          tint = ParentHeaderIconColor,
+          tint = MaterialTheme.colorScheme.onSurface,
           modifier = Modifier.height(14.dp),
         )
 
@@ -250,16 +248,6 @@ internal fun ParentLocationScreen(
             )
           }
 
-          IconButton(
-            onClick = { onPanelVisibleChange(false) },
-            modifier = Modifier.padding(start = 4.dp),
-          ) {
-            Icon(
-              painter = painterResource(R.drawable.pg_icon_close),
-              contentDescription = "Close location details",
-              tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          }
         }
 
         if (location != null) {
