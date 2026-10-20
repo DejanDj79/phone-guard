@@ -132,6 +132,7 @@ fun ParentDashboardScreen(
     uiState.locationLoading = false
     uiState.locationError = null
     uiState.locationNotice = null
+    uiState.locationPanelVisible = true
     uiState.showDeviceManagement = false
     uiState.deviceManagementError = null
     uiState.pendingTimeRequest = null
@@ -205,6 +206,7 @@ fun ParentDashboardScreen(
     uiState.locationLoading = false
     uiState.locationError = null
     uiState.locationNotice = null
+    uiState.locationPanelVisible = true
     ParentPushRegistrar(context.applicationContext)
       .registerCurrentToken()
     uiState.showPairDevice = false
@@ -281,6 +283,7 @@ fun ParentDashboardScreen(
           uiState.locationLoading = false
           uiState.locationError = null
           uiState.locationNotice = null
+          uiState.locationPanelVisible = true
           uiState.showDeviceManagement = false
           uiState.deviceManagementError = null
           uiState.pendingTimeRequest = null
@@ -1459,7 +1462,19 @@ fun ParentDashboardScreen(
     connectionTestSucceeded = uiState.connectionTestSucceeded,
     onTestConnection = { testConnection() },
     onChangeDevice = { uiState.showDevices = true },
-    onSectionSelected = { uiState.selectedTab = it },
+    onSectionSelected = { section ->
+      if (
+        section == PARENT_LOCATION_SECTION &&
+        uiState.selectedTab == PARENT_LOCATION_SECTION
+      ) {
+        uiState.locationPanelVisible = true
+      } else {
+        uiState.selectedTab = section
+        if (section == PARENT_LOCATION_SECTION) {
+          uiState.locationPanelVisible = true
+        }
+      }
+    },
     onSignOut = {
       scope.launch {
         runCatching {
@@ -1477,10 +1492,13 @@ fun ParentDashboardScreen(
     if (uiState.selectedTab == PARENT_LOCATION_SECTION) {
       ParentLocationScreen(
         deviceName = device.displayName,
+        batteryLevelPercent = device.batteryLevelPercent,
         location = uiState.currentLocation,
         loading = uiState.locationLoading,
         errorMessage = uiState.locationError,
         notice = uiState.locationNotice,
+        panelVisible = uiState.locationPanelVisible,
+        onPanelVisibleChange = { uiState.locationPanelVisible = it },
         onRefresh = { requestCurrentLocation() },
         modifier = Modifier.fillMaxSize(),
       )
