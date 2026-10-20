@@ -438,7 +438,7 @@ private fun ParentFloatingBottomNavigation(
               )
               cubicTo(
                 centerX + notchControl,
-                0f,
+                notchTop,
                 centerX + notchControl,
                 shoulderY,
                 centerX + notchHalf,
@@ -464,7 +464,7 @@ private fun ParentFloatingBottomNavigation(
               )
               cubicTo(
                 centerX + notchControl,
-                0f,
+                notchTop,
                 centerX + notchControl,
                 shoulderY,
                 centerX + notchHalf,
