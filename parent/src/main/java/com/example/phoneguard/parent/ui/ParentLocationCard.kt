@@ -20,9 +20,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -56,6 +58,7 @@ import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import kotlin.math.sin
@@ -84,7 +87,7 @@ internal fun ParentLocationScreen(
   geofenceSaving: Boolean,
   geofenceError: String?,
   geofenceNotice: String?,
-  onAddGeofence: (String, Int) -> Unit,
+  onAddGeofence: (String, Int, Double, Double) -> Unit,
   onDeleteGeofence: (String) -> Unit,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
@@ -97,6 +100,12 @@ internal fun ParentLocationScreen(
     mutableStateOf(location != null)
   }
   var showGeofenceManager by remember { mutableStateOf(false) }
+  var geofencePickerActive by remember { mutableStateOf(false) }
+  var pickerLatitude by remember { mutableStateOf<Double?>(null) }
+  var pickerLongitude by remember { mutableStateOf<Double?>(null) }
+  var pickerRadiusMeters by remember { mutableStateOf(100) }
+  var showGeofenceNameDialog by remember { mutableStateOf(false) }
+  var pendingZoneName by remember { mutableStateOf("") }
 
   LaunchedEffect(location?.capturedAt) {
     if (location == null) {
@@ -125,7 +134,15 @@ internal fun ParentLocationScreen(
         deviceName = deviceName,
         location = location,
         geofenceZones = geofenceZones,
-        panelVisible = panelVisible,
+        panelVisible = panelVisible && !geofencePickerActive,
+        pickerActive = geofencePickerActive,
+        pickerLatitude = pickerLatitude,
+        pickerLongitude = pickerLongitude,
+        pickerRadiusMeters = pickerRadiusMeters,
+        onPickerCenterChange = { latitude, longitude ->
+          pickerLatitude = latitude
+          pickerLongitude = longitude
+        },
         modifier = Modifier.fillMaxSize(),
       )
     } else {
@@ -199,7 +216,7 @@ internal fun ParentLocationScreen(
     }
 
     AnimatedVisibility(
-      visible = panelVisible,
+      visible = panelVisible && !geofencePickerActive,
       modifier = Modifier.align(Alignment.BottomCenter),
       enter =
         slideInVertically(
@@ -363,6 +380,101 @@ internal fun ParentLocationScreen(
         }
       }
     }
+    if (geofencePickerActive) {
+      Surface(
+        modifier =
+          Modifier
+            .align(Alignment.Center)
+            .size(36.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+        border = BorderStroke(2.dp, ParentAccentColor),
+        shadowElevation = 8.dp,
+        tonalElevation = 0.dp,
+      ) {
+        Box(contentAlignment = Alignment.Center) {
+          Surface(
+            modifier = Modifier.size(8.dp),
+            shape = CircleShape,
+            color = ParentAccentColor,
+          ) {}
+        }
+      }
+
+      Surface(
+        modifier =
+          Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .padding(
+              start = 16.dp,
+              end = 16.dp,
+              bottom = 104.dp,
+            ),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
+        border = BorderStroke(1.dp, ParentBorderColor),
+        shadowElevation = 12.dp,
+        tonalElevation = 0.dp,
+      ) {
+        Column(
+          modifier = Modifier.padding(16.dp),
+          verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+          Text(
+            text = "Choose zone location",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            text = "Move the map until the target is centered on the place you want to use.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          RadiusChoiceRow(
+            values = listOf(50, 100, 200),
+            selected = pickerRadiusMeters,
+            enabled = !geofenceSaving,
+            onSelected = { pickerRadiusMeters = it },
+          )
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+          ) {
+            OutlinedButton(
+              onClick = {
+                geofencePickerActive = false
+                pickerLatitude = null
+                pickerLongitude = null
+              },
+              enabled = !geofenceSaving,
+              modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+              shape = ParentActionShape,
+            ) {
+              Text("CANCEL")
+            }
+
+            OutlinedButton(
+              onClick = {
+                pendingZoneName = ""
+                showGeofenceNameDialog = true
+              },
+              enabled =
+                !geofenceSaving &&
+                  pickerLatitude != null &&
+                  pickerLongitude != null,
+              modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+              shape = ParentActionShape,
+              border = BorderStroke(1.dp, ParentAccentColor),
+            ) {
+              Text("NEXT")
+            }
+          }
+        }
+      }
+    }
   }
 
   if (showGeofenceManager) {
@@ -373,9 +485,89 @@ internal fun ParentLocationScreen(
       errorMessage = geofenceError,
       notice = geofenceNotice,
       currentLocationAvailable = location != null,
-      onAdd = onAddGeofence,
+      onStartAdd = {
+        val currentLocation = location
+        if (currentLocation != null) {
+          pickerLatitude = currentLocation.latitude
+          pickerLongitude = currentLocation.longitude
+          pickerRadiusMeters = 100
+          showGeofenceManager = false
+          geofencePickerActive = true
+        }
+      },
       onDelete = onDeleteGeofence,
       onDismiss = { showGeofenceManager = false },
+    )
+  }
+
+  if (showGeofenceNameDialog) {
+    AlertDialog(
+      onDismissRequest = {
+        if (!geofenceSaving) {
+          showGeofenceNameDialog = false
+        }
+      },
+      title = {
+        Text(
+          text = "Name location zone",
+          fontWeight = FontWeight.Bold,
+        )
+      },
+      text = {
+        OutlinedTextField(
+          value = pendingZoneName,
+          onValueChange = { pendingZoneName = it.take(60) },
+          label = { Text("Zone name") },
+          placeholder = { Text("Home, School…") },
+          singleLine = true,
+          enabled = !geofenceSaving,
+          modifier = Modifier.fillMaxWidth(),
+          shape = ParentActionShape,
+        )
+      },
+      confirmButton = {
+        OutlinedButton(
+          onClick = {
+            val latitude = pickerLatitude
+            val longitude = pickerLongitude
+
+            if (latitude != null && longitude != null) {
+              onAddGeofence(
+                pendingZoneName.trim(),
+                pickerRadiusMeters,
+                latitude,
+                longitude,
+              )
+              showGeofenceNameDialog = false
+              geofencePickerActive = false
+              pendingZoneName = ""
+              pickerLatitude = null
+              pickerLongitude = null
+            }
+          },
+          enabled =
+            !geofenceSaving &&
+              pendingZoneName.trim().isNotEmpty() &&
+              pickerLatitude != null &&
+              pickerLongitude != null,
+          shape = ParentActionShape,
+        ) {
+          Text(if (geofenceSaving) "SAVING…" else "SAVE")
+        }
+      },
+      dismissButton = {
+        OutlinedButton(
+          onClick = {
+            if (!geofenceSaving) {
+              showGeofenceNameDialog = false
+            }
+          },
+          enabled = !geofenceSaving,
+          shape = ParentActionShape,
+        ) {
+          Text("BACK")
+        }
+      },
     )
   }
 }
