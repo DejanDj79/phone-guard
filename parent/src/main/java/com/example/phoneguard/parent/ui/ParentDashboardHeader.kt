@@ -418,26 +418,28 @@ private fun ParentFloatingBottomNavigation(
       modifier
         .height(92.dp)
         .drawBehind {
-          val shoulderY = 24.dp.toPx()
+          val shoulderY = 30.dp.toPx()
           val centerX = size.width / 2f
-          val notchHalf = 50.dp.toPx()
+          val notchHalf = 48.dp.toPx()
+          val notchTop = 2.dp.toPx()
+          val notchControl = 31.dp.toPx()
 
           val backgroundPath =
             Path().apply {
               moveTo(0f, shoulderY)
               lineTo(centerX - notchHalf, shoulderY)
               cubicTo(
-                centerX - 30.dp.toPx(),
+                centerX - notchControl,
                 shoulderY,
-                centerX - 30.dp.toPx(),
-                0f,
+                centerX - notchControl,
+                notchTop,
                 centerX,
-                0f,
+                notchTop,
               )
               cubicTo(
-                centerX + 30.dp.toPx(),
+                centerX + notchControl,
                 0f,
-                centerX + 30.dp.toPx(),
+                centerX + notchControl,
                 shoulderY,
                 centerX + notchHalf,
                 shoulderY,
@@ -453,17 +455,17 @@ private fun ParentFloatingBottomNavigation(
               moveTo(0f, shoulderY)
               lineTo(centerX - notchHalf, shoulderY)
               cubicTo(
-                centerX - 30.dp.toPx(),
+                centerX - notchControl,
                 shoulderY,
-                centerX - 30.dp.toPx(),
-                0f,
+                centerX - notchControl,
+                notchTop,
                 centerX,
-                0f,
+                notchTop,
               )
               cubicTo(
-                centerX + 30.dp.toPx(),
+                centerX + notchControl,
                 0f,
-                centerX + 30.dp.toPx(),
+                centerX + notchControl,
                 shoulderY,
                 centerX + notchHalf,
                 shoulderY,
@@ -507,44 +509,24 @@ private fun ParentFloatingBottomNavigation(
           modifier =
             Modifier
               .weight(1f)
-              .offset(y = if (isLocation) (-17).dp else 0.dp)
+              .offset(y = if (isLocation) (-12).dp else 0.dp)
               .clickable { onSectionSelected(index) }
               .padding(vertical = 3.dp),
           horizontalAlignment = Alignment.CenterHorizontally,
           verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
           if (isLocation) {
-            Surface(
-              modifier = Modifier.size(52.dp),
-              shape = CircleShape,
-              color =
+            Icon(
+              painter = painterResource(section.iconRes),
+              contentDescription = section.label,
+              tint =
                 if (selected) {
                   ParentAccentColor
                 } else {
-                  MaterialTheme.colorScheme.surface
+                  MaterialTheme.colorScheme.onSurface
                 },
-              border =
-                BorderStroke(
-                  1.dp,
-                  if (selected) ParentAccentColor else ParentBorderColor,
-                ),
-              shadowElevation = 8.dp,
-              tonalElevation = 0.dp,
-            ) {
-              Box(contentAlignment = Alignment.Center) {
-                Icon(
-                  painter = painterResource(section.iconRes),
-                  contentDescription = section.label,
-                  tint =
-                    if (selected) {
-                      ParentGradientEdge
-                    } else {
-                      MaterialTheme.colorScheme.onSurface
-                    },
-                  modifier = Modifier.size(24.dp),
-                )
-              }
-            }
+              modifier = Modifier.size(25.dp),
+            )
           } else {
             Icon(
               painter = painterResource(section.iconRes),
