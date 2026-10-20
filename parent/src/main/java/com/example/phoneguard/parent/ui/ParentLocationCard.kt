@@ -49,6 +49,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -210,14 +211,14 @@ internal fun ParentLocationScreen(
             top = 12.dp,
           ),
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-      // Keep both header cards in the same row so they share a top edge and height.
-      // The device name can shrink, while the refresh actions retain their full width.
+      // Both cards wrap their content. Weight with fill=false only limits
+      // the device card on small screens; it never stretches a short name.
       Surface(
         modifier =
           Modifier
-            .weight(1f)
+            .weight(1f, fill = false)
             .height(LOCATION_TOP_CARD_HEIGHT),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
@@ -228,33 +229,25 @@ internal fun ParentLocationScreen(
         Row(
           modifier =
             Modifier
-              .fillMaxSize()
+              .fillMaxHeight()
               .padding(horizontal = 10.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
           Text(
             text = deviceName,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f, fill = false),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = Color.White,
           )
-
-          Surface(
-            modifier =
-              Modifier
-                .height(18.dp)
-                .width(1.dp),
-            color = ParentBorderColor.copy(alpha = 0.65f),
-          ) {}
 
           Icon(
             painter = painterResource(R.drawable.pg_icon_battery),
             contentDescription = "Battery",
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = Color.White,
             modifier = Modifier.size(14.dp),
           )
 
@@ -265,13 +258,16 @@ internal fun ParentLocationScreen(
                 ?: "—",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = Color.White,
           )
         }
       }
 
       Surface(
-        modifier = Modifier.height(LOCATION_TOP_CARD_HEIGHT),
+        modifier =
+          Modifier
+            .padding(start = 8.dp)
+            .height(LOCATION_TOP_CARD_HEIGHT),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
         border = BorderStroke(1.dp, ParentBorderColor),
@@ -297,7 +293,7 @@ internal fun ParentLocationScreen(
                 ?: "—",
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = Color.White,
           )
 
           IconButton(
@@ -309,13 +305,13 @@ internal fun ParentLocationScreen(
               CircularProgressIndicator(
                 modifier = Modifier.size(16.dp),
                 strokeWidth = 2.dp,
-                color = ParentAccentColor,
+                color = Color.White,
               )
             } else {
               Icon(
                 painter = painterResource(R.drawable.pg_icon_refresh),
                 contentDescription = "Refresh location",
-                tint = ParentAccentColor,
+                tint = Color.White,
                 modifier = Modifier.size(18.dp),
               )
             }
@@ -330,13 +326,13 @@ internal fun ParentLocationScreen(
               CircularProgressIndicator(
                 modifier = Modifier.size(16.dp),
                 strokeWidth = 2.dp,
-                color = ParentAccentColor,
+                color = Color.White,
               )
             } else {
               Icon(
                 painter = painterResource(R.drawable.pg_icon_location),
                 contentDescription = "Location zones",
-                tint = ParentAccentColor,
+                tint = Color.White,
                 modifier = Modifier.size(18.dp),
               )
             }
