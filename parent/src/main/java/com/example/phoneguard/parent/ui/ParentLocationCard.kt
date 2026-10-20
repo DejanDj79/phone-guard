@@ -115,6 +115,7 @@ internal fun ParentLocationScreen(
         deviceName = deviceName,
         location = location,
         geofenceZones = geofenceZones,
+        panelVisible = panelVisible,
         modifier = Modifier.fillMaxSize(),
       )
     } else {
@@ -646,6 +647,7 @@ private fun ChildLocationMap(
   deviceName: String,
   location: ChildLocation,
   geofenceZones: List<GeofenceZone>,
+  panelVisible: Boolean,
   modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
@@ -681,6 +683,7 @@ private fun ChildLocationMap(
     location.longitude,
     deviceName,
     geofenceZones,
+    panelVisible,
   ) {
     mapView.getMapAsync { map ->
       val showLocation = {
@@ -707,11 +710,26 @@ private fun ChildLocationMap(
           )
         }
 
-        map.cameraPosition =
-          CameraPosition.Builder()
-            .target(point)
-            .zoom(16.5)
-            .build()
+        mapView.post {
+          val bottomPadding =
+            if (panelVisible) {
+              mapView.height * 0.56
+            } else {
+              0.0
+            }
+
+          map.cameraPosition =
+            CameraPosition.Builder()
+              .target(point)
+              .zoom(16.5)
+              .padding(
+                0.0,
+                0.0,
+                0.0,
+                bottomPadding,
+              )
+              .build()
+        }
 
         map.uiSettings.apply {
           isCompassEnabled = false
