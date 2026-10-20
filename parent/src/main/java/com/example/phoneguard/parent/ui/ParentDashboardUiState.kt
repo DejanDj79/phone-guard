@@ -23,7 +23,7 @@ internal class ParentDashboardUiState(
   var pairedDevices by mutableStateOf(initialPairedDevices)
   var showPairDevice by mutableStateOf(initialPairedDevice == null)
   var showDevices by mutableStateOf(false)
-  var selectedTab by mutableStateOf(0)
+  var selectedTab by mutableStateOf(PARENT_LOCATION_SECTION)
 
   var commandInProgress by mutableStateOf(false)
   var activeCommandType by mutableStateOf<RemoteCommandType?>(null)
