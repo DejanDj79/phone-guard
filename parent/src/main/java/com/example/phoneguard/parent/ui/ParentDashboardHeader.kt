@@ -324,6 +324,7 @@ internal fun ParentDashboardShell(
             )
           }
         }
+        }
       },
     ) {
       Box(
@@ -400,8 +401,7 @@ internal fun ParentDashboardShell(
         modifier =
           Modifier
             .align(Alignment.BottomCenter)
-            .fillMaxWidth()
-            .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
+            .fillMaxWidth(),
       )
     }
   }
