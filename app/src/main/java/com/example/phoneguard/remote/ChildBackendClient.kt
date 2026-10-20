@@ -1089,6 +1089,10 @@ class ChildBackendClient {
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/heartbeat"
     const val REPORT_LOCATION_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/report-location"
+    const val SYNC_GEOFENCES_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/sync-geofences"
+    const val REPORT_GEOFENCE_EVENT_URL =
+      "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/report-geofence-event"
     const val REQUEST_MORE_TIME_URL =
       "https://lpcytegfsslhugeiefdu.supabase.co/functions/v1/request-more-time"
     const val GET_SCHEDULE_URL =
