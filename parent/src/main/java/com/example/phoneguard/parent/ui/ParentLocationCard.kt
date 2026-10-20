@@ -7,10 +7,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,22 +39,23 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.example.phoneguard.parent.data.ChildLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Locale
 import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import java.util.Locale
 
 @Composable
-internal fun ParentLocationCard(
+internal fun ParentLocationScreen(
   deviceName: String,
   location: ChildLocation?,
   loading: Boolean,
   errorMessage: String?,
   notice: String?,
   onRefresh: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
   var resolvedAddress by remember(location?.capturedAt) {
@@ -78,122 +84,217 @@ internal fun ParentLocationCard(
     addressLoading = false
   }
 
-  Surface(
-    modifier = Modifier.fillMaxWidth(),
-    shape = RoundedCornerShape(24.dp),
-    color = MaterialTheme.colorScheme.surface,
-    border = BorderStroke(1.dp, ParentBorderColor),
+  Box(
+    modifier = modifier.fillMaxSize(),
   ) {
-    Column(
-      modifier = Modifier.padding(18.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+    if (location != null) {
+      ChildLocationMap(
+        deviceName = deviceName,
+        location = location,
+        modifier = Modifier.fillMaxSize(),
+      )
+    } else {
+      Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = ParentGradientEdge,
       ) {
-        Column(
-          modifier = Modifier.weight(1f),
-          verticalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
+        Box(contentAlignment = Alignment.Center) {
           Text(
-            text = "Location",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            text = "Refresh to locate this Child phone.",
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
-          )
-
-          Text(
-            text =
-              when {
-                location == null -> "No location received yet."
-                addressLoading -> "Finding street address…"
-                resolvedAddress != null -> resolvedAddress!!
-                else -> "Street address unavailable."
-              },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-          )
-        }
-
-        if (loading || addressLoading) {
-          CircularProgressIndicator(
-            modifier = Modifier.padding(start = 12.dp),
-            strokeWidth = 2.dp,
-            color = ParentAccentColor,
           )
         }
       }
+    }
 
-      if (location != null) {
-        ChildLocationMap(
-          deviceName = deviceName,
-          location = location,
-        )
+    Column(
+      modifier =
+        Modifier
+          .align(Alignment.TopStart)
+          .statusBarsPadding()
+          .padding(start = 20.dp, top = 16.dp, end = 76.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      Text(
+        text = deviceName,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF253044),
+      )
+      Text(
+        text = "CURRENT LOCATION",
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF253044).copy(alpha = 0.76f),
+      )
+    }
 
-        Text(
-          text =
-            buildString {
-              append("Updated ")
-              append(formatProtectionEventTime(location.capturedAt))
-              location.accuracyMeters?.let {
-                append(" · Accuracy ±")
-                append(Math.round(it))
-                append(" m")
-              }
-            },
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      } else {
+    Surface(
+      modifier =
+        Modifier
+          .align(Alignment.BottomCenter)
+          .fillMaxWidth()
+          .fillMaxHeight(0.43f),
+      shape =
+        RoundedCornerShape(
+          topStart = 32.dp,
+          topEnd = 32.dp,
+        ),
+      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+      shadowElevation = 18.dp,
+      tonalElevation = 0.dp,
+      border =
+        BorderStroke(
+          width = 1.dp,
+          color = ParentBorderColor,
+        ),
+    ) {
+      Column(
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .padding(
+              start = 22.dp,
+              end = 22.dp,
+              top = 12.dp,
+              bottom = 102.dp,
+            ),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
         Surface(
           modifier =
             Modifier
-              .fillMaxWidth()
-              .height(150.dp),
-          shape = RoundedCornerShape(18.dp),
-          color = MaterialTheme.colorScheme.surfaceVariant,
-          border = BorderStroke(1.dp, ParentBorderColor),
+              .align(Alignment.CenterHorizontally)
+              .width(42.dp)
+              .height(4.dp),
+          shape = RoundedCornerShape(50),
+          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+        ) {}
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
         ) {
-          Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center,
+          Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
           ) {
             Text(
-              text = "Refresh to get the Child phone's current location.",
-              modifier = Modifier.padding(20.dp),
-              style = MaterialTheme.typography.bodyMedium,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              text = "Current location",
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.Bold,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            Text(
+              text =
+                when {
+                  location == null -> "No location received yet."
+                  addressLoading -> "Finding street address…"
+                  resolvedAddress != null -> resolvedAddress!!
+                  else -> "Street address unavailable."
+                },
+              style = MaterialTheme.typography.bodyLarge,
+              fontWeight = FontWeight.SemiBold,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+          }
+
+          if (loading || addressLoading) {
+            CircularProgressIndicator(
+              modifier = Modifier.padding(start = 12.dp),
+              strokeWidth = 2.dp,
+              color = ParentAccentColor,
             )
           }
         }
-      }
 
-      OutlinedButton(
-        onClick = onRefresh,
-        enabled = !loading,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-        shape = ParentActionShape,
-      ) {
-        Text(if (loading) "LOCATING…" else "REFRESH LOCATION")
-      }
+        if (location != null) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+          ) {
+            LocationInfoPill(
+              label = "UPDATED",
+              value = formatProtectionEventTime(location.capturedAt),
+              modifier = Modifier.weight(1f),
+            )
+            LocationInfoPill(
+              label = "ACCURACY",
+              value =
+                location.accuracyMeters?.let {
+                  "±" + Math.round(it) + " m"
+                } ?: "—",
+              modifier = Modifier.weight(1f),
+            )
+          }
+        }
 
-      notice?.let { message ->
+        OutlinedButton(
+          onClick = onRefresh,
+          enabled = !loading,
+          modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+          shape = ParentActionShape,
+        ) {
+          Text(if (loading) "LOCATING…" else "REFRESH LOCATION")
+        }
+
+        notice?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = ParentAccentColor,
+          )
+        }
+
+        errorMessage?.let { message ->
+          Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+          )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
         Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = ParentAccentColor,
+          text = "Map © OpenStreetMap contributors · OpenFreeMap",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
         )
       }
+    }
+  }
+}
 
-      errorMessage?.let { message ->
-        Text(
-          text = message,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.error,
-        )
-      }
+@Composable
+private fun LocationInfoPill(
+  label: String,
+  value: String,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier = modifier,
+    shape = RoundedCornerShape(16.dp),
+    color = MaterialTheme.colorScheme.surfaceVariant,
+    border = BorderStroke(1.dp, ParentBorderColor),
+  ) {
+    Column(
+      modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+      verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Text(
+        text = value,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface,
+      )
     }
   }
 }
@@ -202,6 +303,7 @@ internal fun ParentLocationCard(
 private fun ChildLocationMap(
   deviceName: String,
   location: ChildLocation,
+  modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
   val point =
@@ -273,11 +375,7 @@ private fun ChildLocationMap(
   }
 
   AndroidView(
-    modifier =
-      Modifier
-        .fillMaxWidth()
-        .height(220.dp)
-        .clip(RoundedCornerShape(18.dp)),
+    modifier = modifier,
     factory = { mapView },
   )
 }
@@ -325,7 +423,6 @@ private fun resolveStreetAddress(
     .joinToString(", ")
     .takeIf(String::isNotBlank)
 }
-
 
 private const val OPEN_FREE_MAP_STYLE =
   "https://tiles.openfreemap.org/styles/liberty"
