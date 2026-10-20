@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -50,6 +51,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -874,49 +876,63 @@ private fun GeofenceManagerDialog(
               Column(
                 modifier =
                   Modifier.padding(
-                    horizontal = 14.dp,
-                    vertical = 11.dp,
+                    horizontal = 12.dp,
+                    vertical = 8.dp,
                   ),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
               ) {
-                Column(
+                // Title and radius share a single line; long names are truncated.
+                Row(
                   modifier = Modifier.fillMaxWidth(),
-                  verticalArrangement = Arrangement.spacedBy(2.dp),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                   Text(
                     text = zone.name,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                   )
                   Text(
                     text = "Radius " + zone.radiusMeters + " m",
+                    maxLines = 1,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                   )
+                }
 
-                  Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                  Text(
+                    text = if (zone.enabled) "ACTIVE" else "PAUSED",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color =
+                      if (zone.enabled) {
+                        ParentAccentColor
+                      } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                      },
+                  )
+
+                  // The native switch retains its behavior while the wrapper
+                  // keeps its visual row short.
+                  Box(
+                    modifier = Modifier.size(width = 48.dp, height = 32.dp),
+                    contentAlignment = Alignment.Center,
                   ) {
-                    Text(
-                      text = if (zone.enabled) "ACTIVE" else "PAUSED",
-                      style = MaterialTheme.typography.labelSmall,
-                      fontWeight = FontWeight.Bold,
-                      color =
-                        if (zone.enabled) {
-                          ParentAccentColor
-                        } else {
-                          MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-
                     Switch(
                       checked = zone.enabled,
                       onCheckedChange = { enabled ->
                         onSetEnabled(zone, enabled)
                       },
                       enabled = !saving,
+                      modifier = Modifier.scale(0.75f),
                     )
                   }
                 }
@@ -928,19 +944,23 @@ private fun GeofenceManagerDialog(
                   OutlinedButton(
                     onClick = { onEdit(zone) },
                     enabled = !saving,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).height(34.dp),
                     shape = ParentActionShape,
+                    border = BorderStroke(1.dp, ParentAccentColor),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                   ) {
-                    Text("EDIT")
+                    Text("EDIT", style = MaterialTheme.typography.labelMedium)
                   }
 
                   OutlinedButton(
                     onClick = { onDelete(zone.zoneId) },
                     enabled = !saving,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).height(34.dp),
                     shape = ParentActionShape,
+                    border = BorderStroke(1.dp, ParentAccentColor),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                   ) {
-                    Text("DELETE")
+                    Text("DELETE", style = MaterialTheme.typography.labelMedium)
                   }
                 }
               }
