@@ -61,6 +61,10 @@
         </service>
 
         <receiver
+            android:name=".remote.GeofenceBroadcastReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".schedule.ScheduleAlarmReceiver"
             android:exported="false" />
 
