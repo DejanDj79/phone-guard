@@ -509,24 +509,49 @@ private fun ParentFloatingBottomNavigation(
           modifier =
             Modifier
               .weight(1f)
-              .offset(y = if (isLocation) (-12).dp else 0.dp)
+              .offset(y = if (isLocation) (-14).dp else 0.dp)
               .clickable { onSectionSelected(index) }
               .padding(vertical = 3.dp),
           horizontalAlignment = Alignment.CenterHorizontally,
           verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
           if (isLocation) {
-            Icon(
-              painter = painterResource(section.iconRes),
-              contentDescription = section.label,
-              tint =
+            Surface(
+              modifier = Modifier.size(48.dp),
+              shape = CircleShape,
+              color =
                 if (selected) {
                   ParentAccentColor
                 } else {
-                  MaterialTheme.colorScheme.onSurface
+                  MaterialTheme.colorScheme.surface
                 },
-              modifier = Modifier.size(25.dp),
-            )
+              border =
+                BorderStroke(
+                  width = 1.dp,
+                  color =
+                    if (selected) {
+                      ParentAccentColor
+                    } else {
+                      ParentBorderColor
+                    },
+                ),
+              shadowElevation = 6.dp,
+              tonalElevation = 0.dp,
+            ) {
+              Box(contentAlignment = Alignment.Center) {
+                Icon(
+                  painter = painterResource(section.iconRes),
+                  contentDescription = section.label,
+                  tint =
+                    if (selected) {
+                      ParentGradientEdge
+                    } else {
+                      MaterialTheme.colorScheme.onSurface
+                    },
+                  modifier = Modifier.size(24.dp),
+                )
+              }
+            }
           } else {
             Icon(
               painter = painterResource(section.iconRes),
@@ -539,19 +564,19 @@ private fun ParentFloatingBottomNavigation(
                 },
               modifier = Modifier.size(21.dp),
             )
-          }
 
-          Text(
-            text = section.label,
-            style = MaterialTheme.typography.labelSmall,
-            color =
-              if (selected) {
-                ParentAccentColor
-              } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-              },
-            maxLines = 1,
-          )
+            Text(
+              text = section.label,
+              style = MaterialTheme.typography.labelSmall,
+              color =
+                if (selected) {
+                  ParentAccentColor
+                } else {
+                  MaterialTheme.colorScheme.onSurfaceVariant
+                },
+              maxLines = 1,
+            )
+          }
         }
       }
     }
