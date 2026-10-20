@@ -1,0 +1,78 @@
+import { withSupabase } from "npm:@supabase/server@1.7.1";
+import { requireParentUserId } from "../_shared/parent-auth.ts";
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const HISTORY_LIMIT = 30;
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function json(body: unknown, status = 200): Response {
+  return Response.json(body, { status });
+}
+
+export default {
+  fetch: withSupabase({ auth: "none" }, async (req, ctx) => {
+    if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+    const parentUserId = await requireParentUserId(req, ctx);
+    if (!parentUserId) return json({ error: "parent_auth_required" }, 401);
+
+    let payload: Record<string, unknown>;
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "invalid_json" }, 400);
+    }
+
+    const deviceId =
+      typeof payload.deviceId === "string" ? payload.deviceId.trim() : "";
+    const controlToken =
+      typeof payload.controlToken === "string" ? payload.controlToken : "";
+
+    if (!UUID_PATTERN.test(deviceId)) return json({ error: "invalid_device_id" }, 400);
+    if (controlToken.length < 32 || controlToken.length > 256) {
+      return json({ error: "invalid_control_token" }, 400);
+    }
+
+    const controlTokenHash = await sha256Hex(controlToken);
+
+    const { data: device, error: deviceError } = await ctx.supabaseAdmin
+      .from("child_devices")
+      .select("device_id")
+      .eq("device_id", deviceId)
+      .eq("parent_user_id", parentUserId)
+      .eq("control_token_hash", controlTokenHash)
+      .maybeSingle();
+
+    if (deviceError) return json({ error: "database_error" }, 500);
+    if (!device) return json({ error: "device_auth_failed" }, 403);
+
+    const { data, error } = await ctx.supabaseAdmin
+      .from("geofence_events")
+      .select("event_id, zone_id, zone_name, event_type, occurred_at, received_at")
+      .eq("device_id", deviceId)
+      .order("occurred_at", { ascending: false })
+      .limit(HISTORY_LIMIT);
+
+    if (error) return json({ error: "database_error" }, 500);
+
+    return json({
+      ok: true,
+      events: (data ?? []).map((event) => ({
+        eventId: event.event_id,
+        zoneId: event.zone_id,
+        zoneName: event.zone_name,
+        eventType: event.event_type,
+        occurredAt: event.occurred_at,
+        receivedAt: event.received_at,
+      })),
+    });
+  }),
+};
