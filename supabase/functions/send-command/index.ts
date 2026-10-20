@@ -10,6 +10,7 @@ const VALID_COMMANDS = new Set([
   "SYNC_SCHEDULE",
   "SYNC_ALLOWED_APPS",
   "SYNC_DAILY_LIMIT",
+  "SYNC_GEOFENCES",
   "REQUEST_LOCATION",
 ]);
 const FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
