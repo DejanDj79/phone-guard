@@ -394,7 +394,7 @@ private fun GeofenceManagerDialog(
 ) {
   var adding by remember { mutableStateOf(false) }
   var zoneName by remember { mutableStateOf("") }
-  var radiusMeters by remember { mutableStateOf(200) }
+  var radiusMeters by remember { mutableStateOf(100) }
 
   AlertDialog(
     onDismissRequest = {
@@ -442,13 +442,7 @@ private fun GeofenceManagerDialog(
           )
 
           RadiusChoiceRow(
-            values = listOf(100, 200),
-            selected = radiusMeters,
-            enabled = !saving,
-            onSelected = { radiusMeters = it },
-          )
-          RadiusChoiceRow(
-            values = listOf(300, 500),
+            values = listOf(50, 100, 200),
             selected = radiusMeters,
             enabled = !saving,
             onSelected = { radiusMeters = it },
@@ -560,7 +554,7 @@ private fun GeofenceManagerDialog(
           onClick = {
             adding = true
             zoneName = ""
-            radiusMeters = 200
+            radiusMeters = 100
           },
           enabled = !saving && currentLocationAvailable,
           shape = ParentActionShape,
