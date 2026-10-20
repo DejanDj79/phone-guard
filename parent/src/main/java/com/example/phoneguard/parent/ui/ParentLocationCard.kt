@@ -1262,3 +1262,4 @@ private const val GEOFENCE_LINE_LAYER_ID =
   "phoneguard-geofence-line"
 private const val GEOFENCE_CIRCLE_STEPS = 64
 private const val EARTH_RADIUS_METERS = 6_371_000.0
+private const val DUPLICATE_MARKER_DISTANCE_METERS = 10f
