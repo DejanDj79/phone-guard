@@ -49,6 +49,12 @@ class RemoteCommandProcessor(context: Context) {
         }
       }
 
+      RemoteCommandType.SYNC_GEOFENCES -> {
+        check(RemoteGeofenceSyncer(appContext).sync()) {
+          "Remote geofence sync failed."
+        }
+      }
+
       RemoteCommandType.REQUEST_LOCATION -> {
         check(ChildLocationReporter(appContext).reportCurrentLocation()) {
           "Current location report failed."
