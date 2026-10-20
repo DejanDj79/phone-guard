@@ -3,11 +3,11 @@ package com.example.phoneguard.parent.ui
 import android.content.Context
 import android.location.Geocoder
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,11 +22,15 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,12 +42,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.phoneguard.core.GeofenceZone
 import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.ChildLocation
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +69,13 @@ internal fun ParentLocationScreen(
   errorMessage: String?,
   notice: String?,
   panelVisible: Boolean,
+  geofenceZones: List<GeofenceZone>,
+  geofenceLoading: Boolean,
+  geofenceSaving: Boolean,
+  geofenceError: String?,
+  geofenceNotice: String?,
+  onAddGeofence: (String, Int) -> Unit,
+  onDeleteGeofence: (String) -> Unit,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -75,6 +86,7 @@ internal fun ParentLocationScreen(
   var addressLoading by remember(location?.capturedAt) {
     mutableStateOf(location != null)
   }
+  var showGeofenceManager by remember { mutableStateOf(false) }
 
   LaunchedEffect(location?.capturedAt) {
     if (location == null) {
@@ -102,6 +114,7 @@ internal fun ParentLocationScreen(
       ChildLocationMap(
         deviceName = deviceName,
         location = location,
+        geofenceZones = geofenceZones,
         modifier = Modifier.fillMaxSize(),
       )
     } else {
@@ -193,138 +206,407 @@ internal fun ParentLocationScreen(
           Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.43f),
-      shape =
-        RoundedCornerShape(
-          topStart = 32.dp,
-          topEnd = 32.dp,
-        ),
-      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
-      shadowElevation = 18.dp,
-      tonalElevation = 0.dp,
-      border =
-        BorderStroke(
-          width = 1.dp,
-          color = ParentBorderColor,
-        ),
-    ) {
-      Column(
-        modifier =
-          Modifier
-            .fillMaxSize()
-            .padding(
-              start = 22.dp,
-              end = 22.dp,
-              top = 12.dp,
-              bottom = 102.dp,
-            ),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        shape =
+          RoundedCornerShape(
+            topStart = 32.dp,
+            topEnd = 32.dp,
+          ),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+        shadowElevation = 18.dp,
+        tonalElevation = 0.dp,
+        border =
+          BorderStroke(
+            width = 1.dp,
+            color = ParentBorderColor,
+          ),
       ) {
-        Surface(
+        Column(
           modifier =
             Modifier
-              .align(Alignment.CenterHorizontally)
-              .width(42.dp)
-              .height(4.dp),
-          shape = RoundedCornerShape(50),
-          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-        ) {}
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
+              .fillMaxSize()
+              .padding(
+                start = 22.dp,
+                end = 22.dp,
+                top = 12.dp,
+                bottom = 102.dp,
+              ),
+          verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-          Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+          Surface(
+            modifier =
+              Modifier
+                .align(Alignment.CenterHorizontally)
+                .width(42.dp)
+                .height(4.dp),
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+          ) {}
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Column(
+              modifier = Modifier.weight(1f),
+              verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+              Text(
+                text = "Current location",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+              )
+
+              Text(
+                text =
+                  when {
+                    location == null -> "No location received yet."
+                    addressLoading -> "Finding street address…"
+                    resolvedAddress != null -> resolvedAddress!!
+                    else -> "Street address unavailable."
+                  },
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+              )
+            }
+
+            if (loading || addressLoading) {
+              CircularProgressIndicator(
+                modifier = Modifier.padding(start = 12.dp),
+                strokeWidth = 2.dp,
+                color = ParentAccentColor,
+              )
+            }
+          }
+
+          if (location != null) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+              LocationInfoPill(
+                label = "UPDATED",
+                value = formatProtectionEventTime(location.capturedAt),
+                modifier = Modifier.weight(1f),
+              )
+              LocationInfoPill(
+                label = "ACCURACY",
+                value =
+                  location.accuracyMeters?.let {
+                    "±" + Math.round(it) + " m"
+                  } ?: "—",
+                modifier = Modifier.weight(1f),
+              )
+            }
+          }
+
+          OutlinedButton(
+            onClick = onRefresh,
+            enabled = !loading,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            shape = ParentActionShape,
+          ) {
+            Text(if (loading) "LOCATING…" else "REFRESH LOCATION")
+          }
+
+          OutlinedButton(
+            onClick = { showGeofenceManager = true },
+            enabled = !geofenceLoading,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+            shape = ParentActionShape,
           ) {
             Text(
-              text = "Current location",
-              style = MaterialTheme.typography.titleLarge,
-              fontWeight = FontWeight.Bold,
-              color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Text(
-              text =
-                when {
-                  location == null -> "No location received yet."
-                  addressLoading -> "Finding street address…"
-                  resolvedAddress != null -> resolvedAddress!!
-                  else -> "Street address unavailable."
-                },
-              style = MaterialTheme.typography.bodyLarge,
-              fontWeight = FontWeight.SemiBold,
-              color = MaterialTheme.colorScheme.onSurface,
+              if (geofenceLoading) {
+                "LOADING ZONES…"
+              } else {
+                "LOCATION ZONES (" + geofenceZones.size + ")"
+              },
             )
           }
 
-          if (loading || addressLoading) {
-            CircularProgressIndicator(
-              modifier = Modifier.padding(start = 12.dp),
-              strokeWidth = 2.dp,
+          notice?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
               color = ParentAccentColor,
             )
           }
 
-        }
+          errorMessage?.let { message ->
+            Text(
+              text = message,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
+            )
+          }
 
-        if (location != null) {
-          Row(
+          Spacer(modifier = Modifier.weight(1f))
+
+          Text(
+            text = "Map © OpenStreetMap contributors · OpenFreeMap",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+          )
+        }
+      }
+    }
+  }
+
+  if (showGeofenceManager) {
+    GeofenceManagerDialog(
+      zones = geofenceZones,
+      loading = geofenceLoading,
+      saving = geofenceSaving,
+      errorMessage = geofenceError,
+      notice = geofenceNotice,
+      currentLocationAvailable = location != null,
+      onAdd = onAddGeofence,
+      onDelete = onDeleteGeofence,
+      onDismiss = { showGeofenceManager = false },
+    )
+  }
+}
+
+@Composable
+private fun GeofenceManagerDialog(
+  zones: List<GeofenceZone>,
+  loading: Boolean,
+  saving: Boolean,
+  errorMessage: String?,
+  notice: String?,
+  currentLocationAvailable: Boolean,
+  onAdd: (String, Int) -> Unit,
+  onDelete: (String) -> Unit,
+  onDismiss: () -> Unit,
+) {
+  var adding by remember { mutableStateOf(false) }
+  var zoneName by remember { mutableStateOf("") }
+  var radiusMeters by remember { mutableStateOf(200) }
+
+  AlertDialog(
+    onDismissRequest = {
+      if (!saving) onDismiss()
+    },
+    title = {
+      Text(
+        text = if (adding) "Add location zone" else "Location zones",
+        fontWeight = FontWeight.Bold,
+      )
+    },
+    text = {
+      Column(
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .heightIn(max = 420.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        if (adding) {
+          Text(
+            text =
+              "The zone center will use the Child phone's current location. " +
+                "Refresh location first if needed.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+
+          OutlinedTextField(
+            value = zoneName,
+            onValueChange = { zoneName = it.take(60) },
+            label = { Text("Zone name") },
+            placeholder = { Text("Home, School…") },
+            singleLine = true,
+            enabled = !saving,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-          ) {
-            LocationInfoPill(
-              label = "UPDATED",
-              value = formatProtectionEventTime(location.capturedAt),
-              modifier = Modifier.weight(1f),
+            shape = ParentActionShape,
+          )
+
+          Text(
+            text = "Radius",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+          )
+
+          RadiusChoiceRow(
+            values = listOf(100, 200),
+            selected = radiusMeters,
+            enabled = !saving,
+            onSelected = { radiusMeters = it },
+          )
+          RadiusChoiceRow(
+            values = listOf(300, 500),
+            selected = radiusMeters,
+            enabled = !saving,
+            onSelected = { radiusMeters = it },
+          )
+
+          if (!currentLocationAvailable) {
+            Text(
+              text = "Current Child location is not available yet.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error,
             )
-            LocationInfoPill(
-              label = "ACCURACY",
-              value =
-                location.accuracyMeters?.let {
-                  "±" + Math.round(it) + " m"
-                } ?: "—",
-              modifier = Modifier.weight(1f),
+          }
+        } else {
+          if (loading) {
+            CircularProgressIndicator(
+              modifier = Modifier.align(Alignment.CenterHorizontally),
+              color = ParentAccentColor,
             )
+          } else if (zones.isEmpty()) {
+            Text(
+              text = "No saved location zones yet.",
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          } else {
+            zones.forEach { zone ->
+              Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, ParentBorderColor),
+              ) {
+                Row(
+                  modifier =
+                    Modifier.padding(
+                      horizontal = 14.dp,
+                      vertical = 11.dp,
+                    ),
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                  Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                  ) {
+                    Text(
+                      text = zone.name,
+                      style = MaterialTheme.typography.bodyLarge,
+                      fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                      text = "Radius " + zone.radiusMeters + " m",
+                      style = MaterialTheme.typography.bodySmall,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                  }
+
+                  OutlinedButton(
+                    onClick = { onDelete(zone.zoneId) },
+                    enabled = !saving,
+                    shape = ParentActionShape,
+                  ) {
+                    Text("DELETE")
+                  }
+                }
+              }
+            }
           }
         }
 
-        OutlinedButton(
-          onClick = onRefresh,
-          enabled = !loading,
-          modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-          shape = ParentActionShape,
-        ) {
-          Text(if (loading) "LOCATING…" else "REFRESH LOCATION")
-        }
-
-        notice?.let { message ->
+        notice?.let {
           Text(
-            text = message,
+            text = it,
             style = MaterialTheme.typography.bodySmall,
             color = ParentAccentColor,
           )
         }
 
-        errorMessage?.let { message ->
+        errorMessage?.let {
           Text(
-            text = message,
+            text = it,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
           )
         }
+      }
+    },
+    confirmButton = {
+      if (adding) {
+        OutlinedButton(
+          onClick = {
+            onAdd(
+              zoneName.trim(),
+              radiusMeters,
+            )
+            adding = false
+            zoneName = ""
+          },
+          enabled =
+            !saving &&
+              currentLocationAvailable &&
+              zoneName.trim().isNotEmpty(),
+          shape = ParentActionShape,
+        ) {
+          Text(if (saving) "SAVING…" else "SAVE")
+        }
+      } else {
+        OutlinedButton(
+          onClick = {
+            adding = true
+            zoneName = ""
+            radiusMeters = 200
+          },
+          enabled = !saving && currentLocationAvailable,
+          shape = ParentActionShape,
+        ) {
+          Text("ADD ZONE")
+        }
+      }
+    },
+    dismissButton = {
+      OutlinedButton(
+        onClick = {
+          if (adding) {
+            adding = false
+            zoneName = ""
+          } else {
+            onDismiss()
+          }
+        },
+        enabled = !saving,
+        shape = ParentActionShape,
+      ) {
+        Text(if (adding) "BACK" else "CLOSE")
+      }
+    },
+  )
+}
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(
-          text = "Map © OpenStreetMap contributors · OpenFreeMap",
-          style = MaterialTheme.typography.labelSmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-        )
+@Composable
+private fun RadiusChoiceRow(
+  values: List<Int>,
+  selected: Int,
+  enabled: Boolean,
+  onSelected: (Int) -> Unit,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    values.forEach { radius ->
+      OutlinedButton(
+        onClick = { onSelected(radius) },
+        enabled = enabled,
+        modifier = Modifier.weight(1f),
+        shape = ParentActionShape,
+        border =
+          BorderStroke(
+            1.dp,
+            if (selected == radius) {
+              ParentAccentColor
+            } else {
+              ParentBorderColor
+            },
+          ),
+      ) {
+        Text(radius.toString() + " m")
       }
     }
   }
-}
 }
 
 @Composable
@@ -362,6 +644,7 @@ private fun LocationInfoPill(
 private fun ChildLocationMap(
   deviceName: String,
   location: ChildLocation,
+  geofenceZones: List<GeofenceZone>,
   modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
@@ -396,6 +679,7 @@ private fun ChildLocationMap(
     location.latitude,
     location.longitude,
     deviceName,
+    geofenceZones,
   ) {
     mapView.getMapAsync { map ->
       val showLocation = {
@@ -407,6 +691,20 @@ private fun ChildLocationMap(
             .title(deviceName)
             .snippet("Current location"),
         )
+
+        geofenceZones.forEach { zone ->
+          map.addMarker(
+            MarkerOptions()
+              .position(
+                LatLng(
+                  zone.latitude,
+                  zone.longitude,
+                ),
+              )
+              .title(zone.name)
+              .snippet("Location zone · " + zone.radiusMeters + " m"),
+          )
+        }
 
         map.cameraPosition =
           CameraPosition.Builder()
