@@ -495,7 +495,8 @@ private fun ParentFloatingBottomNavigation(
         Modifier
           .fillMaxWidth()
           .align(Alignment.BottomCenter)
-          .padding(horizontal = 8.dp, bottom = 8.dp),
+          .padding(horizontal = 8.dp)
+          .padding(bottom = 8.dp),
       verticalAlignment = Alignment.Bottom,
     ) {
       parentBottomSections.forEachIndexed { index, section ->
