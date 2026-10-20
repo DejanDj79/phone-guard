@@ -79,7 +79,6 @@ import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.FillLayer
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -1478,8 +1477,8 @@ private fun formatLocationRefreshTime(
     listOf(
       "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
       "yyyy-MM-dd'T'HH:mm:ssXXX",
-      "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-      "yyyy-MM-dd'T'HH:mm:ss'Z'",
+      "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+      "yyyy-MM-dd'T'HH:mm:ssX",
     )
 
   val parsed =
@@ -1547,4 +1546,6 @@ private const val GEOFENCE_LINE_LAYER_ID =
   "phoneguard-geofence-line"
 private const val GEOFENCE_CIRCLE_STEPS = 64
 private const val EARTH_RADIUS_METERS = 6_371_000.0
+private const val LOCATION_ACTIVITY_PANEL_FRACTION = 0.42f
+private const val LOCATION_MAP_BOTTOM_PADDING_FRACTION = 0.48
 private const val DUPLICATE_MARKER_DISTANCE_METERS = 10f
