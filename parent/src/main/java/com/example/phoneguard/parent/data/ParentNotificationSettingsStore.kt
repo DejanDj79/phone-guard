@@ -26,9 +26,20 @@ class ParentNotificationSettingsStore(context: Context) {
       .apply()
   }
 
+  fun geofenceNotificationsEnabled(): Boolean =
+    preferences.getBoolean(KEY_GEOFENCE_NOTIFICATIONS_ENABLED, true)
+
+  fun setGeofenceNotificationsEnabled(enabled: Boolean) {
+    preferences
+      .edit()
+      .putBoolean(KEY_GEOFENCE_NOTIFICATIONS_ENABLED, enabled)
+      .apply()
+  }
+
   private companion object {
     const val PREFERENCES_NAME = "phone_guard_parent_notification_settings"
     const val KEY_TIME_REQUESTS_ENABLED = "time_requests_enabled"
     const val KEY_PROTECTION_ALERTS_ENABLED = "protection_alerts_enabled"
+    const val KEY_GEOFENCE_NOTIFICATIONS_ENABLED = "geofence_notifications_enabled"
   }
 }
