@@ -346,7 +346,7 @@ Existing app inventory synchronization should provide part of the technical foun
 
 ### 3. Current Child location
 
-**Status:** Planned for Premium 1.0 and currently in implementation.
+**Status:** Implemented for Premium 1.0. Parent/Child end-to-end coordinates were physically verified; final release regression remains.
 
 Allow the Parent to request and view the Child phone's current location.
 
@@ -368,13 +368,36 @@ Implementation direction:
 - Parent reads the latest location and displays it on the Location screen/map.
 - Android location permission must remain explicit and transparent on the Child device.
 
-Geofencing and location history are separate follow-up Premium features.
+Location history remains a separate follow-up feature.
+
+### 4. Geofencing
+
+**Status:** Premium 1.0 implementation complete; final Child-device physical ENTER/EXIT validation remains.
+
+Premium 1.0 scope:
+
+- Parent can create, edit, pause/resume and delete saved location zones.
+- Zone center can be selected directly on the map or snapped to the latest Child location.
+- Parent presets are 50 m, 100 m and 200 m.
+- Active zone radius is drawn on the Parent map.
+- Child registers active Android geofences for ENTER and EXIT transitions.
+- Geofences are restored after reboot/package replacement and synchronized through the existing remote-command pipeline.
+- Parent receives push alerts when the Child enters or leaves an active zone.
+- Parent Location shows recent zone activity.
+- Disabled zones remain saved but are not sent to the Child and cannot create backend events.
+- Geofence event storage is bounded; this is event history, not continuous movement/location history.
+- Child background location access remains explicit and transparent.
+
+Remaining release validation:
+
+- Physically verify EXIT and ENTER on a Child phone.
+- Verify Parent push delivery on Android 13+ with notification permission granted.
+- Verify background/reboot behavior on the physical Child device.
 
 ## Future premium candidates — not decided
 
 These are ideas to evaluate later and are **not yet assigned to free or paid**:
 
-- Geofencing
 - Location history
 - More detailed usage analytics
 - Longer usage-history retention
