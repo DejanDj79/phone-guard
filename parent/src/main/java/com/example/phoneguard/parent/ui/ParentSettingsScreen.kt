@@ -102,6 +102,11 @@ fun ParentSettingsScreen(
       notificationSettingsStore.protectionAlertNotificationsEnabled(),
     )
   }
+  var geofenceNotificationsEnabled by remember {
+    mutableStateOf(
+      notificationSettingsStore.geofenceNotificationsEnabled(),
+    )
+  }
 
   var currentPin by remember { mutableStateOf("") }
   var newPin by remember { mutableStateOf("") }
@@ -466,6 +471,18 @@ fun ParentSettingsScreen(
               .setProtectionAlertNotificationsEnabled(enabled)
           },
         )
+
+        SettingSwitchRow(
+          title = "Location zone alerts",
+          description = "When a Child enters or leaves a saved location zone.",
+          checked = geofenceNotificationsEnabled,
+          onCheckedChange = { enabled ->
+            geofenceNotificationsEnabled = enabled
+            notificationSettingsStore
+              .setGeofenceNotificationsEnabled(enabled)
+          },
+        )
+
 
         TextButton(
           onClick = {
