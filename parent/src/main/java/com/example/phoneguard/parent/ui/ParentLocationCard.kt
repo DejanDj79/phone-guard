@@ -775,6 +775,11 @@ private fun ChildLocationMap(
   location: ChildLocation,
   geofenceZones: List<GeofenceZone>,
   panelVisible: Boolean,
+  pickerActive: Boolean,
+  pickerLatitude: Double?,
+  pickerLongitude: Double?,
+  pickerRadiusMeters: Int,
+  onPickerCenterChange: (Double, Double) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val context = LocalContext.current
@@ -804,6 +809,46 @@ private fun ChildLocationMap(
     }
   }
 
+  DisposableEffect(
+    mapView,
+    pickerActive,
+  ) {
+    var mapRef: MapLibreMap? = null
+
+    val listener =
+      MapLibreMap.OnCameraIdleListener {
+        if (pickerActive) {
+          val target = mapRef?.cameraPosition?.target
+          if (target != null) {
+            onPickerCenterChange(
+              target.latitude,
+              target.longitude,
+            )
+          }
+        }
+      }
+
+    mapView.getMapAsync { map ->
+      mapRef = map
+      map.addOnCameraIdleListener(listener)
+
+      if (pickerActive) {
+        val target = map.cameraPosition.target
+        if (target != null) {
+          onPickerCenterChange(
+            target.latitude,
+            target.longitude,
+          )
+        }
+      }
+    }
+
+    onDispose {
+      mapRef?.removeOnCameraIdleListener(listener)
+    }
+  }
+
+
   LaunchedEffect(
     mapView,
     location.latitude,
@@ -811,6 +856,10 @@ private fun ChildLocationMap(
     deviceName,
     geofenceZones,
     panelVisible,
+    pickerActive,
+    pickerLatitude,
+    pickerLongitude,
+    pickerRadiusMeters,
   ) {
     mapView.getMapAsync { map ->
       val showLocation = {
@@ -841,28 +890,47 @@ private fun ChildLocationMap(
           updateGeofenceLayers(
             style = style,
             zones = geofenceZones,
+            previewLatitude =
+              if (pickerActive) pickerLatitude else null,
+            previewLongitude =
+              if (pickerActive) pickerLongitude else null,
+            previewRadiusMeters =
+              if (pickerActive) pickerRadiusMeters else null,
           )
         }
 
         mapView.post {
-          val bottomPadding =
-            if (panelVisible) {
-              mapView.height * 0.56
-            } else {
-              0.0
-            }
+          if (pickerActive) {
+            val currentCamera = map.cameraPosition
+            map.cameraPosition =
+              CameraPosition.Builder(currentCamera)
+                .padding(
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                )
+                .build()
+          } else {
+            val bottomPadding =
+              if (panelVisible) {
+                mapView.height * 0.56
+              } else {
+                0.0
+              }
 
-          map.cameraPosition =
-            CameraPosition.Builder()
-              .target(point)
-              .zoom(16.5)
-              .padding(
-                0.0,
-                0.0,
-                0.0,
-                bottomPadding,
-              )
-              .build()
+            map.cameraPosition =
+              CameraPosition.Builder()
+                .target(point)
+                .zoom(16.5)
+                .padding(
+                  0.0,
+                  0.0,
+                  0.0,
+                  bottomPadding,
+                )
+                .build()
+          }
         }
 
         map.uiSettings.apply {
@@ -893,6 +961,9 @@ private fun ChildLocationMap(
 private fun updateGeofenceLayers(
   style: Style,
   zones: List<GeofenceZone>,
+  previewLatitude: Double? = null,
+  previewLongitude: Double? = null,
+  previewRadiusMeters: Int? = null,
 ) {
   style.getLayer(GEOFENCE_FILL_LAYER_ID)?.let {
     style.removeLayer(GEOFENCE_FILL_LAYER_ID)
@@ -904,12 +975,26 @@ private fun updateGeofenceLayers(
     style.removeSource(GEOFENCE_SOURCE_ID)
   }
 
-  if (zones.isEmpty()) return
+  if (
+    zones.isEmpty() &&
+    (
+      previewLatitude == null ||
+      previewLongitude == null ||
+      previewRadiusMeters == null
+    )
+  ) {
+    return
+  }
 
   style.addSource(
     GeoJsonSource(
       GEOFENCE_SOURCE_ID,
-      geofenceGeoJson(zones),
+      geofenceGeoJson(
+        zones = zones,
+        previewLatitude = previewLatitude,
+        previewLongitude = previewLongitude,
+        previewRadiusMeters = previewRadiusMeters,
+      ),
     ),
   )
 
@@ -938,66 +1023,39 @@ private fun updateGeofenceLayers(
 
 private fun geofenceGeoJson(
   zones: List<GeofenceZone>,
+  previewLatitude: Double? = null,
+  previewLongitude: Double? = null,
+  previewRadiusMeters: Int? = null,
 ): String {
   val features = JSONArray()
 
   zones.forEach { zone ->
-    val ring = JSONArray()
-    val latitudeRadians = Math.toRadians(zone.latitude)
-    val longitudeRadians = Math.toRadians(zone.longitude)
-    val angularDistance =
-      zone.radiusMeters.toDouble() / EARTH_RADIUS_METERS
-
-    for (step in 0..GEOFENCE_CIRCLE_STEPS) {
-      val bearing =
-        2.0 * Math.PI * step.toDouble() /
-          GEOFENCE_CIRCLE_STEPS.toDouble()
-
-      val destinationLatitude =
-        asin(
-          sin(latitudeRadians) * cos(angularDistance) +
-            cos(latitudeRadians) *
-              sin(angularDistance) *
-              cos(bearing),
-        )
-
-      val destinationLongitude =
-        longitudeRadians +
-          atan2(
-            sin(bearing) *
-              sin(angularDistance) *
-              cos(latitudeRadians),
-            cos(angularDistance) -
-              sin(latitudeRadians) *
-                sin(destinationLatitude),
-          )
-
-      ring.put(
-        JSONArray()
-          .put(Math.toDegrees(destinationLongitude))
-          .put(Math.toDegrees(destinationLatitude)),
-      )
-    }
-
-    val geometry =
-      JSONObject()
-        .put("type", "Polygon")
-        .put(
-          "coordinates",
-          JSONArray().put(ring),
-        )
-
-    val properties =
-      JSONObject()
-        .put("zoneId", zone.zoneId)
-        .put("name", zone.name)
-        .put("radiusMeters", zone.radiusMeters)
-
     features.put(
-      JSONObject()
-        .put("type", "Feature")
-        .put("properties", properties)
-        .put("geometry", geometry),
+      geofenceCircleFeature(
+        zoneId = zone.zoneId,
+        name = zone.name,
+        latitude = zone.latitude,
+        longitude = zone.longitude,
+        radiusMeters = zone.radiusMeters,
+        preview = false,
+      ),
+    )
+  }
+
+  if (
+    previewLatitude != null &&
+    previewLongitude != null &&
+    previewRadiusMeters != null
+  ) {
+    features.put(
+      geofenceCircleFeature(
+        zoneId = "preview",
+        name = "New zone",
+        latitude = previewLatitude,
+        longitude = previewLongitude,
+        radiusMeters = previewRadiusMeters,
+        preview = true,
+      ),
     )
   }
 
@@ -1005,6 +1063,72 @@ private fun geofenceGeoJson(
     .put("type", "FeatureCollection")
     .put("features", features)
     .toString()
+}
+
+private fun geofenceCircleFeature(
+  zoneId: String,
+  name: String,
+  latitude: Double,
+  longitude: Double,
+  radiusMeters: Int,
+  preview: Boolean,
+): JSONObject {
+  val ring = JSONArray()
+  val latitudeRadians = Math.toRadians(latitude)
+  val longitudeRadians = Math.toRadians(longitude)
+  val angularDistance =
+    radiusMeters.toDouble() / EARTH_RADIUS_METERS
+
+  for (step in 0..GEOFENCE_CIRCLE_STEPS) {
+    val bearing =
+      2.0 * Math.PI * step.toDouble() /
+        GEOFENCE_CIRCLE_STEPS.toDouble()
+
+    val destinationLatitude =
+      asin(
+        sin(latitudeRadians) * cos(angularDistance) +
+          cos(latitudeRadians) *
+            sin(angularDistance) *
+            cos(bearing),
+      )
+
+    val destinationLongitude =
+      longitudeRadians +
+        atan2(
+          sin(bearing) *
+            sin(angularDistance) *
+            cos(latitudeRadians),
+          cos(angularDistance) -
+            sin(latitudeRadians) *
+              sin(destinationLatitude),
+        )
+
+    ring.put(
+      JSONArray()
+        .put(Math.toDegrees(destinationLongitude))
+        .put(Math.toDegrees(destinationLatitude)),
+    )
+  }
+
+  return JSONObject()
+    .put("type", "Feature")
+    .put(
+      "properties",
+      JSONObject()
+        .put("zoneId", zoneId)
+        .put("name", name)
+        .put("radiusMeters", radiusMeters)
+        .put("preview", preview),
+    )
+    .put(
+      "geometry",
+      JSONObject()
+        .put("type", "Polygon")
+        .put(
+          "coordinates",
+          JSONArray().put(ring),
+        ),
+    )
 }
 
 @Suppress("DEPRECATION")
