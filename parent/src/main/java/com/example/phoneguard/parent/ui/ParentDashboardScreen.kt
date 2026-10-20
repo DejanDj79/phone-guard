@@ -49,12 +49,14 @@ import com.example.phoneguard.parent.data.LocationStatusResult
 import com.example.phoneguard.parent.data.GeofenceZonesResult
 import com.example.phoneguard.parent.data.GeofenceSaveResult
 import com.example.phoneguard.parent.data.GeofenceDeleteResult
+import com.example.phoneguard.parent.data.GeofenceEventsResult
 import com.example.phoneguard.parent.data.HttpAllowedAppsGateway
 import com.example.phoneguard.parent.data.HttpAppUsageGateway
 import com.example.phoneguard.parent.data.HttpDeviceManagementGateway
 import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
 import com.example.phoneguard.parent.data.HttpLocationGateway
 import com.example.phoneguard.parent.data.HttpGeofenceGateway
+import com.example.phoneguard.parent.data.HttpGeofenceEventGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.HttpProtectionHistoryGateway
@@ -110,6 +112,7 @@ fun ParentDashboardScreen(
   val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
   val locationGateway = remember { HttpLocationGateway() }
   val geofenceGateway = remember { HttpGeofenceGateway() }
+  val geofenceEventGateway = remember { HttpGeofenceEventGateway() }
   val scheduleGateway = remember { HttpScheduleGateway() }
   val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
   val appUsageGateway = remember { HttpAppUsageGateway() }
@@ -158,6 +161,9 @@ fun ParentDashboardScreen(
     uiState.geofenceSaving = false
     uiState.geofenceError = null
     uiState.geofenceNotice = null
+    uiState.geofenceEvents = emptyList()
+    uiState.geofenceEventsLoading = false
+    uiState.geofenceEventsError = null
     uiState.showDeviceManagement = false
     uiState.deviceManagementError = null
     uiState.pendingTimeRequest = null
@@ -237,6 +243,9 @@ fun ParentDashboardScreen(
     uiState.geofenceSaving = false
     uiState.geofenceError = null
     uiState.geofenceNotice = null
+    uiState.geofenceEvents = emptyList()
+    uiState.geofenceEventsLoading = false
+    uiState.geofenceEventsError = null
     ParentPushRegistrar(context.applicationContext)
       .registerCurrentToken()
     uiState.showPairDevice = false
@@ -831,6 +840,53 @@ fun ParentDashboardScreen(
     uiState.geofenceLoading = false
   }
 
+  LaunchedEffect(device.deviceId, uiState.selectedTab, "geofence-events-poll") {
+    if (uiState.selectedTab != PARENT_LOCATION_SECTION) return@LaunchedEffect
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      uiState.geofenceEventsError =
+        "Control token is missing. Re-pairing is required."
+      return@LaunchedEffect
+    }
+
+    while (true) {
+      if (uiState.geofenceEvents.isEmpty()) {
+        uiState.geofenceEventsLoading = true
+      }
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            geofenceEventGateway.fetch(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+            )
+          }
+      ) {
+        is GeofenceEventsResult.Success -> {
+          uiState.geofenceEvents = result.events
+          uiState.geofenceEventsError = null
+        }
+
+        is GeofenceEventsResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+            return@LaunchedEffect
+          } else {
+            uiState.geofenceEventsError = result.message
+          }
+        }
+      }
+
+      uiState.geofenceEventsLoading = false
+      delay(10_000)
+    }
+  }
+
   LaunchedEffect(device.deviceId, uiState.selectedTab, "protection-history-poll") {
     if (uiState.selectedTab != PARENT_DEVICE_SECTION) return@LaunchedEffect
 
@@ -1390,6 +1446,9 @@ fun ParentDashboardScreen(
       uiState.geofenceSaving = true
       uiState.geofenceError = null
       uiState.geofenceNotice = null
+    uiState.geofenceEvents = emptyList()
+    uiState.geofenceEventsLoading = false
+    uiState.geofenceEventsError = null
 
       when (
         val result =
@@ -1450,6 +1509,9 @@ fun ParentDashboardScreen(
       uiState.geofenceSaving = true
       uiState.geofenceError = null
       uiState.geofenceNotice = null
+    uiState.geofenceEvents = emptyList()
+    uiState.geofenceEventsLoading = false
+    uiState.geofenceEventsError = null
 
       when (
         val result =
@@ -1688,6 +1750,9 @@ fun ParentDashboardScreen(
         geofenceSaving = uiState.geofenceSaving,
         geofenceError = uiState.geofenceError,
         geofenceNotice = uiState.geofenceNotice,
+        geofenceEvents = uiState.geofenceEvents,
+        geofenceEventsLoading = uiState.geofenceEventsLoading,
+        geofenceEventsError = uiState.geofenceEventsError,
         onSaveGeofence = { zoneId, name, radiusMeters, latitude, longitude ->
           saveGeofence(
             zoneId = zoneId,
