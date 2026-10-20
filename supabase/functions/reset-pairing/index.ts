@@ -91,6 +91,16 @@ export default {
       .delete()
       .eq("device_id", deviceId);
 
+    await ctx.supabaseAdmin
+      .from("geofence_events")
+      .delete()
+      .eq("device_id", deviceId);
+
+    await ctx.supabaseAdmin
+      .from("geofence_zones")
+      .delete()
+      .eq("device_id", deviceId);
+
     return json({
       ok: true,
       deviceId,
