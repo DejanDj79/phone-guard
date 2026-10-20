@@ -1467,7 +1467,7 @@ fun ParentDashboardScreen(
         section == PARENT_LOCATION_SECTION &&
         uiState.selectedTab == PARENT_LOCATION_SECTION
       ) {
-        uiState.locationPanelVisible = true
+        uiState.locationPanelVisible = !uiState.locationPanelVisible
       } else {
         uiState.selectedTab = section
         if (section == PARENT_LOCATION_SECTION) {
@@ -1498,7 +1498,6 @@ fun ParentDashboardScreen(
         errorMessage = uiState.locationError,
         notice = uiState.locationNotice,
         panelVisible = uiState.locationPanelVisible,
-        onPanelVisibleChange = { uiState.locationPanelVisible = it },
         onRefresh = { requestCurrentLocation() },
         modifier = Modifier.fillMaxSize(),
       )
