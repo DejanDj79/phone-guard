@@ -2,6 +2,7 @@ package com.example.phoneguard.parent.ui
 
 import android.content.Context
 import android.location.Geocoder
+import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -106,6 +107,7 @@ internal fun ParentLocationScreen(
   var pickerRadiusMeters by remember { mutableStateOf(100) }
   var showGeofenceNameDialog by remember { mutableStateOf(false) }
   var pendingZoneName by remember { mutableStateOf("") }
+  var pickerSnapToChildRequest by remember { mutableStateOf(0) }
 
   LaunchedEffect(location?.capturedAt) {
     if (location == null) {
@@ -139,6 +141,7 @@ internal fun ParentLocationScreen(
         pickerLatitude = pickerLatitude,
         pickerLongitude = pickerLongitude,
         pickerRadiusMeters = pickerRadiusMeters,
+        snapToChildRequest = pickerSnapToChildRequest,
         onPickerCenterChange = { latitude, longitude ->
           pickerLatitude = latitude
           pickerLongitude = longitude
@@ -431,6 +434,23 @@ internal fun ParentLocationScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
+
+          OutlinedButton(
+            onClick = {
+              val currentLocation = location
+              if (currentLocation != null) {
+                pickerLatitude = currentLocation.latitude
+                pickerLongitude = currentLocation.longitude
+                pickerSnapToChildRequest += 1
+              }
+            },
+            enabled = !geofenceSaving && location != null,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            shape = ParentActionShape,
+            border = BorderStroke(1.dp, ParentAccentColor),
+          ) {
+            Text("USE CHILD LOCATION")
+          }
 
           RadiusChoiceRow(
             values = listOf(50, 100, 200),
@@ -779,6 +799,7 @@ private fun ChildLocationMap(
   pickerLatitude: Double?,
   pickerLongitude: Double?,
   pickerRadiusMeters: Int,
+  snapToChildRequest: Int,
   onPickerCenterChange: (Double, Double) -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -848,6 +869,35 @@ private fun ChildLocationMap(
     }
   }
 
+  LaunchedEffect(
+    mapView,
+    pickerActive,
+    snapToChildRequest,
+  ) {
+    if (!pickerActive || snapToChildRequest <= 0) {
+      return@LaunchedEffect
+    }
+
+    mapView.getMapAsync { map ->
+      map.cameraPosition =
+        CameraPosition.Builder(map.cameraPosition)
+          .target(point)
+          .padding(
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+          )
+          .build()
+
+      onPickerCenterChange(
+        point.latitude,
+        point.longitude,
+      )
+    }
+  }
+
+
 
   LaunchedEffect(
     mapView,
@@ -872,19 +922,28 @@ private fun ChildLocationMap(
             .snippet("Current location"),
         )
 
-        geofenceZones.forEach { zone ->
-          map.addMarker(
-            MarkerOptions()
-              .position(
-                LatLng(
-                  zone.latitude,
-                  zone.longitude,
-                ),
-              )
-              .title(zone.name)
-              .snippet("Location zone · " + zone.radiusMeters + " m"),
-          )
-        }
+        geofenceZones
+          .filter { zone ->
+            distanceMeters(
+              latitude1 = location.latitude,
+              longitude1 = location.longitude,
+              latitude2 = zone.latitude,
+              longitude2 = zone.longitude,
+            ) > DUPLICATE_MARKER_DISTANCE_METERS
+          }
+          .forEach { zone ->
+            map.addMarker(
+              MarkerOptions()
+                .position(
+                  LatLng(
+                    zone.latitude,
+                    zone.longitude,
+                  ),
+                )
+                .title(zone.name)
+                .snippet("Location zone · " + zone.radiusMeters + " m"),
+            )
+          }
 
         map.style?.let { style ->
           updateGeofenceLayers(
@@ -956,6 +1015,23 @@ private fun ChildLocationMap(
     modifier = modifier,
     factory = { mapView },
   )
+}
+
+private fun distanceMeters(
+  latitude1: Double,
+  longitude1: Double,
+  latitude2: Double,
+  longitude2: Double,
+): Float {
+  val result = FloatArray(1)
+  Location.distanceBetween(
+    latitude1,
+    longitude1,
+    latitude2,
+    longitude2,
+    result,
+  )
+  return result[0]
 }
 
 private fun updateGeofenceLayers(
