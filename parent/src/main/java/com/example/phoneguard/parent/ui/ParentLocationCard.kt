@@ -2,6 +2,12 @@ package com.example.phoneguard.parent.ui
 
 import android.content.Context
 import android.location.Geocoder
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -168,11 +174,23 @@ internal fun ParentLocationScreen(
       }
     }
 
-    if (panelVisible) {
+    AnimatedVisibility(
+      visible = panelVisible,
+      modifier = Modifier.align(Alignment.BottomCenter),
+      enter =
+        slideInVertically(
+          animationSpec = tween(280),
+          initialOffsetY = { fullHeight -> fullHeight },
+        ) + fadeIn(animationSpec = tween(180)),
+      exit =
+        slideOutVertically(
+          animationSpec = tween(240),
+          targetOffsetY = { fullHeight -> fullHeight },
+        ) + fadeOut(animationSpec = tween(160)),
+    ) {
       Surface(
         modifier =
           Modifier
-            .align(Alignment.BottomCenter)
             .fillMaxWidth()
             .fillMaxHeight(0.43f),
       shape =
@@ -304,7 +322,6 @@ internal fun ParentLocationScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
         )
       }
-    }
     }
   }
 }
