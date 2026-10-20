@@ -580,21 +580,17 @@ private fun GeofenceManagerDialog(
   errorMessage: String?,
   notice: String?,
   currentLocationAvailable: Boolean,
-  onAdd: (String, Int) -> Unit,
+  onStartAdd: () -> Unit,
   onDelete: (String) -> Unit,
   onDismiss: () -> Unit,
 ) {
-  var adding by remember { mutableStateOf(false) }
-  var zoneName by remember { mutableStateOf("") }
-  var radiusMeters by remember { mutableStateOf(100) }
-
   AlertDialog(
     onDismissRequest = {
       if (!saving) onDismiss()
     },
     title = {
       Text(
-        text = if (adding) "Add location zone" else "Location zones",
+        text = "Location zones",
         fontWeight = FontWeight.Bold,
       )
     },
@@ -607,102 +603,68 @@ private fun GeofenceManagerDialog(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
-        if (adding) {
+        if (loading) {
+          CircularProgressIndicator(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            color = ParentAccentColor,
+          )
+        } else if (zones.isEmpty()) {
           Text(
-            text =
-              "The zone center will use the Child phone's current location. " +
-                "Refresh location first if needed.",
-            style = MaterialTheme.typography.bodySmall,
+            text = "No saved location zones yet.",
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
-
-          OutlinedTextField(
-            value = zoneName,
-            onValueChange = { zoneName = it.take(60) },
-            label = { Text("Zone name") },
-            placeholder = { Text("Home, School…") },
-            singleLine = true,
-            enabled = !saving,
-            modifier = Modifier.fillMaxWidth(),
-            shape = ParentActionShape,
-          )
-
-          Text(
-            text = "Radius",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-          )
-
-          RadiusChoiceRow(
-            values = listOf(50, 100, 200),
-            selected = radiusMeters,
-            enabled = !saving,
-            onSelected = { radiusMeters = it },
-          )
-
-          if (!currentLocationAvailable) {
-            Text(
-              text = "Current Child location is not available yet.",
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
         } else {
-          if (loading) {
-            CircularProgressIndicator(
-              modifier = Modifier.align(Alignment.CenterHorizontally),
-              color = ParentAccentColor,
-            )
-          } else if (zones.isEmpty()) {
-            Text(
-              text = "No saved location zones yet.",
-              style = MaterialTheme.typography.bodyMedium,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-          } else {
-            zones.forEach { zone ->
-              Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, ParentBorderColor),
+          zones.forEach { zone ->
+            Surface(
+              modifier = Modifier.fillMaxWidth(),
+              shape = RoundedCornerShape(16.dp),
+              color = MaterialTheme.colorScheme.surfaceVariant,
+              border = BorderStroke(1.dp, ParentBorderColor),
+            ) {
+              Row(
+                modifier =
+                  Modifier.padding(
+                    horizontal = 14.dp,
+                    vertical = 11.dp,
+                  ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
               ) {
-                Row(
-                  modifier =
-                    Modifier.padding(
-                      horizontal = 14.dp,
-                      vertical = 11.dp,
-                    ),
-                  verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.spacedBy(10.dp),
+                Column(
+                  modifier = Modifier.weight(1f),
+                  verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                  Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                  ) {
-                    Text(
-                      text = zone.name,
-                      style = MaterialTheme.typography.bodyLarge,
-                      fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                      text = "Radius " + zone.radiusMeters + " m",
-                      style = MaterialTheme.typography.bodySmall,
-                      color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                  }
+                  Text(
+                    text = zone.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                  )
+                  Text(
+                    text = "Radius " + zone.radiusMeters + " m",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  )
+                }
 
-                  OutlinedButton(
-                    onClick = { onDelete(zone.zoneId) },
-                    enabled = !saving,
-                    shape = ParentActionShape,
-                  ) {
-                    Text("DELETE")
-                  }
+                OutlinedButton(
+                  onClick = { onDelete(zone.zoneId) },
+                  enabled = !saving,
+                  shape = ParentActionShape,
+                ) {
+                  Text("DELETE")
                 }
               }
             }
           }
+        }
+
+        if (!currentLocationAvailable) {
+          Text(
+            text = "Refresh the Child location before choosing a new zone on the map.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+          )
         }
 
         notice?.let {
@@ -723,52 +685,21 @@ private fun GeofenceManagerDialog(
       }
     },
     confirmButton = {
-      if (adding) {
-        OutlinedButton(
-          onClick = {
-            onAdd(
-              zoneName.trim(),
-              radiusMeters,
-            )
-            adding = false
-            zoneName = ""
-          },
-          enabled =
-            !saving &&
-              currentLocationAvailable &&
-              zoneName.trim().isNotEmpty(),
-          shape = ParentActionShape,
-        ) {
-          Text(if (saving) "SAVING…" else "SAVE")
-        }
-      } else {
-        OutlinedButton(
-          onClick = {
-            adding = true
-            zoneName = ""
-            radiusMeters = 100
-          },
-          enabled = !saving && currentLocationAvailable,
-          shape = ParentActionShape,
-        ) {
-          Text("ADD ZONE")
-        }
+      OutlinedButton(
+        onClick = onStartAdd,
+        enabled = !saving && currentLocationAvailable,
+        shape = ParentActionShape,
+      ) {
+        Text("ADD ZONE")
       }
     },
     dismissButton = {
       OutlinedButton(
-        onClick = {
-          if (adding) {
-            adding = false
-            zoneName = ""
-          } else {
-            onDismiss()
-          }
-        },
+        onClick = onDismiss,
         enabled = !saving,
         shape = ParentActionShape,
       ) {
-        Text(if (adding) "BACK" else "CLOSE")
+        Text("CLOSE")
       }
     },
   )
