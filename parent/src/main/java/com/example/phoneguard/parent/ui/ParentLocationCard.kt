@@ -772,43 +772,28 @@ private fun GeofenceActivityTimeline(
       ) {
         events.forEachIndexed { index, event ->
           val highlighted = event.eventId == highlightedEventId
+          val highlightShape = RoundedCornerShape(10.dp)
           Row(
-            modifier =
-              Modifier
-                .fillMaxWidth()
-                .then(
-                  if (highlighted) {
-                    Modifier
-                      .bringIntoViewRequester(highlightRequester)
-                      .background(
-                        color = ParentAccentColor.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(10.dp),
-                      )
-                      .border(
-                        border = BorderStroke(1.dp, ParentAccentColor),
-                        shape = RoundedCornerShape(10.dp),
-                      )
-                  } else {
-                    Modifier
-                  }
-                ),
+            modifier = Modifier.fillMaxWidth().height(42.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.CenterVertically,
           ) {
+            // Keep the dot centered on the event's text line. Draw the rail
+            // through each row so it remains continuous behind the dots.
             Box(
-              modifier =
-                Modifier
-                  .width(16.dp)
-                  .height(48.dp),
+              modifier = Modifier.width(16.dp).height(42.dp),
             ) {
-              if (index < events.lastIndex) {
+              if (events.size > 1) {
+                val lineTop = if (index == 0) 21.dp else 0.dp
+                val lineHeight =
+                  if (index == 0 || index == events.lastIndex) 21.dp else 42.dp
                 Surface(
                   modifier =
                     Modifier
                       .align(Alignment.TopCenter)
-                      .padding(top = 8.dp)
+                      .padding(top = lineTop)
                       .width(2.dp)
-                      .height(40.dp),
+                      .height(lineHeight),
                   color = ParentBorderColor.copy(alpha = 0.85f),
                 ) {}
               }
@@ -816,23 +801,51 @@ private fun GeofenceActivityTimeline(
               Surface(
                 modifier =
                   Modifier
-                    .align(Alignment.TopCenter)
-                    .size(8.dp),
+                    .align(Alignment.Center)
+                    .size(if (highlighted) 11.dp else 8.dp),
                 shape = CircleShape,
-                color = ParentAccentColor,
+                color = if (highlighted) Color.White else ParentAccentColor,
                 border =
                   BorderStroke(
-                    2.dp,
-                    MaterialTheme.colorScheme.surface,
+                    if (highlighted) 2.dp else 1.dp,
+                    if (highlighted) ParentAccentColor else MaterialTheme.colorScheme.surface,
                   ),
               ) {}
             }
 
+            // Highlight only the event details, never the timeline rail.
+            // Keep the same padding for normal and selected events so rows
+            // do not jump horizontally when the highlight is removed.
             Row(
               modifier =
                 Modifier
                   .weight(1f)
-                  .padding(bottom = 8.dp),
+                  .height(36.dp)
+                  .then(
+                    if (highlighted) {
+                      Modifier.bringIntoViewRequester(highlightRequester)
+                    } else {
+                      Modifier
+                    }
+                  )
+                  .background(
+                    color =
+                      if (highlighted) {
+                        ParentAccentColor.copy(alpha = 0.17f)
+                      } else {
+                        Color.Transparent
+                      },
+                    shape = highlightShape,
+                  )
+                  .border(
+                    border =
+                      BorderStroke(
+                        1.dp,
+                        if (highlighted) ParentAccentColor else Color.Transparent,
+                      ),
+                    shape = highlightShape,
+                  )
+                  .padding(horizontal = 9.dp),
               horizontalArrangement = Arrangement.spacedBy(8.dp),
               verticalAlignment = Alignment.CenterVertically,
             ) {
