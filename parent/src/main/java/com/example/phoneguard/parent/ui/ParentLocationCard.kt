@@ -58,6 +58,16 @@ import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import kotlin.math.sin
+import kotlin.math.cos
+import kotlin.math.atan2
+import kotlin.math.asin
+import org.json.JSONObject
+import org.json.JSONArray
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.FillLayer
 import java.util.Locale
 
 @Composable
@@ -710,6 +720,13 @@ private fun ChildLocationMap(
           )
         }
 
+        map.style?.let { style ->
+          updateGeofenceLayers(
+            style = style,
+            zones = geofenceZones,
+          )
+        }
+
         mapView.post {
           val bottomPadding =
             if (panelVisible) {
@@ -754,6 +771,123 @@ private fun ChildLocationMap(
     modifier = modifier,
     factory = { mapView },
   )
+}
+
+private fun updateGeofenceLayers(
+  style: Style,
+  zones: List<GeofenceZone>,
+) {
+  style.getLayer(GEOFENCE_FILL_LAYER_ID)?.let {
+    style.removeLayer(GEOFENCE_FILL_LAYER_ID)
+  }
+  style.getLayer(GEOFENCE_LINE_LAYER_ID)?.let {
+    style.removeLayer(GEOFENCE_LINE_LAYER_ID)
+  }
+  style.getSource(GEOFENCE_SOURCE_ID)?.let {
+    style.removeSource(GEOFENCE_SOURCE_ID)
+  }
+
+  if (zones.isEmpty()) return
+
+  style.addSource(
+    GeoJsonSource(
+      GEOFENCE_SOURCE_ID,
+      geofenceGeoJson(zones),
+    ),
+  )
+
+  style.addLayer(
+    FillLayer(
+      GEOFENCE_FILL_LAYER_ID,
+      GEOFENCE_SOURCE_ID,
+    ).withProperties(
+      PropertyFactory.fillColor("#69DEFF"),
+      PropertyFactory.fillOpacity(0.16f),
+      PropertyFactory.fillOutlineColor("#69DEFF"),
+    ),
+  )
+
+  style.addLayer(
+    LineLayer(
+      GEOFENCE_LINE_LAYER_ID,
+      GEOFENCE_SOURCE_ID,
+    ).withProperties(
+      PropertyFactory.lineColor("#69DEFF"),
+      PropertyFactory.lineWidth(2.2f),
+      PropertyFactory.lineOpacity(0.95f),
+    ),
+  )
+}
+
+private fun geofenceGeoJson(
+  zones: List<GeofenceZone>,
+): String {
+  val features = JSONArray()
+
+  zones.forEach { zone ->
+    val ring = JSONArray()
+    val latitudeRadians = Math.toRadians(zone.latitude)
+    val longitudeRadians = Math.toRadians(zone.longitude)
+    val angularDistance =
+      zone.radiusMeters.toDouble() / EARTH_RADIUS_METERS
+
+    for (step in 0..GEOFENCE_CIRCLE_STEPS) {
+      val bearing =
+        2.0 * Math.PI * step.toDouble() /
+          GEOFENCE_CIRCLE_STEPS.toDouble()
+
+      val destinationLatitude =
+        asin(
+          sin(latitudeRadians) * cos(angularDistance) +
+            cos(latitudeRadians) *
+              sin(angularDistance) *
+              cos(bearing),
+        )
+
+      val destinationLongitude =
+        longitudeRadians +
+          atan2(
+            sin(bearing) *
+              sin(angularDistance) *
+              cos(latitudeRadians),
+            cos(angularDistance) -
+              sin(latitudeRadians) *
+                sin(destinationLatitude),
+          )
+
+      ring.put(
+        JSONArray()
+          .put(Math.toDegrees(destinationLongitude))
+          .put(Math.toDegrees(destinationLatitude)),
+      )
+    }
+
+    val geometry =
+      JSONObject()
+        .put("type", "Polygon")
+        .put(
+          "coordinates",
+          JSONArray().put(ring),
+        )
+
+    val properties =
+      JSONObject()
+        .put("zoneId", zone.zoneId)
+        .put("name", zone.name)
+        .put("radiusMeters", zone.radiusMeters)
+
+    features.put(
+      JSONObject()
+        .put("type", "Feature")
+        .put("properties", properties)
+        .put("geometry", geometry),
+    )
+  }
+
+  return JSONObject()
+    .put("type", "FeatureCollection")
+    .put("features", features)
+    .toString()
 }
 
 @Suppress("DEPRECATION")
@@ -802,3 +936,12 @@ private fun resolveStreetAddress(
 
 private const val OPEN_FREE_MAP_STYLE =
   "https://tiles.openfreemap.org/styles/liberty"
+
+private const val GEOFENCE_SOURCE_ID =
+  "phoneguard-geofence-zones"
+private const val GEOFENCE_FILL_LAYER_ID =
+  "phoneguard-geofence-fill"
+private const val GEOFENCE_LINE_LAYER_ID =
+  "phoneguard-geofence-line"
+private const val GEOFENCE_CIRCLE_STEPS = 64
+private const val EARTH_RADIUS_METERS = 6_371_000.0
