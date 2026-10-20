@@ -26,6 +26,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -96,6 +99,9 @@ private val PARENT_SWIPE_SECTIONS =
 fun ParentDashboardScreen(
   modifier: Modifier = Modifier,
   pairingGateway: PairingGateway? = null,
+  geofenceNotificationEventId: String? = null,
+  geofenceNotificationDeviceId: String? = null,
+  onGeofenceNotificationHandled: () -> Unit = {},
 ) {
   val context = LocalContext.current
   val accountScopeStore =
@@ -129,6 +135,37 @@ fun ParentDashboardScreen(
         initialPairedDevices = settingsStore.loadPairedDevices(),
       )
     }
+
+  var highlightedGeofenceEventId by remember(uiState.pairedDevice?.deviceId) {
+    mutableStateOf<String?>(null)
+  }
+
+  LaunchedEffect(
+    geofenceNotificationEventId,
+    geofenceNotificationDeviceId,
+    uiState.pairedDevice?.deviceId,
+  ) {
+    val eventId = geofenceNotificationEventId?.takeIf { it.isNotBlank() }
+      ?: return@LaunchedEffect
+    val pairedDevice = uiState.pairedDevice ?: return@LaunchedEffect
+    if (
+      geofenceNotificationDeviceId != null &&
+      geofenceNotificationDeviceId != pairedDevice.deviceId
+    ) {
+      return@LaunchedEffect
+    }
+
+    highlightedGeofenceEventId = eventId
+    uiState.showDevices = false
+    uiState.showDeviceManagement = false
+    uiState.showAllProtectionHistory = false
+    uiState.showBonusTimePicker = false
+    uiState.showDailyLimitPicker = false
+    uiState.showClearProtectionHistoryConfirm = false
+    uiState.selectedTab = PARENT_LOCATION_SECTION
+    uiState.locationPanelVisible = true
+    onGeofenceNotificationHandled()
+  }
 
   fun removeInvalidPairing(
     deviceId: String,
@@ -1765,6 +1802,8 @@ fun ParentDashboardScreen(
         geofenceEvents = uiState.geofenceEvents,
         geofenceEventsLoading = uiState.geofenceEventsLoading,
         geofenceEventsError = uiState.geofenceEventsError,
+        highlightedGeofenceEventId = highlightedGeofenceEventId,
+        onHighlightFinished = { highlightedGeofenceEventId = null },
         onSaveGeofence = { zoneId, name, radiusMeters, latitude, longitude, enabled ->
           saveGeofence(
             zoneId = zoneId,
