@@ -231,6 +231,10 @@ class ParentMessagingService : FirebaseMessagingService() {
         flags =
           Intent.FLAG_ACTIVITY_NEW_TASK or
             Intent.FLAG_ACTIVITY_CLEAR_TOP
+        putExtra(EXTRA_GEOFENCE_EVENT_ID, eventId)
+        message.data["device_id"]
+          ?.takeIf { it.isNotBlank() }
+          ?.let { putExtra(EXTRA_GEOFENCE_DEVICE_ID, it) }
       }
 
     val pendingIntent =
@@ -311,6 +315,8 @@ class ParentMessagingService : FirebaseMessagingService() {
     private const val TAG = "PhoneGuardParentPush"
     const val EXTRA_TIME_REQUEST_DEVICE_ID = "time_request_device_id"
     const val EXTRA_TIME_REQUEST_ID = "time_request_id"
+    const val EXTRA_GEOFENCE_EVENT_ID = "geofence_event_id"
+    const val EXTRA_GEOFENCE_DEVICE_ID = "geofence_device_id"
     private const val TYPE_TIME_REQUEST = "TIME_REQUEST"
     private const val TYPE_PROTECTION_ALERT = "PROTECTION_ALERT"
     private const val TYPE_GEOFENCE_EVENT = "GEOFENCE_EVENT"
