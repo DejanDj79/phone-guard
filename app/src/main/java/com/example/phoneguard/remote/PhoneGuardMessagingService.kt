@@ -73,6 +73,7 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
         "SYNC_SCHEDULE" -> RemoteCommand.syncSchedule()
         "SYNC_ALLOWED_APPS" -> RemoteCommand.syncAllowedApps()
         "SYNC_DAILY_LIMIT" -> RemoteCommand.syncDailyLimit()
+        "SYNC_GEOFENCES" -> RemoteCommand.syncGeofences()
         "REQUEST_LOCATION" -> RemoteCommand.requestLocation()
 
         else -> return
@@ -80,7 +81,10 @@ class PhoneGuardMessagingService : FirebaseMessagingService() {
 
     val executor = RemoteCommandExecutor(applicationContext)
 
-    if (command.type == RemoteCommandType.REQUEST_LOCATION) {
+    if (
+      command.type == RemoteCommandType.REQUEST_LOCATION ||
+      command.type == RemoteCommandType.SYNC_GEOFENCES
+    ) {
       Thread {
         executor.applyAndAcknowledge(
           commandId = commandId,
