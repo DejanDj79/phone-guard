@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.example.phoneguard.data.ChildSettingsStore
 import com.example.phoneguard.remote.ChildHeartbeatSender
+import com.example.phoneguard.remote.RemoteGeofenceSyncer
 
 class ScheduleAlarmReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent?) {
@@ -25,7 +26,16 @@ class TemporaryAllowanceReceiver : BroadcastReceiver() {
 class ScheduleRestoreReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent?) {
     ScheduleAlarmScheduler(context).syncCurrentStateAndScheduleNext()
-    sendHeartbeatAsync(context)
+
+    val pendingResult = goAsync()
+    Thread {
+      try {
+        RemoteGeofenceSyncer(context.applicationContext).sync()
+        ChildHeartbeatSender(context.applicationContext).send()
+      } finally {
+        pendingResult.finish()
+      }
+    }.start()
   }
 }
 
