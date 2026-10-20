@@ -1371,6 +1371,7 @@ fun ParentDashboardScreen(
 
 
   fun saveGeofence(
+    zoneId: String?,
     name: String,
     radiusMeters: Int,
     latitude: Double,
@@ -1400,15 +1401,22 @@ fun ParentDashboardScreen(
               latitude = latitude,
               longitude = longitude,
               radiusMeters = radiusMeters,
+              zoneId = zoneId,
             )
           }
       ) {
         is GeofenceSaveResult.Success -> {
           uiState.geofenceZones =
-            (uiState.geofenceZones + result.zone)
-              .distinctBy { it.zoneId }
+            uiState.geofenceZones
+              .filterNot { it.zoneId == result.zone.zoneId } +
+              result.zone
           uiState.geofenceNotice =
-            result.zone.name + " zone saved."
+            result.zone.name +
+              if (zoneId == null) {
+                " zone saved."
+              } else {
+                " zone updated."
+              }
           sendCommand(RemoteCommand.syncGeofences())
         }
 
@@ -1680,8 +1688,9 @@ fun ParentDashboardScreen(
         geofenceSaving = uiState.geofenceSaving,
         geofenceError = uiState.geofenceError,
         geofenceNotice = uiState.geofenceNotice,
-        onAddGeofence = { name, radiusMeters, latitude, longitude ->
+        onSaveGeofence = { zoneId, name, radiusMeters, latitude, longitude ->
           saveGeofence(
+            zoneId = zoneId,
             name = name,
             radiusMeters = radiusMeters,
             latitude = latitude,
