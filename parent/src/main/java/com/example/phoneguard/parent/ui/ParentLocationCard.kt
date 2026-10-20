@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -33,9 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.ChildLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -50,10 +54,13 @@ import java.util.Locale
 @Composable
 internal fun ParentLocationScreen(
   deviceName: String,
+  batteryLevelPercent: Int?,
   location: ChildLocation?,
   loading: Boolean,
   errorMessage: String?,
   notice: String?,
+  panelVisible: Boolean,
+  onPanelVisibleChange: (Boolean) -> Unit,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -108,34 +115,68 @@ internal fun ParentLocationScreen(
       }
     }
 
-    Column(
+    Surface(
       modifier =
         Modifier
           .align(Alignment.TopStart)
           .statusBarsPadding()
-          .padding(start = 20.dp, top = 16.dp, end = 76.dp),
-      verticalArrangement = Arrangement.spacedBy(4.dp),
+          .padding(start = 14.dp, top = 12.dp, end = 76.dp),
+      shape = RoundedCornerShape(14.dp),
+      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+      border = BorderStroke(1.dp, ParentBorderColor),
+      shadowElevation = 6.dp,
+      tonalElevation = 0.dp,
     ) {
-      Text(
-        text = deviceName,
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
-        color = Color(0xFF253044),
-      )
-      Text(
-        text = "CURRENT LOCATION",
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color(0xFF253044).copy(alpha = 0.76f),
-      )
+      Row(
+        modifier =
+          Modifier.padding(
+            horizontal = 11.dp,
+            vertical = 7.dp,
+          ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Text(
+          text = deviceName,
+          style = MaterialTheme.typography.bodySmall,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.onSurface,
+        )
+
+        Surface(
+          modifier =
+            Modifier
+              .height(18.dp)
+              .width(1.dp),
+          color = ParentBorderColor.copy(alpha = 0.65f),
+        ) {}
+
+        Icon(
+          painter = painterResource(R.drawable.pg_icon_battery),
+          contentDescription = "Battery",
+          tint = ParentHeaderIconColor,
+          modifier = Modifier.height(14.dp),
+        )
+
+        Text(
+          text =
+            batteryLevelPercent
+              ?.let { it.toString() + "%" }
+              ?: "—",
+          style = MaterialTheme.typography.labelSmall,
+          fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.onSurface,
+        )
+      }
     }
 
-    Surface(
-      modifier =
-        Modifier
-          .align(Alignment.BottomCenter)
-          .fillMaxWidth()
-          .fillMaxHeight(0.43f),
+    if (panelVisible) {
+      Surface(
+        modifier =
+          Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .fillMaxHeight(0.43f),
       shape =
         RoundedCornerShape(
           topStart = 32.dp,
@@ -208,6 +249,17 @@ internal fun ParentLocationScreen(
               color = ParentAccentColor,
             )
           }
+
+          IconButton(
+            onClick = { onPanelVisibleChange(false) },
+            modifier = Modifier.padding(start = 4.dp),
+          ) {
+            Icon(
+              painter = painterResource(R.drawable.pg_icon_close),
+              contentDescription = "Close location details",
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
         }
 
         if (location != null) {
@@ -264,6 +316,7 @@ internal fun ParentLocationScreen(
           color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
         )
       }
+    }
     }
   }
 }
