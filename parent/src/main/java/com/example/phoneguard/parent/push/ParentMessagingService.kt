@@ -42,7 +42,11 @@ class ParentMessagingService : FirebaseMessagingService() {
       }
 
       TYPE_GEOFENCE_EVENT -> {
-        showGeofenceNotification(message)
+        if (notificationSettings.geofenceNotificationsEnabled()) {
+          showGeofenceNotification(message)
+        } else {
+          Log.i(TAG, "Geofence notification suppressed by Parent setting")
+        }
       }
     }
   }
