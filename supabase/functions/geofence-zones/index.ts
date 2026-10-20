@@ -128,7 +128,7 @@ export default {
     if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
       return json({ error: "invalid_longitude" }, 400);
     }
-    if (radiusMeters < 100 || radiusMeters > 5000) {
+    if (radiusMeters < 50 || radiusMeters > 5000) {
       return json({ error: "invalid_radius" }, 400);
     }
 
