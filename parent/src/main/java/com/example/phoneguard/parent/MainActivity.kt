@@ -13,6 +13,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,6 +38,9 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
 
 class MainActivity : FragmentActivity() {
+  private var pendingGeofenceEventId by mutableStateOf<String?>(null)
+  private var pendingGeofenceDeviceId by mutableStateOf<String?>(null)
+
   private val notificationPermissionLauncher =
     registerForActivityResult(
       ActivityResultContracts.RequestPermission(),
@@ -45,6 +51,7 @@ class MainActivity : FragmentActivity() {
 
     ParentSupabase.client.handleDeeplinks(intent)
     selectRequestedDevice(intent)
+    readGeofenceNotification(intent)
     enableEdgeToEdge()
     hideSystemNavigation()
     setContent {
@@ -71,7 +78,16 @@ class MainActivity : FragmentActivity() {
             ParentAuthGate {
               ParentSecurityGate {
                 ParentPostAuthOnboardingGate {
-                  ParentDashboardScreen()
+                  ParentDashboardScreen(
+                    geofenceNotificationEventId = pendingGeofenceEventId,
+                    geofenceNotificationDeviceId = pendingGeofenceDeviceId,
+                    onGeofenceNotificationHandled = {
+                      pendingGeofenceEventId = null
+                      pendingGeofenceDeviceId = null
+                      intent?.removeExtra(ParentMessagingService.EXTRA_GEOFENCE_EVENT_ID)
+                      intent?.removeExtra(ParentMessagingService.EXTRA_GEOFENCE_DEVICE_ID)
+                    },
+                  )
                 }
               }
             }
@@ -106,6 +122,7 @@ class MainActivity : FragmentActivity() {
     super.onNewIntent(intent)
     setIntent(intent)
     ParentSupabase.client.handleDeeplinks(intent)
+    readGeofenceNotification(intent)
 
     if (selectRequestedDevice(intent)) {
       recreate()
@@ -152,11 +169,25 @@ class MainActivity : FragmentActivity() {
     }
   }
 
+  private fun readGeofenceNotification(intent: Intent?) {
+    pendingGeofenceEventId =
+      intent
+        ?.getStringExtra(ParentMessagingService.EXTRA_GEOFENCE_EVENT_ID)
+        ?.takeIf { it.isNotBlank() }
+    pendingGeofenceDeviceId =
+      intent
+        ?.getStringExtra(ParentMessagingService.EXTRA_GEOFENCE_DEVICE_ID)
+        ?.takeIf { it.isNotBlank() }
+  }
+
   private fun selectRequestedDevice(intent: Intent?): Boolean {
     val deviceId =
       intent
-        ?.getStringExtra(ParentMessagingService.EXTRA_TIME_REQUEST_DEVICE_ID)
+        ?.getStringExtra(ParentMessagingService.EXTRA_GEOFENCE_DEVICE_ID)
         ?.takeIf { it.isNotBlank() }
+        ?: intent
+          ?.getStringExtra(ParentMessagingService.EXTRA_TIME_REQUEST_DEVICE_ID)
+          ?.takeIf { it.isNotBlank() }
         ?: return false
 
     return ParentSettingsStore(applicationContext).selectDevice(deviceId)
