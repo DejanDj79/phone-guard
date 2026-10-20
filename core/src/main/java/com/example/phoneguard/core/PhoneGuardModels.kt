@@ -211,8 +211,8 @@ data class GeofenceZone(
     require(longitude in -180.0..180.0) {
       "Geofence longitude must be between -180 and 180."
     }
-    require(radiusMeters in 100..5000) {
-      "Geofence radius must be between 100 and 5000 meters."
+    require(radiusMeters in 50..5000) {
+      "Geofence radius must be between 50 and 5000 meters."
     }
   }
 }
