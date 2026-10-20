@@ -1092,6 +1092,7 @@ internal fun commandMatchesDeviceState(
     com.example.phoneguard.core.RemoteCommandType.SYNC_SCHEDULE,
     com.example.phoneguard.core.RemoteCommandType.SYNC_ALLOWED_APPS,
     com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT,
+    com.example.phoneguard.core.RemoteCommandType.SYNC_GEOFENCES,
     com.example.phoneguard.core.RemoteCommandType.REQUEST_LOCATION ->
       false
   }
@@ -1116,6 +1117,8 @@ internal fun commandSendingLabel(
         "Syncing allowed apps…"
       com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
         "Syncing daily limit…"
+      com.example.phoneguard.core.RemoteCommandType.SYNC_GEOFENCES ->
+        "Syncing location zones…"
       com.example.phoneguard.core.RemoteCommandType.REQUEST_LOCATION ->
         "Requesting current location…"
     }
@@ -1135,6 +1138,8 @@ internal fun commandAppliedLabel(command: RemoteCommand): String =
       "Allowed apps updated ✓"
     com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
       "Daily limit updated ✓"
+    com.example.phoneguard.core.RemoteCommandType.SYNC_GEOFENCES ->
+      "Location zones updated ✓"
     com.example.phoneguard.core.RemoteCommandType.REQUEST_LOCATION ->
       "Location updated ✓"
   }
@@ -1157,6 +1162,8 @@ internal fun commandQueuedLabel(
         "Allowed apps will be applied when PhoneGuard checks in again."
       com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
         "Daily limit will be applied when PhoneGuard checks in again."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_GEOFENCES ->
+        "Location zones will be applied when PhoneGuard checks in again."
       com.example.phoneguard.core.RemoteCommandType.REQUEST_LOCATION ->
         "Location request queued and will run when PhoneGuard checks in again."
     }
@@ -1174,6 +1181,8 @@ internal fun commandQueuedLabel(
         "Allowed apps sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.SYNC_DAILY_LIMIT ->
         "Daily limit sent. Waiting for the Child device to confirm."
+      com.example.phoneguard.core.RemoteCommandType.SYNC_GEOFENCES ->
+        "Location zones sent. Waiting for the Child device to confirm."
       com.example.phoneguard.core.RemoteCommandType.REQUEST_LOCATION ->
         "Location request sent. Waiting for the Child device to confirm."
     }
