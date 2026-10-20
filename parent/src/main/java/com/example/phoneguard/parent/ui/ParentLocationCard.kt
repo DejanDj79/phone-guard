@@ -144,10 +144,13 @@ internal fun ParentLocationScreen(
         deviceName = deviceName,
         location = location,
         geofenceZones =
-          if (geofencePickerActive && editingZoneId != null) {
-            geofenceZones.filterNot { it.zoneId == editingZoneId }
-          } else {
-            geofenceZones
+          geofenceZones.filter { zone ->
+            zone.enabled &&
+              !(
+                geofencePickerActive &&
+                  editingZoneId != null &&
+                  zone.zoneId == editingZoneId
+              )
           },
         panelVisible = panelVisible && !geofencePickerActive,
         pickerActive = geofencePickerActive,
