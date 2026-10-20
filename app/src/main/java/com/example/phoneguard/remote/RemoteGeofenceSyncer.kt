@@ -19,12 +19,6 @@ class RemoteGeofenceSyncer(context: Context) {
   private val geofencingClient = LocationServices.getGeofencingClient(appContext)
 
   fun sync(): Boolean {
-    if (!ChildLocationAccess.hasRequiredLocationAccess(appContext)) {
-      settingsStore.setLocationAccessRequestedByParent(true)
-      Log.w(TAG, "Geofence sync skipped because location access is incomplete")
-      return false
-    }
-
     val identity = settingsStore.getOrCreatePairingIdentity()
     val deviceSecret = settingsStore.getOrCreateDeviceSecret()
 
@@ -42,6 +36,14 @@ class RemoteGeofenceSyncer(context: Context) {
           return false
         }
       }
+
+    if (zones.isNotEmpty() &&
+      !ChildLocationAccess.hasRequiredLocationAccess(appContext)
+    ) {
+      settingsStore.setLocationAccessRequestedByParent(true)
+      Log.w(TAG, "Geofence sync skipped because location access is incomplete")
+      return false
+    }
 
     return runCatching {
       Tasks.await(
