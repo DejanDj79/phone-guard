@@ -151,7 +151,7 @@ fun ParentDashboardScreen(
     uiState.appUsageError = null
     uiState.appUsageView = APP_USAGE_VIEW_TODAY
     uiState.showDevices = false
-    uiState.selectedTab = 0
+    uiState.selectedTab = PARENT_LOCATION_SECTION
 
     if (uiState.pairedDevice == null) {
       uiState.commandNotice = null
@@ -209,7 +209,7 @@ fun ParentDashboardScreen(
       .registerCurrentToken()
     uiState.showPairDevice = false
     uiState.showDevices = false
-    uiState.selectedTab = 0
+    uiState.selectedTab = PARENT_LOCATION_SECTION
     return result
   }
 
@@ -302,7 +302,7 @@ fun ParentDashboardScreen(
           uiState.appUsageError = null
           uiState.appUsageView = APP_USAGE_VIEW_TODAY
           uiState.showDevices = false
-          uiState.selectedTab = 0
+          uiState.selectedTab = PARENT_LOCATION_SECTION
         }
       },
       onAddDevice = {
@@ -623,7 +623,10 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "app-usage-poll") {
-    if (uiState.selectedTab != 0 && uiState.selectedTab != 2) {
+    if (
+      uiState.selectedTab != PARENT_HOME_SECTION &&
+      uiState.selectedTab != PARENT_APPS_SECTION
+    ) {
       return@LaunchedEffect
     }
 
@@ -672,7 +675,10 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "allowed-apps-overview") {
-    if (uiState.selectedTab != 0 && uiState.selectedTab != 2) {
+    if (
+      uiState.selectedTab != PARENT_HOME_SECTION &&
+      uiState.selectedTab != PARENT_APPS_SECTION
+    ) {
       return@LaunchedEffect
     }
 
@@ -711,7 +717,7 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "location-status") {
-    if (uiState.selectedTab != 0) return@LaunchedEffect
+    if (uiState.selectedTab != PARENT_LOCATION_SECTION) return@LaunchedEffect
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
@@ -753,7 +759,7 @@ fun ParentDashboardScreen(
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "protection-history-poll") {
-    if (uiState.selectedTab != 3) return@LaunchedEffect
+    if (uiState.selectedTab != PARENT_DEVICE_SECTION) return@LaunchedEffect
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
@@ -1436,8 +1442,8 @@ fun ParentDashboardScreen(
     return
   }
 
-  BackHandler(enabled = uiState.selectedTab != 0) {
-    uiState.selectedTab = 0
+  BackHandler(enabled = uiState.selectedTab != PARENT_LOCATION_SECTION) {
+    uiState.selectedTab = PARENT_LOCATION_SECTION
   }
 
   ParentDashboardShell(
@@ -1468,6 +1474,19 @@ fun ParentDashboardScreen(
     },
     modifier = modifier,
   ) {
+    if (uiState.selectedTab == PARENT_LOCATION_SECTION) {
+      ParentLocationScreen(
+        deviceName = device.displayName,
+        location = uiState.currentLocation,
+        loading = uiState.locationLoading,
+        errorMessage = uiState.locationError,
+        notice = uiState.locationNotice,
+        onRefresh = { requestCurrentLocation() },
+        modifier = Modifier.fillMaxSize(),
+      )
+      return@ParentDashboardShell
+    }
+
     Column(
       modifier =
         Modifier
@@ -1483,9 +1502,9 @@ fun ParentDashboardScreen(
                 horizontalDrag += dragAmount
               },
               onDragEnd = {
-                if (uiState.selectedTab in 0..3) {
+                if (uiState.selectedTab in 0..4) {
                   when {
-                    horizontalDrag <= -swipeThreshold && uiState.selectedTab < 3 ->
+                    horizontalDrag <= -swipeThreshold && uiState.selectedTab < 4 ->
                       uiState.selectedTab += 1
                     horizontalDrag >= swipeThreshold && uiState.selectedTab > 0 ->
                       uiState.selectedTab -= 1
@@ -1502,7 +1521,7 @@ fun ParentDashboardScreen(
             end = 20.dp,
             top = 134.dp,
             bottom =
-              if (uiState.selectedTab in 0..3) {
+              if (uiState.selectedTab in 0..4) {
                 108.dp
               } else {
                 20.dp
@@ -1511,7 +1530,7 @@ fun ParentDashboardScreen(
       verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
 
-    if (uiState.selectedTab == 3) {
+    if (uiState.selectedTab == PARENT_DEVICE_SECTION) {
       ParentDeviceTab(
         device = device,
         pairedDeviceCount = uiState.pairedDevices.size,
@@ -1596,7 +1615,7 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (uiState.selectedTab == 0) {
+    if (uiState.selectedTab == PARENT_HOME_SECTION) {
       ParentOverviewTab(
         device = device,
         pendingTimeRequest = uiState.pendingTimeRequest,
@@ -1606,11 +1625,6 @@ fun ParentDashboardScreen(
         commandInProgress = uiState.commandInProgress,
         activeCommandType = uiState.activeCommandType,
         connectionTestInProgress = uiState.connectionTestInProgress,
-        currentLocation = uiState.currentLocation,
-        locationLoading = uiState.locationLoading,
-        locationError = uiState.locationError,
-        locationNotice = uiState.locationNotice,
-        onRefreshLocation = { requestCurrentLocation() },
         appUsageDays = uiState.appUsageDays,
         appInventorySnapshot = uiState.allowedAppsSnapshot,
         appUsageLoading = uiState.appUsageLoading,
@@ -1622,12 +1636,12 @@ fun ParentDashboardScreen(
         onLock = { sendCommand(RemoteCommand.lock()) },
         onUnlock = { sendCommand(RemoteCommand.unlock()) },
         onAddBonusTime = { uiState.showBonusTimePicker = true },
-        onOpenDevice = { uiState.selectedTab = 3 },
+        onOpenDevice = { uiState.selectedTab = PARENT_DEVICE_SECTION },
         onAppUsageViewChange = { uiState.appUsageView = it },
       )
     }
 
-    if (uiState.selectedTab == 2) {
+    if (uiState.selectedTab == PARENT_APPS_SECTION) {
       ParentAppsTab(
         snapshot = uiState.allowedAppsSnapshot,
         todayUsage = uiState.appUsageDays.firstOrNull(),
@@ -1677,7 +1691,7 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (uiState.selectedTab == 1) {
+    if (uiState.selectedTab == PARENT_SCHEDULE_SECTION) {
       ParentScheduleTab(
         device = device,
         scheduleLoading = uiState.scheduleLoading,
@@ -1732,7 +1746,7 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (uiState.selectedTab == 4) {
+    if (uiState.selectedTab == PARENT_SETTINGS_SECTION) {
       ParentSettingsScreen()
     }
 
