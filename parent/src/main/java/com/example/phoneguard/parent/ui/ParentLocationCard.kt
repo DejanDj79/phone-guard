@@ -205,7 +205,7 @@ internal fun ParentLocationScreen(
         modifier =
           Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.43f),
+            .fillMaxHeight(0.56f),
         shape =
           RoundedCornerShape(
             topStart = 32.dp,
@@ -224,6 +224,7 @@ internal fun ParentLocationScreen(
           modifier =
             Modifier
               .fillMaxSize()
+              .verticalScroll(rememberScrollState())
               .padding(
                 start = 22.dp,
                 end = 22.dp,
@@ -341,7 +342,7 @@ internal fun ParentLocationScreen(
             )
           }
 
-          Spacer(modifier = Modifier.weight(1f))
+          Spacer(modifier = Modifier.height(4.dp))
 
           Text(
             text = "Map © OpenStreetMap contributors · OpenFreeMap",
