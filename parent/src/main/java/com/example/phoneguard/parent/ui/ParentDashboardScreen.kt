@@ -1432,6 +1432,7 @@ fun ParentDashboardScreen(
     radiusMeters: Int,
     latitude: Double,
     longitude: Double,
+    enabled: Boolean = true,
   ) {
     if (uiState.geofenceSaving) return
 
@@ -1446,9 +1447,6 @@ fun ParentDashboardScreen(
       uiState.geofenceSaving = true
       uiState.geofenceError = null
       uiState.geofenceNotice = null
-    uiState.geofenceEvents = emptyList()
-    uiState.geofenceEventsLoading = false
-    uiState.geofenceEventsError = null
 
       when (
         val result =
@@ -1461,6 +1459,7 @@ fun ParentDashboardScreen(
               longitude = longitude,
               radiusMeters = radiusMeters,
               zoneId = zoneId,
+              enabled = enabled,
             )
           }
       ) {
@@ -1495,6 +1494,22 @@ fun ParentDashboardScreen(
     }
   }
 
+  fun setGeofenceEnabled(
+    zone: com.example.phoneguard.core.GeofenceZone,
+    enabled: Boolean,
+  ) {
+    if (uiState.geofenceSaving || zone.enabled == enabled) return
+
+    saveGeofence(
+      zoneId = zone.zoneId,
+      name = zone.name,
+      radiusMeters = zone.radiusMeters,
+      latitude = zone.latitude,
+      longitude = zone.longitude,
+      enabled = enabled,
+    )
+  }
+
   fun deleteGeofence(zoneId: String) {
     if (uiState.geofenceSaving) return
 
@@ -1509,9 +1524,6 @@ fun ParentDashboardScreen(
       uiState.geofenceSaving = true
       uiState.geofenceError = null
       uiState.geofenceNotice = null
-    uiState.geofenceEvents = emptyList()
-    uiState.geofenceEventsLoading = false
-    uiState.geofenceEventsError = null
 
       when (
         val result =
@@ -1753,13 +1765,20 @@ fun ParentDashboardScreen(
         geofenceEvents = uiState.geofenceEvents,
         geofenceEventsLoading = uiState.geofenceEventsLoading,
         geofenceEventsError = uiState.geofenceEventsError,
-        onSaveGeofence = { zoneId, name, radiusMeters, latitude, longitude ->
+        onSaveGeofence = { zoneId, name, radiusMeters, latitude, longitude, enabled ->
           saveGeofence(
             zoneId = zoneId,
             name = name,
             radiusMeters = radiusMeters,
             latitude = latitude,
             longitude = longitude,
+            enabled = enabled,
+          )
+        },
+        onSetGeofenceEnabled = { zone, enabled ->
+          setGeofenceEnabled(
+            zone = zone,
+            enabled = enabled,
           )
         },
         onDeleteGeofence = { zoneId ->
