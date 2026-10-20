@@ -325,6 +325,7 @@ internal fun ParentLocationScreen(
     }
   }
 }
+}
 
 @Composable
 private fun LocationInfoPill(
