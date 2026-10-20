@@ -1,6 +1,13 @@
 package com.example.phoneguard.parent.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -70,6 +77,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.withContext
+
+private val PARENT_SWIPE_SECTIONS =
+  listOf(
+    PARENT_HOME_SECTION,
+    PARENT_SCHEDULE_SECTION,
+    PARENT_APPS_SECTION,
+    PARENT_DEVICE_SECTION,
+  )
 
 @Composable
 fun ParentDashboardScreen(
@@ -1504,12 +1519,37 @@ fun ParentDashboardScreen(
       return@ParentDashboardShell
     }
 
-    Column(
-      modifier =
+    AnimatedContent(
+      targetState = uiState.selectedTab,
+      transitionSpec = {
+        if (targetState > initialState) {
+          slideInHorizontally(
+            animationSpec = tween(280),
+            initialOffsetX = { fullWidth -> fullWidth },
+          ) + fadeIn(animationSpec = tween(180)) togetherWith
+            slideOutHorizontally(
+              animationSpec = tween(240),
+              targetOffsetX = { fullWidth -> -fullWidth },
+            ) + fadeOut(animationSpec = tween(150))
+        } else {
+          slideInHorizontally(
+            animationSpec = tween(280),
+            initialOffsetX = { fullWidth -> -fullWidth },
+          ) + fadeIn(animationSpec = tween(180)) togetherWith
+            slideOutHorizontally(
+              animationSpec = tween(240),
+              targetOffsetX = { fullWidth -> fullWidth },
+            ) + fadeOut(animationSpec = tween(150))
+        }
+      },
+      label = "ParentPageTransition",
+    ) { sectionIndex ->
+      Column(
+        modifier =
         Modifier
           .fillMaxSize()
           .statusBarsPadding()
-          .pointerInput(uiState.selectedTab) {
+          .pointerInput(sectionIndex) {
             var horizontalDrag = 0f
             val swipeThreshold = 80.dp.toPx()
 
@@ -1519,14 +1559,23 @@ fun ParentDashboardScreen(
                 horizontalDrag += dragAmount
               },
               onDragEnd = {
-                if (uiState.selectedTab in 0..4) {
+                val swipeIndex =
+                  PARENT_SWIPE_SECTIONS.indexOf(sectionIndex)
+
+                if (swipeIndex >= 0) {
                   when {
-                    horizontalDrag <= -swipeThreshold && uiState.selectedTab < 4 ->
-                      uiState.selectedTab += 1
-                    horizontalDrag >= swipeThreshold && uiState.selectedTab > 0 ->
-                      uiState.selectedTab -= 1
+                    horizontalDrag <= -swipeThreshold &&
+                      swipeIndex < PARENT_SWIPE_SECTIONS.lastIndex ->
+                      uiState.selectedTab =
+                        PARENT_SWIPE_SECTIONS[swipeIndex + 1]
+
+                    horizontalDrag >= swipeThreshold &&
+                      swipeIndex > 0 ->
+                      uiState.selectedTab =
+                        PARENT_SWIPE_SECTIONS[swipeIndex - 1]
                   }
                 }
+
                 horizontalDrag = 0f
               },
               onDragCancel = { horizontalDrag = 0f },
@@ -1538,7 +1587,7 @@ fun ParentDashboardScreen(
             end = 20.dp,
             top = 134.dp,
             bottom =
-              if (uiState.selectedTab in 0..4) {
+              if (sectionIndex in PARENT_SWIPE_SECTIONS) {
                 108.dp
               } else {
                 20.dp
@@ -1547,7 +1596,7 @@ fun ParentDashboardScreen(
       verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
 
-    if (uiState.selectedTab == PARENT_DEVICE_SECTION) {
+    if (sectionIndex == PARENT_DEVICE_SECTION) {
       ParentDeviceTab(
         device = device,
         pairedDeviceCount = uiState.pairedDevices.size,
@@ -1632,7 +1681,7 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (uiState.selectedTab == PARENT_HOME_SECTION) {
+    if (sectionIndex == PARENT_HOME_SECTION) {
       ParentOverviewTab(
         device = device,
         pendingTimeRequest = uiState.pendingTimeRequest,
@@ -1658,7 +1707,7 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (uiState.selectedTab == PARENT_APPS_SECTION) {
+    if (sectionIndex == PARENT_APPS_SECTION) {
       ParentAppsTab(
         snapshot = uiState.allowedAppsSnapshot,
         todayUsage = uiState.appUsageDays.firstOrNull(),
@@ -1708,7 +1757,7 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (uiState.selectedTab == PARENT_SCHEDULE_SECTION) {
+    if (sectionIndex == PARENT_SCHEDULE_SECTION) {
       ParentScheduleTab(
         device = device,
         scheduleLoading = uiState.scheduleLoading,
@@ -1763,7 +1812,7 @@ fun ParentDashboardScreen(
       )
     }
 
-    if (uiState.selectedTab == PARENT_SETTINGS_SECTION) {
+    if (sectionIndex == PARENT_SETTINGS_SECTION) {
       ParentSettingsScreen()
     }
 
@@ -1774,7 +1823,8 @@ fun ParentDashboardScreen(
         color = MaterialTheme.colorScheme.error,
       )
     }
-      Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+      }
     }
   }
 
