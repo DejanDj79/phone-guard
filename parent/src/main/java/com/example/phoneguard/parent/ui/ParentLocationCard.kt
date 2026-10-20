@@ -198,148 +198,148 @@ internal fun ParentLocationScreen(
       }
     }
 
-    Surface(
+    Row(
       modifier =
         Modifier
-          .align(Alignment.TopStart)
+          .align(Alignment.TopCenter)
           .statusBarsPadding()
+          .fillMaxWidth()
           .padding(
             start = 14.dp,
+            end = 14.dp,
             top = 12.dp,
-          )
-          .height(LOCATION_TOP_CARD_HEIGHT)
-          .widthIn(
-            min = 136.dp,
-            max = maxWidth * 0.52f,
           ),
-      shape = RoundedCornerShape(14.dp),
-      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-      border = BorderStroke(1.dp, ParentBorderColor),
-      shadowElevation = 6.dp,
-      tonalElevation = 0.dp,
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-      Row(
+      // Keep both header cards in the same row so they share a top edge and height.
+      // The device name can shrink, while the refresh actions retain their full width.
+      Surface(
         modifier =
           Modifier
-            .fillMaxSize()
-            .padding(horizontal = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .weight(1f)
+            .height(LOCATION_TOP_CARD_HEIGHT),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        border = BorderStroke(1.dp, ParentBorderColor),
+        shadowElevation = 6.dp,
+        tonalElevation = 0.dp,
       ) {
-        Text(
-          text = deviceName,
-          modifier = Modifier.weight(1f),
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-          style = MaterialTheme.typography.bodySmall,
-          fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSurface,
-        )
-
-        Surface(
+        Row(
           modifier =
             Modifier
-              .height(18.dp)
-              .width(1.dp),
-          color = ParentBorderColor.copy(alpha = 0.65f),
-        ) {}
-
-        Icon(
-          painter = painterResource(R.drawable.pg_icon_battery),
-          contentDescription = "Battery",
-          tint = MaterialTheme.colorScheme.onSurface,
-          modifier = Modifier.height(14.dp),
-        )
-
-        Text(
-          text =
-            batteryLevelPercent
-              ?.let { it.toString() + "%" }
-              ?: "—",
-          style = MaterialTheme.typography.labelSmall,
-          fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSurface,
-        )
-      }
-    }
-
-    Surface(
-      modifier =
-        Modifier
-          .align(Alignment.TopEnd)
-          .statusBarsPadding()
-          .padding(
-            top = 12.dp,
-            end = 58.dp,
+              .fillMaxSize()
+              .padding(horizontal = 10.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+          Text(
+            text = deviceName,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
           )
-          .height(LOCATION_TOP_CARD_HEIGHT),
-      shape = RoundedCornerShape(14.dp),
-      color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-      border = BorderStroke(1.dp, ParentBorderColor),
-      shadowElevation = 6.dp,
-      tonalElevation = 0.dp,
-    ) {
-      Row(
-        modifier =
-          Modifier
-            .fillMaxHeight()
-            .padding(
-              start = 10.dp,
-              end = 5.dp,
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(1.dp),
-      ) {
-        Text(
-          text =
-            location
-              ?.capturedAt
-              ?.let(::formatLocationRefreshTime)
-              ?: "—",
-          style = MaterialTheme.typography.labelSmall,
-          fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSurface,
-        )
 
-        IconButton(
-          onClick = onRefresh,
-          enabled = !loading,
-          modifier = Modifier.size(34.dp),
-        ) {
-          if (loading) {
-            CircularProgressIndicator(
-              modifier = Modifier.size(16.dp),
-              strokeWidth = 2.dp,
-              color = ParentAccentColor,
-            )
-          } else {
-            Icon(
-              painter = painterResource(R.drawable.pg_icon_refresh),
-              contentDescription = "Refresh location",
-              tint = ParentAccentColor,
-              modifier = Modifier.size(18.dp),
-            )
-          }
+          Surface(
+            modifier =
+              Modifier
+                .height(18.dp)
+                .width(1.dp),
+            color = ParentBorderColor.copy(alpha = 0.65f),
+          ) {}
+
+          Icon(
+            painter = painterResource(R.drawable.pg_icon_battery),
+            contentDescription = "Battery",
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(14.dp),
+          )
+
+          Text(
+            text =
+              batteryLevelPercent
+                ?.let { it.toString() + "%" }
+                ?: "—",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
         }
+      }
 
-        IconButton(
-          onClick = { showGeofenceManager = true },
-          enabled = !geofenceLoading,
-          modifier = Modifier.size(34.dp),
+      Surface(
+        modifier = Modifier.height(LOCATION_TOP_CARD_HEIGHT),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        border = BorderStroke(1.dp, ParentBorderColor),
+        shadowElevation = 6.dp,
+        tonalElevation = 0.dp,
+      ) {
+        Row(
+          modifier =
+            Modifier
+              .fillMaxHeight()
+              .padding(
+                start = 9.dp,
+                end = 4.dp,
+              ),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-          if (geofenceLoading) {
-            CircularProgressIndicator(
-              modifier = Modifier.size(16.dp),
-              strokeWidth = 2.dp,
-              color = ParentAccentColor,
-            )
-          } else {
-            Icon(
-              painter = painterResource(R.drawable.pg_icon_location),
-              contentDescription = "Location zones",
-              tint = ParentAccentColor,
-              modifier = Modifier.size(18.dp),
-            )
+          Text(
+            text =
+              location
+                ?.capturedAt
+                ?.let(::formatLocationRefreshTime)
+                ?: "—",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
+
+          IconButton(
+            onClick = onRefresh,
+            enabled = !loading,
+            modifier = Modifier.size(34.dp),
+          ) {
+            if (loading) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = ParentAccentColor,
+              )
+            } else {
+              Icon(
+                painter = painterResource(R.drawable.pg_icon_refresh),
+                contentDescription = "Refresh location",
+                tint = ParentAccentColor,
+                modifier = Modifier.size(18.dp),
+              )
+            }
+          }
+
+          IconButton(
+            onClick = { showGeofenceManager = true },
+            enabled = !geofenceLoading,
+            modifier = Modifier.size(34.dp),
+          ) {
+            if (geofenceLoading) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = ParentAccentColor,
+              )
+            } else {
+              Icon(
+                painter = painterResource(R.drawable.pg_icon_location),
+                contentDescription = "Location zones",
+                tint = ParentAccentColor,
+                modifier = Modifier.size(18.dp),
+              )
+            }
           }
         }
       }
