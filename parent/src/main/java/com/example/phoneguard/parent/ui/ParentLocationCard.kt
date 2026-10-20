@@ -283,26 +283,16 @@ internal fun ParentLocationScreen(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(1.dp),
         ) {
-          Column(
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(1.dp),
-          ) {
-            Text(
-              text = "UPDATED",
-              style = MaterialTheme.typography.labelSmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-              text =
-                location
-                  ?.capturedAt
-                  ?.let(::formatLocationRefreshTime)
-                  ?: "—",
-              style = MaterialTheme.typography.labelSmall,
-              fontWeight = FontWeight.Bold,
-              color = MaterialTheme.colorScheme.onSurface,
-            )
-          }
+          Text(
+            text =
+              location
+                ?.capturedAt
+                ?.let(::formatLocationRefreshTime)
+                ?: "—",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
 
           IconButton(
             onClick = onRefresh,
