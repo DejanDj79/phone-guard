@@ -37,6 +37,7 @@ internal class ParentDashboardUiState(
   var locationLoading by mutableStateOf(false)
   var locationError by mutableStateOf<String?>(null)
   var locationNotice by mutableStateOf<String?>(null)
+  var locationPanelVisible by mutableStateOf(true)
 
   var connectionTestInProgress by mutableStateOf(false)
   var connectionTestSucceeded by mutableStateOf<Boolean?>(null)
