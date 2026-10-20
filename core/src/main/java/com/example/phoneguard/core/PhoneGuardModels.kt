@@ -7,6 +7,7 @@ enum class RemoteCommandType {
   SYNC_SCHEDULE,
   SYNC_ALLOWED_APPS,
   SYNC_DAILY_LIMIT,
+  SYNC_GEOFENCES,
   REQUEST_LOCATION,
 }
 
@@ -26,6 +27,7 @@ data class RemoteCommand(
       RemoteCommandType.SYNC_SCHEDULE,
       RemoteCommandType.SYNC_ALLOWED_APPS,
       RemoteCommandType.SYNC_DAILY_LIMIT,
+      RemoteCommandType.SYNC_GEOFENCES,
       RemoteCommandType.REQUEST_LOCATION ->
         require(bonusMinutes == null) {
           "$type must not include bonusMinutes."
@@ -54,6 +56,9 @@ data class RemoteCommand(
 
     fun syncDailyLimit(): RemoteCommand =
       RemoteCommand(RemoteCommandType.SYNC_DAILY_LIMIT)
+
+    fun syncGeofences(): RemoteCommand =
+      RemoteCommand(RemoteCommandType.SYNC_GEOFENCES)
 
     fun requestLocation(): RemoteCommand =
       RemoteCommand(RemoteCommandType.REQUEST_LOCATION)
@@ -184,4 +189,35 @@ sealed interface PairingResult {
   data class Error(
     val message: String,
   ) : PairingResult
+}
+
+
+data class GeofenceZone(
+  val zoneId: String,
+  val name: String,
+  val latitude: Double,
+  val longitude: Double,
+  val radiusMeters: Int,
+  val enabled: Boolean = true,
+) {
+  init {
+    require(zoneId.isNotBlank()) { "zoneId must not be blank." }
+    require(name.isNotBlank() && name.length <= 60) {
+      "Geofence name must contain 1 to 60 characters."
+    }
+    require(latitude in -90.0..90.0) {
+      "Geofence latitude must be between -90 and 90."
+    }
+    require(longitude in -180.0..180.0) {
+      "Geofence longitude must be between -180 and 180."
+    }
+    require(radiusMeters in 100..5000) {
+      "Geofence radius must be between 100 and 5000 meters."
+    }
+  }
+}
+
+enum class GeofenceTransitionType {
+  ENTER,
+  EXIT,
 }
