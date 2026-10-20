@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -92,7 +93,8 @@ internal fun ParentLocationScreen(
   geofenceEvents: List<GeofenceEvent>,
   geofenceEventsLoading: Boolean,
   geofenceEventsError: String?,
-  onSaveGeofence: (String?, String, Int, Double, Double) -> Unit,
+  onSaveGeofence: (String?, String, Int, Double, Double, Boolean) -> Unit,
+  onSetGeofenceEnabled: (GeofenceZone, Boolean) -> Unit,
   onDeleteGeofence: (String) -> Unit,
   onRefresh: () -> Unit,
   modifier: Modifier = Modifier,
@@ -112,6 +114,7 @@ internal fun ParentLocationScreen(
   var showGeofenceNameDialog by remember { mutableStateOf(false) }
   var pendingZoneName by remember { mutableStateOf("") }
   var editingZoneId by remember { mutableStateOf<String?>(null) }
+  var editingZoneEnabled by remember { mutableStateOf(true) }
   var pickerRecenterRequest by remember { mutableStateOf(0) }
 
   LaunchedEffect(location?.capturedAt) {
@@ -491,6 +494,7 @@ internal fun ParentLocationScreen(
                 pickerLatitude = null
                 pickerLongitude = null
                 editingZoneId = null
+                editingZoneEnabled = true
                 pendingZoneName = ""
                 showGeofenceManager = true
               },
@@ -536,6 +540,7 @@ internal fun ParentLocationScreen(
         val currentLocation = location
         if (currentLocation != null) {
           editingZoneId = null
+          editingZoneEnabled = true
           pendingZoneName = ""
           pickerLatitude = currentLocation.latitude
           pickerLongitude = currentLocation.longitude
@@ -547,6 +552,7 @@ internal fun ParentLocationScreen(
       },
       onEdit = { zone ->
         editingZoneId = zone.zoneId
+        editingZoneEnabled = zone.enabled
         pendingZoneName = zone.name
         pickerLatitude = zone.latitude
         pickerLongitude = zone.longitude
@@ -555,6 +561,7 @@ internal fun ParentLocationScreen(
         geofencePickerActive = true
         pickerRecenterRequest += 1
       },
+      onSetEnabled = onSetGeofenceEnabled,
       onDelete = onDeleteGeofence,
       onDismiss = { showGeofenceManager = false },
     )
@@ -603,6 +610,7 @@ internal fun ParentLocationScreen(
                 pickerRadiusMeters,
                 latitude,
                 longitude,
+                editingZoneEnabled,
               )
               showGeofenceNameDialog = false
               geofencePickerActive = false
@@ -610,6 +618,7 @@ internal fun ParentLocationScreen(
               pickerLatitude = null
               pickerLongitude = null
               editingZoneId = null
+              editingZoneEnabled = true
             }
           },
           enabled =
@@ -768,6 +777,7 @@ private fun GeofenceManagerDialog(
   currentLocationAvailable: Boolean,
   onStartAdd: () -> Unit,
   onEdit: (GeofenceZone) -> Unit,
+  onSetEnabled: (GeofenceZone, Boolean) -> Unit,
   onDelete: (String) -> Unit,
   onDismiss: () -> Unit,
 ) {
@@ -831,6 +841,32 @@ private fun GeofenceManagerDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                   )
+
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                  ) {
+                    Text(
+                      text = if (zone.enabled) "ACTIVE" else "PAUSED",
+                      style = MaterialTheme.typography.labelSmall,
+                      fontWeight = FontWeight.Bold,
+                      color =
+                        if (zone.enabled) {
+                          ParentAccentColor
+                        } else {
+                          MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+
+                    Switch(
+                      checked = zone.enabled,
+                      onCheckedChange = { enabled ->
+                        onSetEnabled(zone, enabled)
+                      },
+                      enabled = !saving,
+                    )
+                  }
                 }
 
                 Row(
