@@ -12,6 +12,7 @@ import com.example.phoneguard.core.RemoteCommandType
 import com.example.phoneguard.core.RemoteWeeklySchedule
 import com.example.phoneguard.parent.data.AppUsageDay
 import com.example.phoneguard.parent.data.ChildLocation
+import com.example.phoneguard.parent.data.GeofenceEvent
 import com.example.phoneguard.parent.data.PendingTimeRequest
 import com.example.phoneguard.parent.data.ProtectionHistoryEvent
 
@@ -45,6 +46,9 @@ internal class ParentDashboardUiState(
   var geofenceSaving by mutableStateOf(false)
   var geofenceError by mutableStateOf<String?>(null)
   var geofenceNotice by mutableStateOf<String?>(null)
+  var geofenceEvents by mutableStateOf<List<GeofenceEvent>>(emptyList())
+  var geofenceEventsLoading by mutableStateOf(false)
+  var geofenceEventsError by mutableStateOf<String?>(null)
 
   var connectionTestInProgress by mutableStateOf(false)
   var connectionTestSucceeded by mutableStateOf<Boolean?>(null)
