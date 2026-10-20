@@ -40,6 +40,10 @@ class ParentMessagingService : FirebaseMessagingService() {
           Log.i(TAG, "Protection alert notification suppressed by Parent setting")
         }
       }
+
+      TYPE_GEOFENCE_EVENT -> {
+        showGeofenceNotification(message)
+      }
     }
   }
 
@@ -184,6 +188,87 @@ class ParentMessagingService : FirebaseMessagingService() {
     manager.notify(notificationKey.hashCode(), notification)
   }
 
+  private fun showGeofenceNotification(message: RemoteMessage) {
+    val eventType =
+      message.data["event_type"]
+        ?.uppercase()
+        ?.takeIf { it == "ENTER" || it == "EXIT" }
+        ?: return
+    val zoneName =
+      message.data["zone_name"]
+        ?.takeIf { it.isNotBlank() }
+        ?: "saved zone"
+    val displayName =
+      message.data["display_name"]
+        ?.takeIf { it.isNotBlank() }
+        ?: "Child device"
+    val eventId =
+      message.data["event_id"]
+        ?.takeIf { it.isNotBlank() }
+        ?: (eventType + ":" + zoneName + ":" + displayName)
+
+    ensureGeofenceChannel()
+
+    val title =
+      if (eventType == "ENTER") {
+        displayName + " arrived"
+      } else {
+        displayName + " left"
+      }
+    val body =
+      if (eventType == "ENTER") {
+        displayName + " entered " + zoneName + "."
+      } else {
+        displayName + " exited " + zoneName + "."
+      }
+
+    val intent =
+      Intent(this, MainActivity::class.java).apply {
+        flags =
+          Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_CLEAR_TOP
+      }
+
+    val pendingIntent =
+      PendingIntent.getActivity(
+        this,
+        eventId.hashCode(),
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+
+    val notification =
+      NotificationCompat.Builder(this, GEOFENCE_CHANNEL_ID)
+        .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+        .setContentTitle(title)
+        .setContentText(body)
+        .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setAutoCancel(true)
+        .setContentIntent(pendingIntent)
+        .build()
+
+    val manager = getSystemService(NotificationManager::class.java)
+    manager.notify(eventId.hashCode(), notification)
+  }
+
+  private fun ensureGeofenceChannel() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+    val manager = getSystemService(NotificationManager::class.java)
+    if (manager.getNotificationChannel(GEOFENCE_CHANNEL_ID) != null) return
+
+    manager.createNotificationChannel(
+      NotificationChannel(
+        GEOFENCE_CHANNEL_ID,
+        "Location zones",
+        NotificationManager.IMPORTANCE_HIGH,
+      ).apply {
+        description = "Alerts when a Child device enters or leaves a saved location zone."
+      },
+    )
+  }
+
   private fun ensureTimeRequestChannel() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
@@ -224,6 +309,7 @@ class ParentMessagingService : FirebaseMessagingService() {
     const val EXTRA_TIME_REQUEST_ID = "time_request_id"
     private const val TYPE_TIME_REQUEST = "TIME_REQUEST"
     private const val TYPE_PROTECTION_ALERT = "PROTECTION_ALERT"
+    private const val TYPE_GEOFENCE_EVENT = "GEOFENCE_EVENT"
     private const val ALERT_ACCESSIBILITY_DISABLED = "ACCESSIBILITY_DISABLED"
     private const val ALERT_PRECISE_TIMING_DISABLED = "PRECISE_TIMING_DISABLED"
     private const val ALERT_BATTERY_UNRESTRICTED_DISABLED = "BATTERY_UNRESTRICTED_DISABLED"
@@ -233,5 +319,6 @@ class ParentMessagingService : FirebaseMessagingService() {
     private const val ALERT_CLEAR_DATA_ATTEMPT = "CLEAR_DATA_ATTEMPT"
     private const val TIME_REQUEST_CHANNEL_ID = "phoneguard_time_requests"
     private const val PROTECTION_ALERTS_CHANNEL_ID = "phoneguard_protection_alerts"
+    private const val GEOFENCE_CHANNEL_ID = "phoneguard_geofence_events"
   }
 }
