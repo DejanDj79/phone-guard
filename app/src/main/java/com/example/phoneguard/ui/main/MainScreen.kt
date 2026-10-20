@@ -67,6 +67,7 @@ import com.example.phoneguard.remote.ChildRegistrationResult
 import com.example.phoneguard.remote.ChildTimeRequestResult
 import com.example.phoneguard.remote.FcmTokenProvider
 import com.example.phoneguard.remote.RemoteCommandSyncer
+import com.example.phoneguard.remote.RemoteGeofenceSyncer
 import com.example.phoneguard.schedule.ScheduleAlarmScheduler
 import com.example.phoneguard.theme.PhoneGuardTheme
 import kotlinx.coroutines.Dispatchers
@@ -351,6 +352,10 @@ fun MainScreen(
                 }
 
               if (result is ChildPairingResetResult.Success) {
+                withContext(Dispatchers.IO) {
+                  RemoteGeofenceSyncer(context.applicationContext).sync()
+                }
+
                 pairingIdentity = refreshedIdentity
                 registrationResult =
                   ChildRegistrationResult.Success(
