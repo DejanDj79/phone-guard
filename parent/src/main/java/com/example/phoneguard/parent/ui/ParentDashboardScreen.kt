@@ -1370,6 +1370,118 @@ fun ParentDashboardScreen(
   }
 
 
+  fun saveGeofenceAtCurrentLocation(
+    name: String,
+    radiusMeters: Int,
+  ) {
+    if (uiState.geofenceSaving) return
+
+    val currentLocation = uiState.currentLocation
+    if (currentLocation == null) {
+      uiState.geofenceError =
+        "Refresh the Child location before creating a location zone."
+      return
+    }
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      uiState.geofenceError =
+        "Control token is missing. Re-pairing is required."
+      return
+    }
+
+    scope.launch {
+      uiState.geofenceSaving = true
+      uiState.geofenceError = null
+      uiState.geofenceNotice = null
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            geofenceGateway.save(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+              name = name,
+              latitude = currentLocation.latitude,
+              longitude = currentLocation.longitude,
+              radiusMeters = radiusMeters,
+            )
+          }
+      ) {
+        is GeofenceSaveResult.Success -> {
+          uiState.geofenceZones =
+            (uiState.geofenceZones + result.zone)
+              .distinctBy { it.zoneId }
+          uiState.geofenceNotice =
+            result.zone.name + " zone saved."
+          sendCommand(RemoteCommand.syncGeofences())
+        }
+
+        is GeofenceSaveResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+          } else {
+            uiState.geofenceError = result.message
+          }
+        }
+      }
+
+      uiState.geofenceSaving = false
+    }
+  }
+
+  fun deleteGeofence(zoneId: String) {
+    if (uiState.geofenceSaving) return
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      uiState.geofenceError =
+        "Control token is missing. Re-pairing is required."
+      return
+    }
+
+    scope.launch {
+      uiState.geofenceSaving = true
+      uiState.geofenceError = null
+      uiState.geofenceNotice = null
+
+      when (
+        val result =
+          withContext(Dispatchers.IO) {
+            geofenceGateway.delete(
+              deviceId = device.deviceId,
+              controlToken = controlToken,
+              zoneId = zoneId,
+            )
+          }
+      ) {
+        GeofenceDeleteResult.Success -> {
+          uiState.geofenceZones =
+            uiState.geofenceZones.filterNot { it.zoneId == zoneId }
+          uiState.geofenceNotice = "Location zone deleted."
+          sendCommand(RemoteCommand.syncGeofences())
+        }
+
+        is GeofenceDeleteResult.Error -> {
+          if (result.pairingInvalid) {
+            removeInvalidPairing(
+              deviceId = device.deviceId,
+              displayName = device.displayName,
+            )
+          } else {
+            uiState.geofenceError = result.message
+          }
+        }
+      }
+
+      uiState.geofenceSaving = false
+    }
+  }
+
+
   fun requestCurrentLocation() {
     if (uiState.locationLoading || uiState.commandInProgress) return
 
@@ -1568,6 +1680,20 @@ fun ParentDashboardScreen(
         errorMessage = uiState.locationError,
         notice = uiState.locationNotice,
         panelVisible = uiState.locationPanelVisible,
+        geofenceZones = uiState.geofenceZones,
+        geofenceLoading = uiState.geofenceLoading,
+        geofenceSaving = uiState.geofenceSaving,
+        geofenceError = uiState.geofenceError,
+        geofenceNotice = uiState.geofenceNotice,
+        onAddGeofence = { name, radiusMeters ->
+          saveGeofenceAtCurrentLocation(
+            name = name,
+            radiusMeters = radiusMeters,
+          )
+        },
+        onDeleteGeofence = { zoneId ->
+          deleteGeofence(zoneId)
+        },
         onRefresh = { requestCurrentLocation() },
         modifier = Modifier.fillMaxSize(),
       )
