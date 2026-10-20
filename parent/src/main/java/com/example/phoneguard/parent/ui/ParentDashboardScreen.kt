@@ -46,11 +46,15 @@ import com.example.phoneguard.parent.data.CommandDeliveryResult
 import com.example.phoneguard.parent.data.CommandResult
 import com.example.phoneguard.parent.data.DeviceStatusResult
 import com.example.phoneguard.parent.data.LocationStatusResult
+import com.example.phoneguard.parent.data.GeofenceZonesResult
+import com.example.phoneguard.parent.data.GeofenceSaveResult
+import com.example.phoneguard.parent.data.GeofenceDeleteResult
 import com.example.phoneguard.parent.data.HttpAllowedAppsGateway
 import com.example.phoneguard.parent.data.HttpAppUsageGateway
 import com.example.phoneguard.parent.data.HttpDeviceManagementGateway
 import com.example.phoneguard.parent.data.HttpDeviceStatusGateway
 import com.example.phoneguard.parent.data.HttpLocationGateway
+import com.example.phoneguard.parent.data.HttpGeofenceGateway
 import com.example.phoneguard.parent.data.HttpCommandGateway
 import com.example.phoneguard.parent.data.HttpPairingGateway
 import com.example.phoneguard.parent.data.HttpProtectionHistoryGateway
@@ -105,6 +109,7 @@ fun ParentDashboardScreen(
   val commandGateway = remember { HttpCommandGateway() }
   val deviceStatusGateway = remember { HttpDeviceStatusGateway() }
   val locationGateway = remember { HttpLocationGateway() }
+  val geofenceGateway = remember { HttpGeofenceGateway() }
   val scheduleGateway = remember { HttpScheduleGateway() }
   val allowedAppsGateway = remember { HttpAllowedAppsGateway() }
   val appUsageGateway = remember { HttpAppUsageGateway() }
@@ -148,6 +153,11 @@ fun ParentDashboardScreen(
     uiState.locationError = null
     uiState.locationNotice = null
     uiState.locationPanelVisible = true
+    uiState.geofenceZones = emptyList()
+    uiState.geofenceLoading = false
+    uiState.geofenceSaving = false
+    uiState.geofenceError = null
+    uiState.geofenceNotice = null
     uiState.showDeviceManagement = false
     uiState.deviceManagementError = null
     uiState.pendingTimeRequest = null
@@ -222,6 +232,11 @@ fun ParentDashboardScreen(
     uiState.locationError = null
     uiState.locationNotice = null
     uiState.locationPanelVisible = true
+    uiState.geofenceZones = emptyList()
+    uiState.geofenceLoading = false
+    uiState.geofenceSaving = false
+    uiState.geofenceError = null
+    uiState.geofenceNotice = null
     ParentPushRegistrar(context.applicationContext)
       .registerCurrentToken()
     uiState.showPairDevice = false
@@ -774,6 +789,46 @@ fun ParentDashboardScreen(
 
       delay(5_000)
     }
+  }
+
+  LaunchedEffect(device.deviceId, uiState.selectedTab, "geofence-zones") {
+    if (uiState.selectedTab != PARENT_LOCATION_SECTION) return@LaunchedEffect
+
+    val controlToken = settingsStore.controlToken(device.deviceId)
+    if (controlToken.isNullOrBlank()) {
+      uiState.geofenceError =
+        "Control token is missing. Re-pairing is required."
+      return@LaunchedEffect
+    }
+
+    uiState.geofenceLoading = true
+    when (
+      val result =
+        withContext(Dispatchers.IO) {
+          geofenceGateway.fetch(
+            deviceId = device.deviceId,
+            controlToken = controlToken,
+          )
+        }
+    ) {
+      is GeofenceZonesResult.Success -> {
+        uiState.geofenceZones = result.zones
+        uiState.geofenceError = null
+      }
+
+      is GeofenceZonesResult.Error -> {
+        if (result.pairingInvalid) {
+          removeInvalidPairing(
+            deviceId = device.deviceId,
+            displayName = device.displayName,
+          )
+          return@LaunchedEffect
+        } else {
+          uiState.geofenceError = result.message
+        }
+      }
+    }
+    uiState.geofenceLoading = false
   }
 
   LaunchedEffect(device.deviceId, uiState.selectedTab, "protection-history-poll") {
