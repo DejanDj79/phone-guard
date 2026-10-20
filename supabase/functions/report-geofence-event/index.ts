@@ -71,13 +71,14 @@ export default {
 
     const { data: zone, error: zoneError } = await ctx.supabaseAdmin
       .from("geofence_zones")
-      .select("zone_id, name")
+      .select("zone_id, name, enabled")
       .eq("zone_id", zoneId)
       .eq("device_id", deviceId)
       .maybeSingle();
 
     if (zoneError) return json({ error: "database_error" }, 500);
     if (!zone) return json({ error: "zone_not_found" }, 404);
+    if (!zone.enabled) return json({ error: "zone_disabled" }, 409);
 
     const now = new Date().toISOString();
 
