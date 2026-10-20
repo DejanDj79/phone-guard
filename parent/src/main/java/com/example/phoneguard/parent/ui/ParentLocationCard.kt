@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -65,6 +68,7 @@ import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.ChildLocation
 import com.example.phoneguard.parent.data.GeofenceEvent
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.MarkerOptions
@@ -103,6 +107,8 @@ internal fun ParentLocationScreen(
   geofenceEvents: List<GeofenceEvent>,
   geofenceEventsLoading: Boolean,
   geofenceEventsError: String?,
+  highlightedGeofenceEventId: String?,
+  onHighlightFinished: () -> Unit,
   onSaveGeofence: (String?, String, Int, Double, Double, Boolean) -> Unit,
   onSetGeofenceEnabled: (GeofenceZone, Boolean) -> Unit,
   onDeleteGeofence: (String) -> Unit,
@@ -387,6 +393,8 @@ internal fun ParentLocationScreen(
             events = geofenceEvents,
             loading = geofenceEventsLoading,
             errorMessage = geofenceEventsError,
+            highlightedEventId = highlightedGeofenceEventId,
+            onHighlightFinished = onHighlightFinished,
           )
         }
       }
@@ -703,7 +711,25 @@ private fun GeofenceActivityTimeline(
   events: List<GeofenceEvent>,
   loading: Boolean,
   errorMessage: String?,
+  highlightedEventId: String?,
+  onHighlightFinished: () -> Unit,
 ) {
+  val highlightRequester = remember { BringIntoViewRequester() }
+  val targetLoaded =
+    highlightedEventId != null &&
+      events.any { it.eventId == highlightedEventId }
+
+  // The timeline is populated asynchronously. Scroll only once the target
+  // event is rendered, and leave its highlight visible briefly.
+  LaunchedEffect(highlightedEventId, targetLoaded) {
+    if (targetLoaded) {
+      delay(400)
+      highlightRequester.bringIntoView()
+      delay(5_000)
+      onHighlightFinished()
+    }
+  }
+
   when {
     loading && events.isEmpty() -> {
       Row(
@@ -745,8 +771,27 @@ private fun GeofenceActivityTimeline(
         modifier = Modifier.fillMaxWidth(),
       ) {
         events.forEachIndexed { index, event ->
+          val highlighted = event.eventId == highlightedEventId
           Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+              Modifier
+                .fillMaxWidth()
+                .then(
+                  if (highlighted) {
+                    Modifier
+                      .bringIntoViewRequester(highlightRequester)
+                      .background(
+                        color = ParentAccentColor.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(10.dp),
+                      )
+                      .border(
+                        border = BorderStroke(1.dp, ParentAccentColor),
+                        shape = RoundedCornerShape(10.dp),
+                      )
+                  } else {
+                    Modifier
+                  }
+                ),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top,
           ) {
