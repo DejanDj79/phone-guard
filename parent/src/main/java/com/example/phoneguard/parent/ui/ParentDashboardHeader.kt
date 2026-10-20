@@ -340,7 +340,9 @@ internal fun ParentDashboardShell(
           Modifier
             .align(Alignment.TopEnd)
             .statusBarsPadding()
-            .padding(top = 8.dp, end = 8.dp),
+            // Keep the account menu accessible without overlapping the top-right
+            // location refresh and zones card.
+            .padding(top = 60.dp, end = 8.dp),
       ) {
         ParentAccountMenuButton(
           expanded = accountMenuExpanded,
