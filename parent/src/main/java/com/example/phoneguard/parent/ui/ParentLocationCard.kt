@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -213,129 +214,115 @@ internal fun ParentLocationScreen(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-      // Both cards wrap their content. Weight with fill=false only limits
-      // the device card on small screens; it never stretches a short name.
-      Surface(
+      // Solid backgrounds are drawn directly on the rows, with no extra
+      // Material Surface layers or translucency over the map.
+      Row(
         modifier =
           Modifier
             .weight(1f, fill = false)
-            .height(LOCATION_TOP_CARD_HEIGHT),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-        border = BorderStroke(1.dp, ParentBorderColor),
-        shadowElevation = 6.dp,
-        tonalElevation = 0.dp,
+            .height(LOCATION_TOP_CARD_HEIGHT)
+            .background(
+              color = MaterialTheme.colorScheme.surface,
+              shape = RoundedCornerShape(14.dp),
+            )
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
       ) {
-        Row(
-          modifier =
-            Modifier
-              .fillMaxHeight()
-              .padding(horizontal = 10.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-          Text(
-            text = deviceName,
-            modifier = Modifier.weight(1f, fill = false),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-          )
+        Text(
+          text = deviceName,
+          modifier = Modifier.weight(1f, fill = false),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          style = MaterialTheme.typography.bodySmall,
+          fontWeight = FontWeight.Bold,
+          color = Color.White,
+        )
 
-          Icon(
-            painter = painterResource(R.drawable.pg_icon_battery),
-            contentDescription = "Battery",
-            tint = Color.White,
-            modifier = Modifier.size(14.dp),
-          )
+        Icon(
+          painter = painterResource(R.drawable.pg_icon_battery),
+          contentDescription = "Battery",
+          tint = Color.White,
+          modifier = Modifier.size(14.dp),
+        )
 
-          Text(
-            text =
-              batteryLevelPercent
-                ?.let { it.toString() + "%" }
-                ?: "—",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-          )
-        }
+        Text(
+          text =
+            batteryLevelPercent
+              ?.let { it.toString() + "%" }
+              ?: "—",
+          style = MaterialTheme.typography.labelSmall,
+          fontWeight = FontWeight.Bold,
+          color = Color.White,
+        )
       }
 
-      Surface(
+      Row(
         modifier =
           Modifier
             .padding(start = 8.dp)
-            .height(LOCATION_TOP_CARD_HEIGHT),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-        border = BorderStroke(1.dp, ParentBorderColor),
-        shadowElevation = 6.dp,
-        tonalElevation = 0.dp,
+            .height(LOCATION_TOP_CARD_HEIGHT)
+            .background(
+              color = MaterialTheme.colorScheme.surface,
+              shape = RoundedCornerShape(14.dp),
+            )
+            .padding(
+              start = 9.dp,
+              end = 4.dp,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
       ) {
-        Row(
-          modifier =
-            Modifier
-              .fillMaxHeight()
-              .padding(
-                start = 9.dp,
-                end = 4.dp,
-              ),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(2.dp),
+        Text(
+          text =
+            location
+              ?.capturedAt
+              ?.let(::formatLocationRefreshTime)
+              ?: "—",
+          style = MaterialTheme.typography.labelSmall,
+          fontWeight = FontWeight.Bold,
+          color = Color.White,
+        )
+
+        IconButton(
+          onClick = onRefresh,
+          enabled = !loading,
+          modifier = Modifier.size(34.dp),
         ) {
-          Text(
-            text =
-              location
-                ?.capturedAt
-                ?.let(::formatLocationRefreshTime)
-                ?: "—",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-          )
-
-          IconButton(
-            onClick = onRefresh,
-            enabled = !loading,
-            modifier = Modifier.size(34.dp),
-          ) {
-            if (loading) {
-              CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp,
-                color = Color.White,
-              )
-            } else {
-              Icon(
-                painter = painterResource(R.drawable.pg_icon_refresh),
-                contentDescription = "Refresh location",
-                tint = Color.White,
-                modifier = Modifier.size(18.dp),
-              )
-            }
+          if (loading) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(16.dp),
+              strokeWidth = 2.dp,
+              color = Color.White,
+            )
+          } else {
+            Icon(
+              painter = painterResource(R.drawable.pg_icon_refresh),
+              contentDescription = "Refresh location",
+              tint = Color.White,
+              modifier = Modifier.size(18.dp),
+            )
           }
+        }
 
-          IconButton(
-            onClick = { showGeofenceManager = true },
-            enabled = !geofenceLoading,
-            modifier = Modifier.size(34.dp),
-          ) {
-            if (geofenceLoading) {
-              CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp,
-                color = Color.White,
-              )
-            } else {
-              Icon(
-                painter = painterResource(R.drawable.pg_icon_location),
-                contentDescription = "Location zones",
-                tint = Color.White,
-                modifier = Modifier.size(18.dp),
-              )
-            }
+        IconButton(
+          onClick = { showGeofenceManager = true },
+          enabled = !geofenceLoading,
+          modifier = Modifier.size(34.dp),
+        ) {
+          if (geofenceLoading) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(16.dp),
+              strokeWidth = 2.dp,
+              color = Color.White,
+            )
+          } else {
+            Icon(
+              painter = painterResource(R.drawable.pg_icon_location),
+              contentDescription = "Location zones",
+              tint = Color.White,
+              modifier = Modifier.size(18.dp),
+            )
           }
         }
       }
