@@ -53,6 +53,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.example.phoneguard.core.GeofenceZone
 import com.example.phoneguard.parent.R
 import com.example.phoneguard.parent.data.ChildLocation
+import com.example.phoneguard.parent.data.GeofenceEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.maplibre.android.MapLibre
@@ -88,6 +89,9 @@ internal fun ParentLocationScreen(
   geofenceSaving: Boolean,
   geofenceError: String?,
   geofenceNotice: String?,
+  geofenceEvents: List<GeofenceEvent>,
+  geofenceEventsLoading: Boolean,
+  geofenceEventsError: String?,
   onSaveGeofence: (String?, String, Int, Double, Double) -> Unit,
   onDeleteGeofence: (String) -> Unit,
   onRefresh: () -> Unit,
@@ -363,6 +367,13 @@ internal fun ParentLocationScreen(
             )
           }
 
+          GeofenceActivityPreview(
+            events = geofenceEvents,
+            loading = geofenceEventsLoading,
+            errorMessage = geofenceEventsError,
+          )
+
+
           notice?.let { message ->
             Text(
               text = message,
@@ -625,6 +636,125 @@ internal fun ParentLocationScreen(
         }
       },
     )
+  }
+}
+
+@Composable
+private fun GeofenceActivityPreview(
+  events: List<GeofenceEvent>,
+  loading: Boolean,
+  errorMessage: String?,
+) {
+  Column(
+    modifier = Modifier.fillMaxWidth(),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    Text(
+      text = "Recent zone activity",
+      style = MaterialTheme.typography.labelLarge,
+      fontWeight = FontWeight.Bold,
+      color = MaterialTheme.colorScheme.onSurface,
+    )
+
+    when {
+      loading && events.isEmpty() -> {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(18.dp),
+            strokeWidth = 2.dp,
+            color = ParentAccentColor,
+          )
+          Text(
+            text = "Loading zone activity…",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+      }
+
+      errorMessage != null && events.isEmpty() -> {
+        Text(
+          text = errorMessage,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.error,
+        )
+      }
+
+      events.isEmpty() -> {
+        Text(
+          text = "No zone activity yet.",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+
+      else -> {
+        events.take(3).forEach { event ->
+          Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+            border = BorderStroke(1.dp, ParentBorderColor.copy(alpha = 0.75f)),
+          ) {
+            Row(
+              modifier =
+                Modifier.padding(
+                  horizontal = 12.dp,
+                  vertical = 9.dp,
+                ),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+              Text(
+                text =
+                  if (event.eventType == "ENTER") {
+                    "↳"
+                  } else {
+                    "↰"
+                  },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = ParentAccentColor,
+              )
+
+              Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+              ) {
+                Text(
+                  text =
+                    if (event.eventType == "ENTER") {
+                      "Arrived at " + event.zoneName
+                    } else {
+                      "Left " + event.zoneName
+                    },
+                  style = MaterialTheme.typography.bodyMedium,
+                  fontWeight = FontWeight.SemiBold,
+                  color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                  text = formatProtectionEventTime(event.occurredAt),
+                  style = MaterialTheme.typography.labelSmall,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
+            }
+          }
+        }
+
+        if (errorMessage != null) {
+          Text(
+            text = errorMessage,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
+          )
+        }
+      }
+    }
   }
 }
 
