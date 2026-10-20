@@ -173,7 +173,7 @@ class HttpGeofenceGateway {
               "zone_limit_reached" ->
                 "This Child device already has the maximum number of location zones."
               "invalid_radius" ->
-                "Zone radius must be between 100 and 5000 meters."
+                "Zone radius must be between 50 and 5000 meters."
               "zone_not_found" ->
                 "Location zone was not found."
               else ->
