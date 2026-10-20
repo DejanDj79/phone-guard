@@ -747,22 +747,23 @@ private fun GeofenceActivityTimeline(
         events.forEachIndexed { index, event ->
           Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Top,
           ) {
             Box(
               modifier =
                 Modifier
-                  .width(18.dp)
-                  .height(62.dp),
+                  .width(16.dp)
+                  .height(48.dp),
             ) {
               if (index < events.lastIndex) {
                 Surface(
                   modifier =
                     Modifier
                       .align(Alignment.TopCenter)
-                      .padding(top = 10.dp)
+                      .padding(top = 8.dp)
                       .width(2.dp)
-                      .height(52.dp),
+                      .height(40.dp),
                   color = ParentBorderColor.copy(alpha = 0.85f),
                 ) {}
               }
@@ -771,7 +772,7 @@ private fun GeofenceActivityTimeline(
                 modifier =
                   Modifier
                     .align(Alignment.TopCenter)
-                    .size(10.dp),
+                    .size(8.dp),
                 shape = CircleShape,
                 color = ParentAccentColor,
                 border =
@@ -782,12 +783,13 @@ private fun GeofenceActivityTimeline(
               ) {}
             }
 
-            Column(
+            Row(
               modifier =
                 Modifier
                   .weight(1f)
-                  .padding(bottom = 14.dp),
-              verticalArrangement = Arrangement.spacedBy(3.dp),
+                  .padding(bottom = 8.dp),
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              verticalAlignment = Alignment.CenterVertically,
             ) {
               Text(
                 text =
@@ -796,12 +798,16 @@ private fun GeofenceActivityTimeline(
                   } else {
                     "Left " + event.zoneName
                   },
-                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
               )
               Text(
                 text = formatProtectionEventTime(event.occurredAt),
+                maxLines = 1,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
