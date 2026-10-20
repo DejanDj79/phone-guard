@@ -34,6 +34,12 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
     val triggeringGeofences = event.triggeringGeofences.orEmpty()
     if (triggeringGeofences.isEmpty()) return
 
+    Log.i(
+      TAG,
+      "Geofence transition received: " + transition.name +
+        " for " + triggeringGeofences.size + " zone(s)",
+    )
+
     val pendingResult = goAsync()
 
     Thread {
