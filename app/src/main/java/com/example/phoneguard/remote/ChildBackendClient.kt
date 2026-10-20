@@ -1,5 +1,6 @@
 package com.example.phoneguard.remote
 
+import com.example.phoneguard.core.GeofenceZone
 import com.example.phoneguard.core.InstalledAppInfo
 import com.example.phoneguard.core.PairingIdentity
 import org.json.JSONArray
@@ -112,6 +113,24 @@ sealed interface ChildLocationReportResult {
   data class Failure(
     val message: String,
   ) : ChildLocationReportResult
+}
+
+sealed interface ChildGeofenceSyncResult {
+  data class Success(
+    val zones: List<GeofenceZone>,
+  ) : ChildGeofenceSyncResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildGeofenceSyncResult
+}
+
+sealed interface ChildGeofenceEventReportResult {
+  data object Success : ChildGeofenceEventReportResult
+
+  data class Failure(
+    val message: String,
+  ) : ChildGeofenceEventReportResult
 }
 
 sealed interface ChildTimeRequestResult {
@@ -817,6 +836,130 @@ class ChildBackendClient {
       }
     } catch (error: Exception) {
       ChildLocationReportResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
+  fun fetchGeofences(
+    deviceId: String,
+    deviceSecret: String,
+  ): ChildGeofenceSyncResult {
+    val connection =
+      (URL(SYNC_GEOFENCES_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        val json = JSONObject(responseBody)
+        val zonesJson = json.optJSONArray("zones") ?: JSONArray()
+        val zones = buildList {
+          for (index in 0 until zonesJson.length()) {
+            val zoneJson = zonesJson.getJSONObject(index)
+            add(
+              GeofenceZone(
+                zoneId = zoneJson.getString("zoneId"),
+                name = zoneJson.getString("name"),
+                latitude = zoneJson.getDouble("latitude"),
+                longitude = zoneJson.getDouble("longitude"),
+                radiusMeters = zoneJson.getInt("radiusMeters"),
+                enabled = zoneJson.optBoolean("enabled", true),
+              ),
+            )
+          }
+        }
+
+        ChildGeofenceSyncResult.Success(zones)
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildGeofenceSyncResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildGeofenceSyncResult.Failure(
+        error.message ?: error::class.java.simpleName,
+      )
+    } finally {
+      connection.disconnect()
+    }
+  }
+
+  fun reportGeofenceEvent(
+    deviceId: String,
+    deviceSecret: String,
+    zoneId: String,
+    eventType: String,
+    occurredAtMillis: Long,
+  ): ChildGeofenceEventReportResult {
+    val connection =
+      (URL(REPORT_GEOFENCE_EVENT_URL).openConnection() as HttpURLConnection).apply {
+        requestMethod = "POST"
+        connectTimeout = 10_000
+        readTimeout = 10_000
+        doOutput = true
+        setRequestProperty("Content-Type", "application/json")
+      }
+
+    return try {
+      val body =
+        JSONObject()
+          .put("deviceId", deviceId)
+          .put("deviceSecret", deviceSecret)
+          .put("zoneId", zoneId)
+          .put("eventType", eventType)
+          .put("occurredAtMillis", occurredAtMillis)
+          .toString()
+
+      connection.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+        writer.write(body)
+      }
+
+      val statusCode = connection.responseCode
+      val responseBody =
+        (if (statusCode in 200..299) connection.inputStream else connection.errorStream)
+          ?.bufferedReader(Charsets.UTF_8)
+          ?.use { it.readText() }
+          .orEmpty()
+
+      if (statusCode in 200..299) {
+        ChildGeofenceEventReportResult.Success
+      } else {
+        val error =
+          runCatching { JSONObject(responseBody).optString("error") }
+            .getOrDefault("")
+            .ifBlank { "HTTP " + statusCode }
+
+        ChildGeofenceEventReportResult.Failure(error)
+      }
+    } catch (error: Exception) {
+      ChildGeofenceEventReportResult.Failure(
         error.message ?: error::class.java.simpleName,
       )
     } finally {
