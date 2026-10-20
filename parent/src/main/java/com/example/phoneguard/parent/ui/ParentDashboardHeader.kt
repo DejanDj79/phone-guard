@@ -57,16 +57,24 @@ import androidx.compose.ui.unit.dp
 import com.example.phoneguard.core.ChildDevice
 import com.example.phoneguard.parent.R
 
+internal const val PARENT_HOME_SECTION = 0
+internal const val PARENT_SCHEDULE_SECTION = 1
+internal const val PARENT_LOCATION_SECTION = 2
+internal const val PARENT_APPS_SECTION = 3
+internal const val PARENT_DEVICE_SECTION = 4
+internal const val PARENT_SETTINGS_SECTION = 5
+
 internal val parentDashboardSections =
   listOf(
     ParentDashboardSection("Home", R.drawable.pg_icon_home),
     ParentDashboardSection("Schedule", R.drawable.pg_icon_timer),
+    ParentDashboardSection("Location", R.drawable.pg_icon_location),
     ParentDashboardSection("Apps", R.drawable.pg_icon_apps),
     ParentDashboardSection("Device", R.drawable.pg_icon_device),
     ParentDashboardSection("Settings", R.drawable.pg_icon_settings),
   )
 
-private val parentBottomSections = parentDashboardSections.take(4)
+private val parentBottomSections = parentDashboardSections.take(5)
 
 internal data class ParentDashboardSection(
   val label: String,
@@ -97,7 +105,8 @@ internal fun ParentDashboardShell(
       modifier = Modifier.fillMaxSize(),
       containerColor = Color.Transparent,
       topBar = {
-        AnimatedContent(
+        if (selectedSection != PARENT_LOCATION_SECTION) {
+          AnimatedContent(
           targetState = selectedSection,
           transitionSpec = {
             if (targetState == 0) {
@@ -218,12 +227,12 @@ internal fun ParentDashboardShell(
                 actionsBusy = actionsBusy,
                 coloredHeader = false,
                 onChangeDevice = onChangeDevice,
-                onOpenSettings = { onSectionSelected(4) },
+                onOpenSettings = { onSectionSelected(PARENT_SETTINGS_SECTION) },
                 onSignOut = onSignOut,
               )
             } else {
               IconButton(
-                onClick = { onSectionSelected(0) },
+                onClick = { onSectionSelected(PARENT_LOCATION_SECTION) },
                 modifier =
                   Modifier
                     .align(Alignment.TopStart)
@@ -232,7 +241,7 @@ internal fun ParentDashboardShell(
               ) {
                 Icon(
                   painter = painterResource(R.drawable.pg_icon_back),
-                  contentDescription = "Back to Home",
+                  contentDescription = "Back to Location",
                   tint = ParentHeaderIconColor,
                   modifier = Modifier.size(20.dp),
                 )
@@ -297,7 +306,7 @@ internal fun ParentDashboardShell(
                   actionsBusy = actionsBusy,
                   coloredHeader = true,
                   onChangeDevice = onChangeDevice,
-                  onOpenSettings = { onSectionSelected(4) },
+                  onOpenSettings = { onSectionSelected(PARENT_SETTINGS_SECTION) },
                   onSignOut = onSignOut,
                 )
               }
@@ -324,6 +333,30 @@ internal fun ParentDashboardShell(
       }
     }
 
+    if (selectedSection == PARENT_LOCATION_SECTION) {
+      Box(
+        modifier =
+          Modifier
+            .align(Alignment.TopEnd)
+            .statusBarsPadding()
+            .padding(top = 8.dp, end = 8.dp),
+      ) {
+        ParentAccountMenuButton(
+          expanded = accountMenuExpanded,
+          onExpandedChange = { accountMenuExpanded = it },
+          parentEmail = parentEmail,
+          childName = device.displayName,
+          actionsBusy = actionsBusy,
+          coloredHeader = false,
+          onChangeDevice = onChangeDevice,
+          onOpenSettings = {
+            onSectionSelected(PARENT_SETTINGS_SECTION)
+          },
+          onSignOut = onSignOut,
+        )
+      }
+    }
+
     if (accountMenuExpanded) {
       BackHandler {
         accountMenuExpanded = false
@@ -339,7 +372,7 @@ internal fun ParentDashboardShell(
         },
         onOpenSettings = {
           accountMenuExpanded = false
-          onSectionSelected(4)
+          onSectionSelected(PARENT_SETTINGS_SECTION)
         },
         onSignOut = {
           accountMenuExpanded = false
@@ -380,72 +413,162 @@ private fun ParentFloatingBottomNavigation(
   onSectionSelected: (Int) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Surface(
-    modifier = modifier,
-    shape = RoundedCornerShape(30.dp),
-    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
-    shadowElevation = 14.dp,
-    tonalElevation = 0.dp,
+  BoxWithConstraints(
+    modifier =
+      modifier
+        .height(92.dp)
+        .drawBehind {
+          val shoulderY = 24.dp.toPx()
+          val centerX = size.width / 2f
+          val notchHalf = 50.dp.toPx()
+
+          val backgroundPath =
+            Path().apply {
+              moveTo(0f, shoulderY)
+              lineTo(centerX - notchHalf, shoulderY)
+              cubicTo(
+                centerX - 30.dp.toPx(),
+                shoulderY,
+                centerX - 30.dp.toPx(),
+                0f,
+                centerX,
+                0f,
+              )
+              cubicTo(
+                centerX + 30.dp.toPx(),
+                0f,
+                centerX + 30.dp.toPx(),
+                shoulderY,
+                centerX + notchHalf,
+                shoulderY,
+              )
+              lineTo(size.width, shoulderY)
+              lineTo(size.width, size.height)
+              lineTo(0f, size.height)
+              close()
+            }
+
+          val borderPath =
+            Path().apply {
+              moveTo(0f, shoulderY)
+              lineTo(centerX - notchHalf, shoulderY)
+              cubicTo(
+                centerX - 30.dp.toPx(),
+                shoulderY,
+                centerX - 30.dp.toPx(),
+                0f,
+                centerX,
+                0f,
+              )
+              cubicTo(
+                centerX + 30.dp.toPx(),
+                0f,
+                centerX + 30.dp.toPx(),
+                shoulderY,
+                centerX + notchHalf,
+                shoulderY,
+              )
+              lineTo(size.width, shoulderY)
+            }
+
+          drawPath(
+            path = backgroundPath,
+            brush =
+              Brush.horizontalGradient(
+                colors =
+                  listOf(
+                    ParentGradientEdge,
+                    ParentGradientCenter,
+                    ParentGradientEdge,
+                  ),
+              ),
+          )
+          drawPath(
+            path = borderPath,
+            color = ParentBorderColor,
+            style = Stroke(width = 1.dp.toPx()),
+          )
+        },
   ) {
-    BoxWithConstraints(
+    Row(
       modifier =
         Modifier
           .fillMaxWidth()
-          .padding(horizontal = 14.dp, vertical = 12.dp),
+          .align(Alignment.BottomCenter)
+          .padding(horizontal = 8.dp, bottom = 8.dp),
+      verticalAlignment = Alignment.Bottom,
     ) {
-      val itemWidth = maxWidth / parentBottomSections.size.toFloat()
-      val indicatorTarget =
-        (itemWidth * selectedSection.toFloat()) +
-          ((itemWidth - 44.dp) / 2f)
-      val indicatorOffset by
-        animateDpAsState(
-          targetValue = indicatorTarget,
-          animationSpec =
-            spring(
-              dampingRatio = Spring.DampingRatioMediumBouncy,
-              stiffness = Spring.StiffnessMediumLow,
-            ),
-          label = "BottomNavIndicator",
-        )
+      parentBottomSections.forEachIndexed { index, section ->
+        val selected = selectedSection == index
+        val isLocation = index == PARENT_LOCATION_SECTION
 
-      Surface(
-        modifier =
-          Modifier
-            .offset(x = indicatorOffset)
-            .size(44.dp),
-        shape = CircleShape,
-        color = Color.Transparent,
-        border = BorderStroke(1.dp, ParentAccentColor),
-        shadowElevation = 0.dp,
-      ) {}
-
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        parentBottomSections.forEachIndexed { index, section ->
-          val selected = selectedSection == index
-
-          Box(
-            modifier =
-              Modifier
-                .weight(1f)
-                .height(44.dp)
-                .clickable { onSectionSelected(index) },
-            contentAlignment = Alignment.Center,
-          ) {
+        Column(
+          modifier =
+            Modifier
+              .weight(1f)
+              .offset(y = if (isLocation) (-17).dp else 0.dp)
+              .clickable { onSectionSelected(index) }
+              .padding(vertical = 3.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
+          verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+          if (isLocation) {
+            Surface(
+              modifier = Modifier.size(52.dp),
+              shape = CircleShape,
+              color =
+                if (selected) {
+                  ParentAccentColor
+                } else {
+                  MaterialTheme.colorScheme.surface
+                },
+              border =
+                BorderStroke(
+                  1.dp,
+                  if (selected) ParentAccentColor else ParentBorderColor,
+                ),
+              shadowElevation = 8.dp,
+              tonalElevation = 0.dp,
+            ) {
+              Box(contentAlignment = Alignment.Center) {
+                Icon(
+                  painter = painterResource(section.iconRes),
+                  contentDescription = section.label,
+                  tint =
+                    if (selected) {
+                      ParentGradientEdge
+                    } else {
+                      MaterialTheme.colorScheme.onSurface
+                    },
+                  modifier = Modifier.size(24.dp),
+                )
+              }
+            }
+          } else {
             Icon(
               painter = painterResource(section.iconRes),
               contentDescription = section.label,
               tint =
                 if (selected) {
-                  MaterialTheme.colorScheme.onSurface
+                  ParentAccentColor
                 } else {
                   MaterialTheme.colorScheme.onSurfaceVariant
                 },
-              modifier = Modifier.size(22.dp),
+              modifier = Modifier.size(21.dp),
             )
           }
+
+          Text(
+            text = section.label,
+            style = MaterialTheme.typography.labelSmall,
+            color =
+              if (selected) {
+                ParentAccentColor
+              } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+              },
+            maxLines = 1,
+          )
         }
       }
     }
