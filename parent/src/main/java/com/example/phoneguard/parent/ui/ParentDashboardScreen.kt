@@ -1370,18 +1370,13 @@ fun ParentDashboardScreen(
   }
 
 
-  fun saveGeofenceAtCurrentLocation(
+  fun saveGeofence(
     name: String,
     radiusMeters: Int,
+    latitude: Double,
+    longitude: Double,
   ) {
     if (uiState.geofenceSaving) return
-
-    val currentLocation = uiState.currentLocation
-    if (currentLocation == null) {
-      uiState.geofenceError =
-        "Refresh the Child location before creating a location zone."
-      return
-    }
 
     val controlToken = settingsStore.controlToken(device.deviceId)
     if (controlToken.isNullOrBlank()) {
@@ -1402,8 +1397,8 @@ fun ParentDashboardScreen(
               deviceId = device.deviceId,
               controlToken = controlToken,
               name = name,
-              latitude = currentLocation.latitude,
-              longitude = currentLocation.longitude,
+              latitude = latitude,
+              longitude = longitude,
               radiusMeters = radiusMeters,
             )
           }
@@ -1685,10 +1680,12 @@ fun ParentDashboardScreen(
         geofenceSaving = uiState.geofenceSaving,
         geofenceError = uiState.geofenceError,
         geofenceNotice = uiState.geofenceNotice,
-        onAddGeofence = { name, radiusMeters ->
-          saveGeofenceAtCurrentLocation(
+        onAddGeofence = { name, radiusMeters, latitude, longitude ->
+          saveGeofence(
             name = name,
             radiusMeters = radiusMeters,
+            latitude = latitude,
+            longitude = longitude,
           )
         },
         onDeleteGeofence = { zoneId ->
